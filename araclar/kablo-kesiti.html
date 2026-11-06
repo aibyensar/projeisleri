@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kablo Kesiti Hesabı</title>
+<link rel="stylesheet" href="../ortak/stil.css">
+</head>
+<body>
+<header>
+  <a href="../index.html">← Proje İşleri</a>
+  <h1>Kablo kesiti ve gerilim düşümü</h1>
+  <p>Akım taşıma kapasitesi ve izin verilen % gerilim düşümüne göre kesit seçimi</p>
+</header>
+<main>
+  <div class="kart">
+    <form id="form" onsubmit="return false">
+      <label>Sistem
+        <select id="sistem">
+          <option value="3">Trifaze (3 faz)</option>
+          <option value="1">Monofaze (1 faz)</option>
+        </select>
+      </label>
+      <label>Gerilim (V)
+        <input id="gerilim" type="number" value="400" min="1" step="any">
+      </label>
+      <label>Güç (kW)
+        <input id="guc" type="number" value="30" min="0" step="any">
+      </label>
+      <label>Güç katsayısı (cos φ)
+        <input id="cosfi" type="number" value="0.85" min="0.1" max="1" step="0.01">
+      </label>
+      <label>Hat uzunluğu (m)
+        <input id="uzunluk" type="number" value="100" min="0" step="any">
+      </label>
+      <label>İletken
+        <select id="iletken">
+          <option value="cu">Bakır (Cu)</option>
+          <option value="al">Alüminyum (Al)</option>
+        </select>
+      </label>
+      <label>İzin verilen düşüm (%)
+        <input id="limit" type="number" value="3" min="0.1" step="0.1">
+      </label>
+      <label>Düzeltme katsayısı
+        <input id="katsayi" type="number" value="1" min="0.1" max="1.5" step="0.01">
+      </label>
+    </form>
+  </div>
+
+  <div class="kart sonuc" id="sonuc"></div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">Tüm kesitler</h2>
+    <div class="tablo-kutu">
+      <table>
+        <thead><tr><th>Kesit (mm²)</th><th>Taşıma (A)</th><th>% Düşüm</th><th>Düşüm (V)</th><th>Durum</th></tr></thead>
+        <tbody id="tablo"></tbody>
+      </table>
+    </div>
+    <p class="not">
+      Formüller: Trifaze %e = 100·L·P / (k·S·U²), monofaze %e = 200·L·P / (k·S·U²).
+      İletkenlik k: Cu = 56, Al = 35 m/(Ω·mm²).<br>
+      Akım taşıma değerleri yaklaşıktır: IEC 60364-5-52, yöntem C (duvar üstü), PVC yalıtım, 30 °C ortam.
+      Alüminyum için bakır değerinin 0,78 katı alınmıştır. Döşeme şekli, gruplama ve sıcaklık için
+      “Düzeltme katsayısı” alanını kullanın. Sonucu proje öncesi ilgili yönetmelik ve üretici tablolarıyla doğrulayın.
+    </p>
+  </div>
+</main>
+<script>
+const KESITLER = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
+// Bakır, PVC, yöntem C, 30 °C — [2 yüklü iletken (monofaze), 3 yüklü iletken (trifaze)]
+const TASIMA_CU = {
+  1.5: [17.5, 15.5], 2.5: [24, 21], 4: [32, 28], 6: [41, 36], 10: [57, 50],
+  16: [76, 68], 25: [96, 89], 35: [119, 110], 50: [144, 134], 70: [184, 171],
+  95: [223, 207], 120: [259, 239], 150: [299, 262], 185: [341, 296], 240: [403, 346]
+};
+const ILETKENLIK = { cu: 56, al: 35 };
+
+const $ = id => document.getElementById(id);
+const sayi = (x, b = 2) => x.toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b });
+
+function hesapla() {
+  const faz = +$('sistem').value;
+  const U = +$('gerilim').value;
+  const P = +$('guc').value * 1000;
+  const cosfi = +$('cosfi').value;
+  const L = +$('uzunluk').value;
+  const iletken = $('iletken').value;
+  const limit = +$('limit').value;
+  const katsayi = +$('katsayi').value;
+  const k = ILETKENLIK[iletken];
+
+  if (!(U > 0 && P >= 0 && cosfi > 0 && L >= 0 && limit > 0 && katsayi > 0)) {
+    $('sonuc').innerHTML = '<span class="uyari">Lütfen tüm değerleri doğru girin.</span>';
+    $('tablo').innerHTML = '';
+    return;
+  }
+
+  const I = faz === 3 ? P / (Math.sqrt(3) * U * cosfi) : P / (U * cosfi);
+  const carpan = faz === 3 ? 100 : 200;
+
+  let secilen = null;
+  const satirlar = KESITLER.map(S => {
+    const iz = TASIMA_CU[S][faz === 3 ? 1 : 0] * (iletken === 'al' ? 0.78 : 1) * katsayi;
+    const yuzde = carpan * L * P / (k * S * U * U);
+    const akimOk = I <= iz;
+    const dusumOk = yuzde <= limit;
+    const uygun = akimOk && dusumOk;
+    if (uygun && secilen === null) secilen = { S, iz, yuzde };
+    const durum = uygun ? 'Uygun' : !akimOk ? 'Akım yetersiz' : 'Düşüm fazla';
+    return { S, iz, yuzde, uygun, durum };
+  });
+
+  $('tablo').innerHTML = satirlar.map(r => `
+    <tr class="${secilen && r.S === secilen.S ? 'secilen' : r.uygun ? 'uygun' : ''}">
+      <td>${sayi(r.S, r.S % 1 ? 1 : 0)}</td>
+      <td>${sayi(r.iz, r.iz % 1 ? 1 : 0)}</td>
+      <td>${sayi(r.yuzde)}</td>
+      <td>${sayi(r.yuzde * U / 100, 1)}</td>
+      <td>${r.durum}</td>
+    </tr>`).join('');
+
+  $('sonuc').innerHTML = `
+    <div>Hat akımı: <b>${sayi(I, 1)} A</b></div>
+    ${secilen
+      ? `<div>Önerilen kesit: <strong>${sayi(secilen.S, secilen.S % 1 ? 1 : 0)} mm²</strong></div>
+         <div class="not">Taşıma ${sayi(secilen.iz, 0)} A · Gerilim düşümü %${sayi(secilen.yuzde)}</div>`
+      : `<div class="uyari">240 mm²'ye kadar uygun kesit yok. Paralel kablo veya daha yüksek gerilim düşünün.</div>`}
+  `;
+}
+
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', hesapla));
+$('sistem').addEventListener('change', () => { $('gerilim').value = $('sistem').value === '3' ? 400 : 230; hesapla(); });
+hesapla();
+</script>
+</body>
+</html>
