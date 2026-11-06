@@ -34,9 +34,17 @@
     border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi);
   }
   .degisti { border-color: var(--vurgu) !important; }
-  #firmaTablo td, #firmaTablo th { text-align: right; }
-  #firmaTablo td:first-child, #firmaTablo th:first-child { text-align: left; }
-  #firmaTablo tr.esik td { color: var(--soluk); }
+  #firmaTablo { border: 1px solid var(--cizgi); }
+  #firmaTablo th { white-space: normal; text-align: center; font-size: .75rem; font-weight: 600; vertical-align: bottom;
+    border: 1px solid var(--cizgi); background: var(--zemin); min-width: 64px; }
+  #firmaTablo td { text-align: center; border-left: 1px solid var(--cizgi); }
+  #firmaTablo td:first-child { text-align: left; }
+  .firma-bilgi { display: grid; gap: 4px; font-size: .85rem; margin: 8px 0 12px; }
+  .firma-bilgi div { display: grid; grid-template-columns: 8em 1fr; gap: 8px; }
+  .firma-bilgi span { color: var(--soluk); }
+  .sekme { flex-wrap: wrap; }
+  .sekme button { flex: 0 1 auto; font-size: .8rem; padding: 6px 10px; }
+  #firmaNot a { color: var(--ana); }
 </style>
 </head>
 <body>
@@ -73,7 +81,8 @@
 
   <div class="kart">
     <h2 id="firmaBaslik"></h2>
-    <p class="not" id="firmaAlt"></p>
+    <div class="firma-bilgi" id="firmaBilgi"></div>
+    <div class="secim sekme" id="firmaSekme"></div>
     <div class="tablo-kutu">
       <table id="firmaTablo"></table>
     </div>
@@ -118,6 +127,7 @@
   </div>
 </main>
 <script src="../veri/kablolar.js"></script>
+<script src="../veri/katalog.js"></script>
 <script>
 // Katsayı: trifaze 100 / (k × U²), monofaze 200 / (k × U²), elle hesaptaki gibi 3 haneye yuvarlanır.
 const VARSAYILAN = {
@@ -170,20 +180,41 @@ function dosemeGuncelle() {
   $('doseme').innerHTML = k.sutunlar.map((s, i) => `<option value="${i}">${DOSEME_ADI[s]}</option>`).join('');
 }
 
-function firmaTablosu(kablo, tip, damar, tablo, sutun, secilen, Sgerek) {
-  const baslikDamar = kablo.tekDamar ? 'tek damarlı' : `${damar} damarlı`;
-  $('firmaBaslik').textContent = `${FIRMA} tablosu: ${tip} ${baslikDamar}`;
-  $('firmaAlt').textContent = `${kablo.ad} · ${kablo.standart} · maks. ${kablo.maksSicaklik} °C`;
-  const kesitler = Object.keys(tablo).sort((a, b) => a - b);
-  $('firmaTablo').innerHTML =
-    `<thead><tr><th>Kesit (mm²)</th>${kablo.sutunlar.map((s, i) =>
-      `<th>${DOSEME_ADI[s]} (A)${i === sutun ? ' ●' : ''}</th>`).join('')}</tr></thead><tbody>` +
-    kesitler.map(s => `<tr class="${s === secilen ? 'secilen' : Sgerek != null && +s < Sgerek ? 'esik' : ''}">
-      <td>${kablo.tekDamar ? '1' : damar}x${kesitYaz(s)}</td>
-      ${tablo[s].map(v => `<td>${v == null ? '–' : v}</td>`).join('')}</tr>`).join('') + '</tbody>';
-  $('firmaNot').innerHTML = `● hesapta kullanılan sütun. Yeşil satır seçilen kablo, soluk satırlar formül sonucundan küçük kesitler.<br>
-    Toprakta: 20 °C, 70 cm derinlik, toprak ısıl direnci 1 K·m/W, yük faktörü 0,7. Havada: 30 °C, yük faktörü 1,0. Tek sistem.<br>
-    Kaynak: ${kablo.kaynak}.`;
+let gosterilenTablo = null;   // kullanıcı başka bir firma tablosuna geçtiyse
+function firmaTablosu(kablo, tip, damar, secilenKesit) {
+  const tablolar = KATALOG.filter(t => t.kablo === tip);
+  const etiket = secilenKesit == null ? null : (kablo.tekDamar ? secilenKesit : `${damar}x${secilenKesit}`);
+  const satirEtiketi = r => r[0].replace(/^\*/, '').split(' ')[0];
+  let tablo = tablolar.find(t => t === gosterilenTablo)
+    || tablolar.find(t => etiket && t.satirlar.some(r => satirEtiketi(r) === etiket))
+    || tablolar.find(t => !kablo.tekDamar && t.satirlar.some(r => satirEtiketi(r).startsWith(damar + 'x')))
+    || tablolar[0];
+
+  $('firmaSekme').innerHTML = tablolar.length > 1 ? tablolar.map((t, i) => {
+    const ilk = satirEtiketi(t.satirlar[0]), son = satirEtiketi(t.satirlar[t.satirlar.length - 1]);
+    return `<button type="button" data-i="${i}" aria-pressed="${t === tablo}">${ilk} … ${son}</button>`;
+  }).join('') : '';
+  $('firmaSekme').hidden = tablolar.length < 2;
+  $('firmaSekme').onclick = ev => {
+    const btn = ev.target.closest('button'); if (!btn) return;
+    gosterilenTablo = tablolar[+btn.dataset.i]; hesapla();
+  };
+
+  $('firmaBaslik').textContent = `${tablo.firma}: ${tablo.urun}`;
+  $('firmaBilgi').innerHTML = `
+    <div><span>Tip</span>${tablo.tip}</div>
+    <div><span>Standartlar</span>${tablo.standart}</div>
+    <div><span>Yapısı</span>${tablo.yapi}</div>
+    <div><span>Kullanıldığı yerler</span>${tablo.kullanim}</div>
+    <div><span>Teknik veriler</span>${tablo.teknik}</div>`;
+  const h = tablo.basliklar, a = tablo.akimSutun;
+  $('firmaTablo').innerHTML = `<thead>
+      <tr>${h.slice(0, a).map(x => `<th rowspan="2">${x}</th>`).join('')}<th colspan="${h.length - a}">${tablo.akimBasligi}</th></tr>
+      <tr>${h.slice(a).map(x => `<th>${x}</th>`).join('')}</tr>
+    </thead><tbody>` +
+    tablo.satirlar.map(r => `<tr class="${etiket && satirEtiketi(r) === etiket ? 'secilen' : ''}">${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('') +
+    '</tbody>';
+  $('firmaNot').innerHTML = `${tablo.dipnot}<br>Kaynak: <a href="${encodeURI(tablo.url)}" target="_blank" rel="noopener">${tablo.firma} ürün sayfası</a> (Kasım 2026'da okundu). Yeşil satır hesapta seçilen kablo.`;
 }
 
 function hesapla() {
@@ -206,7 +237,7 @@ function hesapla() {
 
   if (!(P > 0 && L > 0 && c > 0 && e > 0 && cosfi > 0)) {
     $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki değerler sıfırdan büyük olmalı.</span>';
-    firmaTablosu(kablo, tip, damar, tablo, sutun, null, null);
+    firmaTablosu(kablo, tip, damar, null);
     return;
   }
 
@@ -217,7 +248,7 @@ function hesapla() {
   const secilen = kesitler.find(s => +s >= Sgerek && tablo[s][sutun] >= I);
   const ad = s => kablo.tekDamar ? `${tip} 1x${kesitYaz(s)}` : `${tip} ${damar}x${kesitYaz(s)}`;
   const doseme = DOSEME_ADI[kablo.sutunlar[sutun]].toLowerCase();
-  firmaTablosu(kablo, tip, damar, tablo, sutun, secilen, Sgerek);
+  firmaTablosu(kablo, tip, damar, secilen);
 
   if (!secilen) {
     $('sonuc').innerHTML = `<span class="uyari">${tip} tablosunda yeterli kesit yok. Gerekli kesit ${sayi(Sgerek)} mm², hat akımı ${sayi(I, 1)} A. Paralel kablo veya başka kablo tipi düşünün.</span>`;
@@ -258,10 +289,11 @@ for (const grup of ['faz', 'iletken', 'kullanim']) {
     if (!btn) return;
     $(grup).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn));
     if (grup === 'iletken') tipleriGuncelle();
+    gosterilenTablo = null;
     hesapla();
   });
 }
-$('tip').addEventListener('change', () => { dosemeGuncelle(); hesapla(); });
+$('tip').addEventListener('change', () => { gosterilenTablo = null; dosemeGuncelle(); hesapla(); });
 $('doseme').addEventListener('change', hesapla);
 $('guc').addEventListener('input', hesapla);
 $('uzunluk').addEventListener('input', hesapla);

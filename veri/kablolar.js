@@ -1,13 +1,12 @@
-// Piyasada kullanılan bakır ve alüminyum iletkenli kabloların akım taşıma kapasiteleri (A).
-// Kaynak: Öznur Kablo ürün katalogları (oznurkablo.com.tr), Kasım 2026'da okundu.
-// Toprakta: 20 °C toprak, 70 cm derinlik, toprak ısıl direnci 1 K·m/W, yük faktörü 0,7.
-// Havada: 30 °C ortam, yük faktörü 1,0. Tek sistem (yanında başka kablo yok).
-// Kesit anahtarları mm², değerler sırasıyla 'sutunlar' alanındaki döşeme şekillerine aittir.
+// Hesapta kullanılan akım taşıma değerleri (A). veri/katalog.js içindeki firma tablolarından üretilmiştir.
+// Kaynak: Öznur Kablo ürün katalogları (oznurkablo.com.tr), Kasım 2026.
+// Firma notu: toprakta 20 °C, havada 30 °C. Kesit anahtarları mm²; değerler 'sutunlar' sırasındadır.
 const KABLOLAR = {
  "NYY": {
-  "ad": "YVV-U / YVV-R (TSE), NYY (VDE) — Cu/PVC/PVC, 0,6/1 kV",
+  "ad": "YVV-U, YVV-R (TSE), NYY (VDE), Cu/PVC/PVC (BS)",
   "standart": "TS IEC 60502-1, VDE 0276",
   "maksSicaklik": 70,
+  "iletken": "cu",
   "sutunlar": [
    "toprak",
    "hava"
@@ -270,13 +269,13 @@ const KABLOLAR = {
      430
     ]
    }
-  },
-  "iletken": "cu"
+  }
  },
  "N2XY": {
-  "ad": "YXV-U / YXV-R (TSE), N2XY (VDE) — Cu/XLPE/PVC, 0,6/1 kV",
+  "ad": "YXV-U, YXV-R (TSE), N2XY (VDE)",
   "standart": "TS IEC 60502-1, VDE 0276",
   "maksSicaklik": 90,
+  "iletken": "cu",
   "sutunlar": [
    "toprak",
    "hava"
@@ -391,13 +390,13 @@ const KABLOLAR = {
      32
     ]
    }
-  },
-  "iletken": "cu"
+  }
  },
  "N2XH": {
-  "ad": "N2XH — Cu/XLPE/HFFR halojensiz, 0,6/1 kV",
-  "standart": "TS HD 604 S1, VDE 0276",
+  "ad": "N2XH",
+  "standart": "TS HD 604 S1 ,VDE 0276",
   "maksSicaklik": 90,
+  "iletken": "cu",
   "sutunlar": [
    "hava"
   ],
@@ -448,6 +447,59 @@ const KABLOLAR = {
     ],
     "2.5": [
      36
+    ]
+   },
+   "3": {
+    "4": [
+     42
+    ],
+    "6": [
+     53
+    ],
+    "10": [
+     73
+    ],
+    "16": [
+     98
+    ],
+    "25": [
+     126
+    ],
+    "35": [
+     156
+    ],
+    "50": [
+     190
+    ],
+    "70": [
+     245
+    ],
+    "95": [
+     297
+    ],
+    "120": [
+     346
+    ],
+    "150": [
+     398
+    ],
+    "185": [
+     455
+    ],
+    "240": [
+     535
+    ],
+    "300": [
+     630
+    ],
+    "400": [
+     740
+    ],
+    "1.5": [
+     23
+    ],
+    "2.5": [
+     32
     ]
    },
    "4": {
@@ -544,13 +596,13 @@ const KABLOLAR = {
      535
     ]
    }
-  },
-  "iletken": "cu"
+  }
  },
  "NYM": {
-  "ad": "NVV / 05VV-U / 05VV-R (TSE), NYM (VDE) — 300/500 V tesisat kablosu",
-  "standart": "TS HD 21.4 S2, VDE 0281",
+  "ad": "NVV, 05VV-U , 05VV-R (TSE), NYM(VDE), Cu/PVC/PVC (BS)",
+  "standart": "TS HD 21.4 S2, VDE 0281, BS 6004, IEC 60227",
   "maksSicaklik": 70,
+  "iletken": "cu",
   "sutunlar": [
    "hava"
   ],
@@ -660,13 +712,13 @@ const KABLOLAR = {
      24
     ]
    }
-  },
-  "iletken": "cu"
+  }
  },
  "NYA": {
-  "ad": "H07V-U / H07V-R (TSE), NYA (VDE) — 450/750 V tek damarlı",
-  "standart": "TS EN 50525-2-31, VDE 0281",
+  "ad": "H07V-U, H07V-R (TSE) , NYA (VDE)",
+  "standart": "TS EN 50525-2-31, VDE 0281, BS 6004, IEC 60227",
   "maksSicaklik": 70,
+  "iletken": "cu",
   "sutunlar": [
    "boru",
    "hava"
@@ -749,19 +801,18 @@ const KABLOLAR = {
     19,
     32
    ]
-  },
-  "iletken": "cu"
+  }
  },
  "NAYY": {
-  "ad": "YAVV-R (TSE), NAYY (VDE) — Al/PVC/PVC, 0,6/1 kV",
+  "ad": "YAVV-R (TSE), NAYY (VDE), AL/PVC/PVC (BS)",
   "standart": "TS IEC 60502-1, VDE 0276",
   "maksSicaklik": 70,
+  "iletken": "al",
   "sutunlar": [
    "toprak",
    "hava"
   ],
   "kaynak": "Öznur Kablo ürün kataloğu (oznurkablo.com.tr), Kasım 2026",
-  "iletken": "al",
   "damar": {
    "2": {
     "10": [
@@ -920,15 +971,15 @@ const KABLOLAR = {
   }
  },
  "NA2XY": {
-  "ad": "YAXV-R (TSE), NA2XY (VDE) — Al/XLPE/PVC, 0,6/1 kV",
+  "ad": "YAXV-R, NA2XY",
   "standart": "TS IEC 60502-1, VDE 0276",
   "maksSicaklik": 90,
+  "iletken": "al",
   "sutunlar": [
    "toprak",
    "hava"
   ],
   "kaynak": "Öznur Kablo ürün kataloğu (oznurkablo.com.tr), Kasım 2026",
-  "iletken": "al",
   "damar": {
    "2": {
     "25": [
