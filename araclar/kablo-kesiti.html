@@ -16,16 +16,27 @@
   }
   .secim button small { display: block; font-size: .75rem; opacity: .8; }
   .secim button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); }
-  .secim button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
   .buyuk { font-size: 2rem; font-weight: 700; color: var(--vurgu); margin: 4px 0; }
   .adim { padding: 10px 0; border-top: 1px solid var(--cizgi); }
   .adim:first-child { border-top: 0; padding-top: 0; }
   .adim b { display: block; font-size: .85rem; color: var(--soluk); font-weight: 600; }
   .formul { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; overflow-wrap: anywhere; }
   .deger { font-weight: 700; }
-  details { margin-top: 4px; }
-  summary { cursor: pointer; color: var(--soluk); font-size: .9rem; }
-  details form { margin-top: 12px; }
+  details > summary { cursor: pointer; font-weight: 600; }
+  details[open] > summary { margin-bottom: 12px; }
+  .kart h2 { margin: 0 0 4px; }
+  .ayar-grup { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .ayar-grup h3 { grid-column: 1 / -1; margin: 0; font-size: .9rem; }
+  .ayar-grup input { width: 100%; min-width: 0; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .ikincil {
+    font: inherit; font-size: .9rem; padding: 8px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi);
+  }
+  .degisti { border-color: var(--vurgu) !important; }
+  #firmaTablo td, #firmaTablo th { text-align: right; }
+  #firmaTablo td:first-child, #firmaTablo th:first-child { text-align: left; }
+  #firmaTablo tr.esik td { color: var(--soluk); }
 </style>
 </head>
 <body>
@@ -44,9 +55,9 @@
       <button type="button" data-v="al" aria-pressed="false">Alüminyum</button>
     </div>
     <div class="secim" id="kullanim">
-      <button type="button" data-v="1.5" aria-pressed="true">Normal tesisat<small>%1,5</small></button>
-      <button type="button" data-v="3" aria-pressed="false">Motor<small>%3</small></button>
-      <button type="button" data-v="5" aria-pressed="false">Trafo<small>%5</small></button>
+      <button type="button" data-v="normal" aria-pressed="true">Normal tesisat<small id="lb-normal"></small></button>
+      <button type="button" data-v="motor" aria-pressed="false">Motor<small id="lb-motor"></small></button>
+      <button type="button" data-v="trafo" aria-pressed="false">Trafo<small id="lb-trafo"></small></button>
     </div>
     <div class="giris">
       <label>Güç (W)
@@ -61,39 +72,75 @@
   <div class="kart" id="sonuc"></div>
 
   <div class="kart">
+    <h2 id="firmaBaslik"></h2>
+    <p class="not" id="firmaAlt"></p>
+    <div class="tablo-kutu">
+      <table id="firmaTablo"></table>
+    </div>
+    <p class="not" id="firmaNot"></p>
+  </div>
+
+  <div class="kart">
     <details>
-      <summary>Ayarlar</summary>
-      <form onsubmit="return false">
-        <label>Kablo tipi
-          <select id="tip"></select>
-        </label>
-        <label>Döşeme
-          <select id="doseme"></select>
-        </label>
-        <label>cos φ (akım kontrolü için)
-          <input id="cosfi" type="number" value="0.85" min="0.1" max="1" step="0.01">
-        </label>
-      </form>
+      <summary>Formül ve ayarlar</summary>
+      <p class="not">Burada yaptığınız değişiklikler bu cihazda saklanır. Değişen kutular turuncu görünür.</p>
+      <div class="ayar-grup">
+        <h3>Gerilim düşümü katsayıları (%e = katsayı × P × L / S)</h3>
+        <label>Trifaze bakır<input id="k-3-cu" type="number" step="any"></label>
+        <label>Trifaze alüminyum<input id="k-3-al" type="number" step="any"></label>
+        <label>Monofaze bakır<input id="k-1-cu" type="number" step="any"></label>
+        <label>Monofaze alüminyum<input id="k-1-al" type="number" step="any"></label>
+      </div>
+      <div class="ayar-grup">
+        <h3>İzin verilen gerilim düşümü (%)</h3>
+        <label>Normal tesisat<input id="e-normal" type="number" step="0.1" min="0.1"></label>
+        <label>Motor<input id="e-motor" type="number" step="0.1" min="0.1"></label>
+        <label>Trafo<input id="e-trafo" type="number" step="0.1" min="0.1"></label>
+      </div>
+      <div class="ayar-grup">
+        <h3>Kablo ve akım kontrolü</h3>
+        <label>Kablo tipi<select id="tip"></select></label>
+        <label>Döşeme<select id="doseme"></select></label>
+        <label>cos φ<input id="cosfi" type="number" step="0.01" min="0.1" max="1"></label>
+      </div>
+      <button type="button" class="ikincil" id="sifirla">Varsayılan değerlere dön</button>
     </details>
   </div>
 </main>
 <script src="../veri/kablolar.js"></script>
 <script>
-// Gerilim düşümü katsayıları: %e = katsayı × P(W) × L(m) / S(mm²)
-// Trifaze: 100 / (k × 380²), monofaze: 200 / (k × 220²); k bakır 56, alüminyum 35.
-const KATSAYI = {
-  '3': { cu: 0.0000124, al: 0.0000198 },
-  '1': { cu: 0.000074, al: 0.000118 }
+// Varsayılanlar: trifaze 100 / (k × 380²), monofaze 200 / (k × 220²); k bakır 56, alüminyum 35.
+const VARSAYILAN = {
+  'k-3-cu': 0.0000124, 'k-3-al': 0.0000198, 'k-1-cu': 0.000074, 'k-1-al': 0.000118,
+  'e-normal': 1.5, 'e-motor': 3, 'e-trafo': 5, 'cosfi': 0.85
 };
+const ANAHTAR = 'kablo-kesiti-ayarlar';
 const GERILIM = { '3': 380, '1': 220 };
 const VARSAYILAN_TIP = { cu: 'NYY', al: 'NAYY' };
 const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
+const FIRMA = 'Öznur Kablo';
 
 const $ = id => document.getElementById(id);
 const sayi = (x, b = 2) => x.toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b });
-const katsayiYaz = x => x.toLocaleString('tr-TR', { maximumFractionDigits: 7, useGrouping: false });
+const katsayiYaz = x => x.toLocaleString('tr-TR', { maximumFractionDigits: 8, useGrouping: false });
 const kesitYaz = s => sayi(+s, +s % 1 ? 1 : 0);
 const secili = id => $(id).querySelector('[aria-pressed="true"]').dataset.v;
+const ayar = id => +$(id).value;
+
+function ayarlariYukle() {
+  let kayitli = {};
+  try { kayitli = JSON.parse(localStorage.getItem(ANAHTAR)) || {}; } catch (e) {}
+  for (const [id, v] of Object.entries(VARSAYILAN)) $(id).value = kayitli[id] ?? v;
+}
+function ayarlariKaydet() {
+  const o = {};
+  for (const id of Object.keys(VARSAYILAN)) o[id] = +$(id).value;
+  try { localStorage.setItem(ANAHTAR, JSON.stringify(o)); } catch (e) {}
+}
+function ayarlariIsaretle() {
+  for (const [id, v] of Object.entries(VARSAYILAN)) $(id).classList.toggle('degisti', +$(id).value !== v);
+  for (const k of ['normal', 'motor', 'trafo']) $('lb-' + k).textContent = '%' + sayi(ayar('e-' + k), 1).replace(/,0$/, '');
+}
 
 function tipleriGuncelle() {
   const il = secili('iletken');
@@ -102,29 +149,47 @@ function tipleriGuncelle() {
   $('tip').value = VARSAYILAN_TIP[il];
   dosemeGuncelle();
 }
-
 function dosemeGuncelle() {
   const k = KABLOLAR[$('tip').value];
   $('doseme').innerHTML = k.sutunlar.map((s, i) => `<option value="${i}">${DOSEME_ADI[s]}</option>`).join('');
 }
 
+function firmaTablosu(kablo, tip, damar, tablo, sutun, secilen, Sgerek) {
+  const baslikDamar = kablo.tekDamar ? 'tek damarlı' : `${damar} damarlı`;
+  $('firmaBaslik').textContent = `${FIRMA} tablosu: ${tip} ${baslikDamar}`;
+  $('firmaAlt').textContent = `${kablo.ad} · ${kablo.standart} · maks. ${kablo.maksSicaklik} °C`;
+  const kesitler = Object.keys(tablo).sort((a, b) => a - b);
+  $('firmaTablo').innerHTML =
+    `<thead><tr><th>Kesit (mm²)</th>${kablo.sutunlar.map((s, i) =>
+      `<th>${DOSEME_ADI[s]} (A)${i === sutun ? ' ●' : ''}</th>`).join('')}</tr></thead><tbody>` +
+    kesitler.map(s => `<tr class="${s === secilen ? 'secilen' : Sgerek != null && +s < Sgerek ? 'esik' : ''}">
+      <td>${kablo.tekDamar ? '1' : damar}x${kesitYaz(s)}</td>
+      ${tablo[s].map(v => `<td>${v == null ? '–' : v}</td>`).join('')}</tr>`).join('') + '</tbody>';
+  $('firmaNot').innerHTML = `● hesapta kullanılan sütun. Yeşil satır seçilen kablo, soluk satırlar formül sonucundan küçük kesitler.<br>
+    Toprakta: 20 °C, 70 cm derinlik, toprak ısıl direnci 1 K·m/W, yük faktörü 0,7. Havada: 30 °C, yük faktörü 1,0. Tek sistem.<br>
+    Kaynak: ${kablo.kaynak}.`;
+}
+
 function hesapla() {
+  ayarlariIsaretle();
   const faz = secili('faz');
   const il = secili('iletken');
-  const e = +secili('kullanim');
-  const c = KATSAYI[faz][il];
+  const kullanim = secili('kullanim');
+  const e = ayar('e-' + kullanim);
+  const c = ayar(`k-${faz}-${il}`);
   const U = GERILIM[faz];
   const P = +$('guc').value;
   const L = +$('uzunluk').value;
-  const cosfi = +$('cosfi').value;
+  const cosfi = ayar('cosfi');
   const tip = $('tip').value;
   const kablo = KABLOLAR[tip];
   const sutun = +$('doseme').value;
   const damar = kablo.tekDamar ? null : (faz === '3' ? ['4', '5', '3'] : ['3', '2']).find(n => kablo.damar[n]);
   const tablo = kablo.tekDamar || kablo.damar[damar];
 
-  if (!(P > 0 && L > 0 && cosfi > 0)) {
-    $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin.</span>';
+  if (!(P > 0 && L > 0 && c > 0 && e > 0 && cosfi > 0)) {
+    $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki katsayılar ve yüzdeler sıfırdan büyük olmalı.</span>';
+    firmaTablosu(kablo, tip, damar, tablo, sutun, null, null);
     return;
   }
 
@@ -135,6 +200,7 @@ function hesapla() {
   const secilen = kesitler.find(s => +s >= Sgerek && tablo[s][sutun] >= I);
   const ad = s => kablo.tekDamar ? `${tip} 1x${kesitYaz(s)}` : `${tip} ${damar}x${kesitYaz(s)}`;
   const doseme = DOSEME_ADI[kablo.sutunlar[sutun]].toLowerCase();
+  firmaTablosu(kablo, tip, damar, tablo, sutun, secilen, Sgerek);
 
   if (!secilen) {
     $('sonuc').innerHTML = `<span class="uyari">${tip} tablosunda yeterli kesit yok. Gerekli kesit ${sayi(Sgerek)} mm², hat akımı ${sayi(I, 1)} A. Paralel kablo veya başka kablo tipi düşünün.</span>`;
@@ -177,7 +243,15 @@ for (const grup of ['faz', 'iletken', 'kullanim']) {
   });
 }
 $('tip').addEventListener('change', () => { dosemeGuncelle(); hesapla(); });
-document.querySelectorAll('input, #doseme').forEach(el => el.addEventListener('input', hesapla));
+$('doseme').addEventListener('change', hesapla);
+$('guc').addEventListener('input', hesapla);
+$('uzunluk').addEventListener('input', hesapla);
+for (const id of Object.keys(VARSAYILAN)) $(id).addEventListener('input', () => { ayarlariKaydet(); hesapla(); });
+$('sifirla').addEventListener('click', () => {
+  for (const [id, v] of Object.entries(VARSAYILAN)) $(id).value = v;
+  ayarlariKaydet(); hesapla();
+});
+ayarlariYukle();
 tipleriGuncelle();
 hesapla();
 </script>
