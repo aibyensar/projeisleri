@@ -10,9 +10,10 @@
   --kotu: #c0392b;
   --iyi-zemin: #e6f5ec;
   --kotu-zemin: #fbeaea;
+  --baslik: #1f3a6d;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --zemin: #0f141d;
     --kart: #18202d;
     --yazi: #e6ebf3;
@@ -24,7 +25,22 @@
     --kotu: #ef6f61;
     --iyi-zemin: #17301f;
     --kotu-zemin: #3a1d1b;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+    --zemin: #0f141d;
+    --kart: #18202d;
+    --yazi: #e6ebf3;
+    --soluk: #9aa5b8;
+    --cizgi: #2a3445;
+    --ana: #8fb0ea;
+    --vurgu: #f5a04d;
+    --iyi: #4cc283;
+    --kotu: #ef6f61;
+    --iyi-zemin: #17301f;
+    --kotu-zemin: #3a1d1b;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -35,15 +51,20 @@ body {
   line-height: 1.5;
 }
 header {
-  background: var(--ana);
+  background: var(--baslik);
   color: #fff;
-  padding: 16px;
+  padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-@media (prefers-color-scheme: dark) { header { background: #1f3a6d; } }
 header a { color: #fff; text-decoration: none; }
 header h1 { margin: 0; font-size: 1.3rem; }
 header p { margin: 4px 0 0; opacity: .85; font-size: .9rem; }
-main { max-width: 960px; margin: 0 auto; padding: 16px; }
+main {
+  max-width: 960px; margin: 0 auto; padding-block: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
 h2 { font-size: 1.1rem; margin: 24px 0 8px; }
 .kart {
   background: var(--kart);
