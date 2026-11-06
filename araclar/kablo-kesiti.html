@@ -47,8 +47,8 @@
 <main>
   <div class="kart">
     <div class="secim" id="faz">
-      <button type="button" data-v="3" aria-pressed="true">Trifaze</button>
-      <button type="button" data-v="1" aria-pressed="false">Monofaze</button>
+      <button type="button" data-v="3" aria-pressed="true">Trifaze<small id="lb-u3"></small></button>
+      <button type="button" data-v="1" aria-pressed="false">Monofaze<small id="lb-u1"></small></button>
     </div>
     <div class="secim" id="iletken">
       <button type="button" data-v="cu" aria-pressed="true">Bakır</button>
@@ -85,11 +85,22 @@
       <summary>Formül ve ayarlar</summary>
       <p class="not">Burada yaptığınız değişiklikler bu cihazda saklanır. Değişen kutular turuncu görünür.</p>
       <div class="ayar-grup">
-        <h3>Gerilim düşümü katsayıları (%e = katsayı × P × L / S)</h3>
-        <label>Trifaze bakır<input id="k-3-cu" type="number" step="any"></label>
-        <label>Trifaze alüminyum<input id="k-3-al" type="number" step="any"></label>
-        <label>Monofaze bakır<input id="k-1-cu" type="number" step="any"></label>
-        <label>Monofaze alüminyum<input id="k-1-al" type="number" step="any"></label>
+        <h3>Gerilim (V)</h3>
+        <label>Trifaze<input id="u-3" type="number" step="any" min="1"></label>
+        <label>Monofaze<input id="u-1" type="number" step="any" min="1"></label>
+      </div>
+      <div class="ayar-grup">
+        <h3>İletkenlik k (m/Ω·mm²)</h3>
+        <label>Bakır<input id="k-cu" type="number" step="any" min="1"></label>
+        <label>Alüminyum<input id="k-al" type="number" step="any" min="1"></label>
+      </div>
+      <div class="ayar-grup">
+        <h3>cos φ</h3>
+        <label>Güç katsayısı<input id="cosfi" type="number" step="0.01" min="0.1" max="1"></label>
+      </div>
+      <div class="ayar-grup">
+        <h3>Bu değerlerle çıkan katsayılar</h3>
+        <div class="formul" id="katsayiListe" style="grid-column: 1 / -1"></div>
       </div>
       <div class="ayar-grup">
         <h3>İzin verilen gerilim düşümü (%)</h3>
@@ -98,10 +109,9 @@
         <label>Trafo<input id="e-trafo" type="number" step="0.1" min="0.1"></label>
       </div>
       <div class="ayar-grup">
-        <h3>Kablo ve akım kontrolü</h3>
+        <h3>Kablo</h3>
         <label>Kablo tipi<select id="tip"></select></label>
         <label>Döşeme<select id="doseme"></select></label>
-        <label>cos φ<input id="cosfi" type="number" step="0.01" min="0.1" max="1"></label>
       </div>
       <button type="button" class="ikincil" id="sifirla">Varsayılan değerlere dön</button>
     </details>
@@ -109,13 +119,14 @@
 </main>
 <script src="../veri/kablolar.js"></script>
 <script>
-// Varsayılanlar: trifaze 100 / (k × 380²), monofaze 200 / (k × 220²); k bakır 56, alüminyum 35.
+// Katsayı: trifaze 100 / (k × U²), monofaze 200 / (k × U²), elle hesaptaki gibi 3 haneye yuvarlanır.
 const VARSAYILAN = {
-  'k-3-cu': 0.0000124, 'k-3-al': 0.0000198, 'k-1-cu': 0.000074, 'k-1-al': 0.000118,
-  'e-normal': 1.5, 'e-motor': 3, 'e-trafo': 5, 'cosfi': 0.85
+  'u-3': 380, 'u-1': 220, 'k-cu': 56, 'k-al': 35, 'cosfi': 0.85,
+  'e-normal': 1.5, 'e-motor': 3, 'e-trafo': 5
 };
-const ANAHTAR = 'kablo-kesiti-ayarlar';
-const GERILIM = { '3': 380, '1': 220 };
+const ANAHTAR = 'kablo-kesiti-ayarlar-2';
+const BIRIM = { '3': 100, '1': 200 };
+const katsayiHesapla = (faz, il) => +(BIRIM[faz] / (ayar('k-' + il) * ayar('u-' + faz) ** 2)).toPrecision(3);
 const VARSAYILAN_TIP = { cu: 'NYY', al: 'NAYY' };
 const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
 const FIRMA = 'Öznur Kablo';
@@ -140,6 +151,11 @@ function ayarlariKaydet() {
 function ayarlariIsaretle() {
   for (const [id, v] of Object.entries(VARSAYILAN)) $(id).classList.toggle('degisti', +$(id).value !== v);
   for (const k of ['normal', 'motor', 'trafo']) $('lb-' + k).textContent = '%' + sayi(ayar('e-' + k), 1).replace(/,0$/, '');
+  $('lb-u3').textContent = ayar('u-3') + ' V';
+  $('lb-u1').textContent = ayar('u-1') + ' V';
+  const satir = (faz, il, ad) => `${ad}: ${BIRIM[faz]} / (${ayar('k-' + il)} × ${ayar('u-' + faz)}²) = ${katsayiYaz(katsayiHesapla(faz, il))}`;
+  $('katsayiListe').innerHTML = [satir('3', 'cu', 'Trifaze bakır'), satir('3', 'al', 'Trifaze alüminyum'),
+    satir('1', 'cu', 'Monofaze bakır'), satir('1', 'al', 'Monofaze alüminyum')].join('<br>');
 }
 
 function tipleriGuncelle() {
@@ -176,8 +192,9 @@ function hesapla() {
   const il = secili('iletken');
   const kullanim = secili('kullanim');
   const e = ayar('e-' + kullanim);
-  const c = ayar(`k-${faz}-${il}`);
-  const U = GERILIM[faz];
+  const U = ayar('u-' + faz);
+  const k = ayar('k-' + il);
+  const c = U > 0 && k > 0 ? katsayiHesapla(faz, il) : 0;
   const P = +$('guc').value;
   const L = +$('uzunluk').value;
   const cosfi = ayar('cosfi');
@@ -188,7 +205,7 @@ function hesapla() {
   const tablo = kablo.tekDamar || kablo.damar[damar];
 
   if (!(P > 0 && L > 0 && c > 0 && e > 0 && cosfi > 0)) {
-    $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki katsayılar ve yüzdeler sıfırdan büyük olmalı.</span>';
+    $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki değerler sıfırdan büyük olmalı.</span>';
     firmaTablosu(kablo, tip, damar, tablo, sutun, null, null);
     return;
   }
@@ -219,6 +236,7 @@ function hesapla() {
     </div>
     <div class="adim">
       <b>1. Formül</b>
+      <div class="formul">katsayı = ${BIRIM[faz]} / (${k} × ${U}²) = ${katsayiYaz(c)}</div>
       <div class="formul">S = ${katsayiYaz(c)} × P × L / %e</div>
       <div class="formul">S = ${katsayiYaz(c)} × ${sayi(P, 0)} × ${sayi(L, 0)} / ${sayi(e, 1)} = <span class="deger">${sayi(Sgerek)} mm²</span></div>
     </div>
@@ -229,6 +247,7 @@ function hesapla() {
     <div class="adim">
       <b>3. Akım kontrolü</b>
       ${akimNotu}
+      <div class="formul">I = ${faz === '3' ? `P / (√3 × ${U} × ${sayi(cosfi)})` : `P / (${U} × ${sayi(cosfi)})`} = ${sayi(I, 1)} A</div>
       <div>Hat akımı ${sayi(I, 1)} A ≤ ${kesitYaz(secilen)} mm² taşıma ${tablo[secilen][sutun]} A ✓</div>
     </div>`;
 }
