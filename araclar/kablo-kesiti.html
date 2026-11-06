@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kablo Kesiti Hesabı</title>
 <link rel="stylesheet" href="../ortak/stil.css">
 </head>
@@ -10,7 +10,7 @@
 <header>
   <a href="../index.html">← Proje İşleri</a>
   <h1>Kablo kesiti ve gerilim düşümü</h1>
-  <p>Akım taşıma kapasitesi ve izin verilen % gerilim düşümüne göre kesit seçimi</p>
+  <p>Üretici katalog değerleriyle kesit seçimi (bakır iletken)</p>
 </header>
 <main>
   <div class="kart">
@@ -33,11 +33,20 @@
       <label>Hat uzunluğu (m)
         <input id="uzunluk" type="number" value="100" min="0" step="any">
       </label>
-      <label>İletken
-        <select id="iletken">
-          <option value="cu">Bakır (Cu)</option>
-          <option value="al">Alüminyum (Al)</option>
+      <label>Kablo tipi
+        <select id="tip">
+          <option value="NYY">NYY (YVV)</option>
+          <option value="N2XY">N2XY (YXV)</option>
+          <option value="N2XH">N2XH (halojensiz)</option>
+          <option value="NYM">NYM (NVV)</option>
+          <option value="NYA">NYA (H07V), tek damar</option>
         </select>
+      </label>
+      <label>Damar sayısı
+        <select id="damar"></select>
+      </label>
+      <label>Döşeme
+        <select id="doseme"></select>
       </label>
       <label>İzin verilen düşüm (%)
         <input id="limit" type="number" value="3" min="0.1" step="0.1">
@@ -58,27 +67,52 @@
         <tbody id="tablo"></tbody>
       </table>
     </div>
+    <p class="not" id="kaynak"></p>
     <p class="not">
-      Formüller: Trifaze %e = 100·L·P / (k·S·U²), monofaze %e = 200·L·P / (k·S·U²).
-      İletkenlik k: Cu = 56, Al = 35 m/(Ω·mm²).<br>
-      Akım taşıma değerleri yaklaşıktır: IEC 60364-5-52, yöntem C (duvar üstü), PVC yalıtım, 30 °C ortam.
-      Alüminyum için bakır değerinin 0,78 katı alınmıştır. Döşeme şekli, gruplama ve sıcaklık için
-      “Düzeltme katsayısı” alanını kullanın. Sonucu proje öncesi ilgili yönetmelik ve üretici tablolarıyla doğrulayın.
+      Formüller: trifaze %e = 100·L·P / (k·S·U²), monofaze %e = 200·L·P / (k·S·U²), bakır için k = 56 m/(Ω·mm²).<br>
+      Katalog şartları: toprakta 20 °C, 70 cm derinlik, toprak ısıl direnci 1 K·m/W, yük faktörü 0,7;
+      havada 30 °C, yük faktörü 1,0; tek sistem. Farklı sıcaklık, derinlik veya yan yana kablo varsa
+      “Düzeltme katsayısı” alanını kullanın.
     </p>
   </div>
 </main>
+<script src="../veri/kablolar.js"></script>
 <script>
-const KESITLER = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
-// Bakır, PVC, yöntem C, 30 °C — [2 yüklü iletken (monofaze), 3 yüklü iletken (trifaze)]
-const TASIMA_CU = {
-  1.5: [17.5, 15.5], 2.5: [24, 21], 4: [32, 28], 6: [41, 36], 10: [57, 50],
-  16: [76, 68], 25: [96, 89], 35: [119, 110], 50: [144, 134], 70: [184, 171],
-  95: [223, 207], 120: [259, 239], 150: [299, 262], 185: [341, 296], 240: [403, 346]
-};
-const ILETKENLIK = { cu: 56, al: 35 };
-
+const K = 56;
+const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
 const $ = id => document.getElementById(id);
 const sayi = (x, b = 2) => x.toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b });
+const kesitYaz = s => sayi(+s, +s % 1 ? 1 : 0);
+
+function tablosu() {
+  const k = KABLOLAR[$('tip').value];
+  return k.tekDamar || k.damar[$('damar').value] || {};
+}
+
+function seceneklerGuncelle() {
+  const k = KABLOLAR[$('tip').value];
+  const faz = $('sistem').value;
+  const eskiDamar = $('damar').value, eskiDoseme = $('doseme').value;
+
+  if (k.tekDamar) {
+    $('damar').innerHTML = '<option value="1">Tek damar</option>';
+    $('damar').disabled = true;
+  } else {
+    const liste = Object.keys(k.damar);
+    $('damar').innerHTML = liste.map(n => `<option value="${n}">${n} damarlı</option>`).join('');
+    $('damar').disabled = false;
+    const tercih = faz === '3' ? ['4', '5', '3'] : ['3', '2'];
+    $('damar').value = liste.includes(eskiDamar) && $('damar').dataset.tip === $('tip').value && $('damar').dataset.faz === faz
+      ? eskiDamar : (tercih.find(n => liste.includes(n)) || liste[0]);
+  }
+  $('damar').dataset.tip = $('tip').value;
+  $('damar').dataset.faz = faz;
+
+  $('doseme').innerHTML = k.sutunlar.map((s, i) => `<option value="${i}">${DOSEME_ADI[s]}</option>`).join('');
+  if (eskiDoseme && +eskiDoseme < k.sutunlar.length) $('doseme').value = eskiDoseme;
+
+  $('kaynak').textContent = `${k.ad}. Standart: ${k.standart}. Maks. iletken sıcaklığı ${k.maksSicaklik} °C. Kaynak: ${k.kaynak}.`;
+}
 
 function hesapla() {
   const faz = +$('sistem').value;
@@ -86,10 +120,9 @@ function hesapla() {
   const P = +$('guc').value * 1000;
   const cosfi = +$('cosfi').value;
   const L = +$('uzunluk').value;
-  const iletken = $('iletken').value;
   const limit = +$('limit').value;
   const katsayi = +$('katsayi').value;
-  const k = ILETKENLIK[iletken];
+  const sutun = +$('doseme').value;
 
   if (!(U > 0 && P >= 0 && cosfi > 0 && L >= 0 && limit > 0 && katsayi > 0)) {
     $('sonuc').innerHTML = '<span class="uyari">Lütfen tüm değerleri doğru girin.</span>';
@@ -99,39 +132,48 @@ function hesapla() {
 
   const I = faz === 3 ? P / (Math.sqrt(3) * U * cosfi) : P / (U * cosfi);
   const carpan = faz === 3 ? 100 : 200;
+  const tablo = tablosu();
 
   let secilen = null;
-  const satirlar = KESITLER.map(S => {
-    const iz = TASIMA_CU[S][faz === 3 ? 1 : 0] * (iletken === 'al' ? 0.78 : 1) * katsayi;
-    const yuzde = carpan * L * P / (k * S * U * U);
-    const akimOk = I <= iz;
-    const dusumOk = yuzde <= limit;
-    const uygun = akimOk && dusumOk;
-    if (uygun && secilen === null) secilen = { S, iz, yuzde };
-    const durum = uygun ? 'Uygun' : !akimOk ? 'Akım yetersiz' : 'Düşüm fazla';
-    return { S, iz, yuzde, uygun, durum };
+  const satirlar = Object.keys(tablo).sort((a, b) => a - b).map(s => {
+    const S = +s;
+    const deger = tablo[s][sutun];
+    const yuzde = carpan * L * P / (K * S * U * U);
+    if (deger == null) return { s, iz: null, yuzde, uygun: false, durum: 'Katalogda değer yok' };
+    const iz = deger * katsayi;
+    const akimOk = I <= iz, dusumOk = yuzde <= limit, uygun = akimOk && dusumOk;
+    if (uygun && !secilen) secilen = { s, iz, yuzde };
+    return { s, iz, yuzde, uygun, durum: uygun ? 'Uygun' : !akimOk ? 'Akım yetersiz' : 'Düşüm fazla' };
   });
 
   $('tablo').innerHTML = satirlar.map(r => `
-    <tr class="${secilen && r.S === secilen.S ? 'secilen' : r.uygun ? 'uygun' : ''}">
-      <td>${sayi(r.S, r.S % 1 ? 1 : 0)}</td>
-      <td>${sayi(r.iz, r.iz % 1 ? 1 : 0)}</td>
+    <tr class="${secilen && r.s === secilen.s ? 'secilen' : r.uygun ? 'uygun' : ''}">
+      <td>${kesitYaz(r.s)}</td>
+      <td>${r.iz == null ? '–' : sayi(r.iz, r.iz % 1 ? 1 : 0)}</td>
       <td>${sayi(r.yuzde)}</td>
       <td>${sayi(r.yuzde * U / 100, 1)}</td>
       <td>${r.durum}</td>
     </tr>`).join('');
 
+  const tip = $('tip').value;
+  const ad = KABLOLAR[tip].tekDamar ? `${tip} 1x` : `${tip} ${$('damar').value}x`;
+  const enBuyuk = satirlar.length ? kesitYaz(satirlar[satirlar.length - 1].s) : '';
   $('sonuc').innerHTML = `
     <div>Hat akımı: <b>${sayi(I, 1)} A</b></div>
     ${secilen
-      ? `<div>Önerilen kesit: <strong>${sayi(secilen.S, secilen.S % 1 ? 1 : 0)} mm²</strong></div>
-         <div class="not">Taşıma ${sayi(secilen.iz, 0)} A · Gerilim düşümü %${sayi(secilen.yuzde)}</div>`
-      : `<div class="uyari">240 mm²'ye kadar uygun kesit yok. Paralel kablo veya daha yüksek gerilim düşünün.</div>`}
+      ? `<div>Önerilen kablo: <strong>${ad}${kesitYaz(secilen.s)} mm²</strong></div>
+         <div class="not">${DOSEME_ADI[KABLOLAR[tip].sutunlar[sutun]]} taşıma ${sayi(secilen.iz, secilen.iz % 1 ? 1 : 0)} A · Gerilim düşümü %${sayi(secilen.yuzde)}</div>`
+      : `<div class="uyari">Bu kablo tipinde ${enBuyuk} mm²'ye kadar uygun kesit yok. Başka kablo tipi, paralel kablo veya daha yüksek gerilim düşünün.</div>`}
   `;
 }
 
-document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', hesapla));
-$('sistem').addEventListener('change', () => { $('gerilim').value = $('sistem').value === '3' ? 400 : 230; hesapla(); });
+$('tip').addEventListener('change', () => { seceneklerGuncelle(); hesapla(); });
+$('sistem').addEventListener('change', () => {
+  $('gerilim').value = $('sistem').value === '3' ? 400 : 230;
+  seceneklerGuncelle(); hesapla();
+});
+document.querySelectorAll('input, #damar, #doseme').forEach(el => el.addEventListener('input', hesapla));
+seceneklerGuncelle();
 hesapla();
 </script>
 </body>
