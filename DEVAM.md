@@ -178,6 +178,12 @@ Yeni resimden okuma (baglanti-hatti.html, b-ro-ic): 1) sayfa en/boy oranına gö
 PDF yazısından okunan antet değerleri önceliklidir, resim yalnız boşları doldurur. Yazıdan okunamayan bilgi varsa resimden okuma kendiliğinden başlar.
 Sahte cevaplarla akış denendi (test/resimden-oku-dene.js); GERÇEK claude.ai'de kullanıcı henüz denemedi.
 
+**v8.4:** kullanıcı "iç tesisat bilgileri çok önemli, kesin çözüm, yanlışsız" dedi. Güç tablosu resimden 2 kez (farklıysa 3 kez) okunur,
+her hücre çoğunlukla seçilir, çoğunluk yoksa hücre kırmızı (D.supheli); tek şüpheli kurulu hücrede toplamı antete eşitleyen aday seçilir;
+okunan tablonun KIRPILMIŞ RESMİ 4. bölümde gösterilir ve "karşılaştırdım, doğru" kutusu (gucOnay) işaretlenmeden İNDİR açılmaz.
+Kesin çözüm önerisi: iç tesisatı DWG olarak yüklemek (yazılar gerçek yazı; gömülü Excel tablosu OLE içinden okunabilir) — kullanıcıdan
+iç tesisat DWG'si istendi; gelince DWG yükleme eklenecek (libredwg-web tarayıcıda, OLE2FRAME binaryData → SheetJS ile Excel).
+
 **AÇIK KONULAR (sıradaki)**
 0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
