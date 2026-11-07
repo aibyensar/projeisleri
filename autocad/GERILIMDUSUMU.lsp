@@ -581,28 +581,54 @@
 (defun ict:ucgen (p1 p2 p3 renk)
   (ict:say (entmakex (list '(0 . "SOLID") (cons 62 renk) (cons 10 (ict:p3 p1)) (cons 11 (ict:p3 p2))
                            (cons 12 (ict:p3 p3)) (cons 13 (ict:p3 p3))))))
-;; Pano sembolü: kırmızı dikdörtgen, köşegenler, mavi dolu iki üçgen
+;; Dolu dikdörtgen (SOLID: köşe sırası sol-üst, sağ-üst, sol-alt, sağ-alt)
+(defun ict:bant (x1 y1 x2 y2 renk)
+  (ict:say (entmakex (list '(0 . "SOLID") (cons 62 renk)
+                           (cons 10 (ict:p3 (list x1 y1))) (cons 11 (ict:p3 (list x2 y1)))
+                           (cons 12 (ict:p3 (list x1 y2))) (cons 13 (ict:p3 (list x2 y2)))))))
+;; MTEXT biçimleri: kalın ve renkli yazı
+(defun ict:kalin (s) (strcat "{\\fArial|b1;" s "}"))
+(defun ict:renkli (s r) (strcat "{\\C" (itoa r) ";" s "}"))
+;; Pano (dağıtım tablosu): çerçeve, yarısı dolu
 (defun ict:pano (x y h / w v)
-  (setq w (* 1.2 h) v (* 1.8 h))
-  (ict:dortgen (- x w) (- y v) (+ x w) (+ y v) 1)
-  (ict:cizgi (list (- x w) (+ y v)) (list (+ x w) (- y v)) 1)
-  (ict:cizgi (list (- x w) (- y v)) (list (+ x w) (+ y v)) 1)
-  (ict:ucgen (list (- x w) (+ y v)) (list (- x w) (- y v)) (list x y) 5)
-  (ict:ucgen (list (+ x w) (+ y v)) (list (+ x w) (- y v)) (list x y) 5))
-;; Yük: aşağı inen çizgi ve dolu üçgen
+  (setq w (* 1.6 h) v (* 1.1 h))
+  (ict:ucgen (list (- x w) (- y v)) (list (+ x w) (- y v)) (list (+ x w) (+ y v)) 140)
+  (ict:dortgen (- x w) (- y v) (+ x w) (+ y v) 7)
+  (ict:cizgi (list (- x w) (- y v)) (list (+ x w) (+ y v)) 7))
+;; Şebeke bağlantı noktası: dolu küçük kare
+(defun ict:nokta (x y h / r)
+  (setq r (* 0.45 h))
+  (ict:bant (- x r) (+ y r) (+ x r) (- y r) 7))
+;; Yük: aşağı inen çizgi ve dolu ok
 (defun ict:yuk (x y h guc)
-  (ict:cizgi (list x y) (list x (- y (* 3.0 h))) 7)
-  (ict:ucgen (list (- x h) (- y (* 3.0 h))) (list (+ x h) (- y (* 3.0 h))) (list x (- y (* 4.6 h))) 5)
-  (ict:yazi (list x (- y (* 5.2 h))) (strcat (ict:n0 guc) " W") h 7 2))
-;; Çift çerçeveli başlık
-(defun ict:baslik (x y str h / g)
-  (setq g (+ (* (strlen str) h 0.78) (* 3.0 h)))
-  (ict:dortgen x y (+ x g) (- y (* 2.6 h)) 4)
-  (ict:dortgen (+ x (* 0.3 h)) (- y (* 0.3 h)) (- (+ x g) (* 0.3 h)) (- y (* 2.3 h)) 6)
-  (ict:yazi (list (+ x (/ g 2.0)) (- y (* 1.3 h))) str (* 1.1 h) 6 5))
+  (ict:cizgi (list x y) (list x (- y (* 2.2 h))) 7)
+  (ict:ucgen (list (- x (* 0.8 h)) (- y (* 2.2 h))) (list (+ x (* 0.8 h)) (- y (* 2.2 h))) (list x (- y (* 3.6 h))) 7)
+  (ict:yazi (list x (- y (* 4.2 h))) (ict:kalin (strcat (ict:n0 guc) " W")) h 2 2))
+;; Kablo üzerinde damar sayısı kadar çentik
+(defun ict:centik (x y n h / i)
+  (setq i 0)
+  (while (< i n)
+    (ict:cizgi (list (+ x (* i 0.55 h) (* -0.3 h)) (- y (* 0.6 h))) (list (+ x (* i 0.55 h) (* 0.3 h)) (+ y (* 0.6 h))) 7)
+    (setq i (1+ i))))
+(defun ict:damar (ad / i)
+  (if (setq i (vl-string-search "X" ad)) (atoi (substr ad 1 i)) 1))
+;; Kesikli çizgi
+(defun ict:kesikli (x1 x2 y renk h / x)
+  (setq x x1)
+  (while (< x x2)
+    (ict:cizgi (list x y) (list (min x2 (+ x (* 1.2 h))) y) renk)
+    (setq x (+ x (* 2.0 h)))))
+;; Şemada bir kablo parçası: çizgi, çentik, üstte %e ve kablo adı, altta uzunluk
+(defun ict:parca (x1 x2 y h no ad L / m)
+  (setq m (/ (+ x1 x2) 2.0))
+  (ict:cizgi (list x1 y) (list x2 y) 7)
+  (ict:centik (+ x1 (* 2.0 h)) y (ict:damar ad) h)
+  (ict:yazi (list m (+ y (* 0.7 h))) (strcat (ict:renkli (ict:kalin (strcat "%e" (itoa no))) 4) "  " ad) (* 0.9 h) 7 8)
+  (ict:yazi (list m (- y (* 0.7 h))) (strcat (ict:ns L) " m") (* 0.9 h) 254 2))
+(defun ict:parca-genislik (ad h) (max (* 17.0 h) (+ (* (+ (strlen ad) 5) h 0.58) (* 5.0 h))))
 
 ;;; ---------------------------------------------------------------- komut
-(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u kurulu-s kurulu talep-s nt
+(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u y0 m g kurulu-s kurulu talep-s nt
                       btip bk bsatir bdos bdos-kw bL n i hat hatlar faz tip satir L P ad
                       h pt x0 y u3 cosfi limit bolen In Iz akim-ok liste no c e eY toplam
                       adlar degerler px seg ilk-pano son hat-ad)
@@ -685,54 +711,7 @@
         In (/ nt bolen)
         bolen (atof (rtos bolen 2 3)))
 
-  ;; --- çizim
-  (setq *ict-adim* "çizim")
-  (command "_.UNDO" "_BE")
-  (setq *ict-undo* T)
-  (ict:sinir-sifirla)
-  (ict:stil)
-  (setq x0 (car pt) y (cadr pt))
-  (defun ict:satir (str renk) (ict:yazi (list x0 y) str h renk 1) (setq y (- y (* 1.8 h))))
-  (defun ict:bos () (setq y (- y (* 1.2 h))))
-
-  (if kurulu (ict:satir (strcat "KURULU GÜÇ = " (ict:n0 kurulu) " W") 7))
-  (ict:satir (strcat "TALEP GÜÇ = "
-                     (if (ict:sadece-sayi-mi talep-s) "" (strcat (ict:islem-yaz talep-s) " = "))
-                     (ict:n0 nt) " W") 7)
-  (ict:bos)
-
-  (setq akim-ok T)
-  (if mevcut
-    (progn
-      (setq Iz (nth bdos (caddr bsatir))
-            akim-ok (and Iz (<= In Iz)))
-      (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YÖNÜNDEN KONTROL" h)
-      (setq y (- y (* 4.0 h)))
-      (ict:satir (strcat "In = Nt / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen) " = "
-                         (ict:n2 In) " A " (if akim-ok "<" ">") " " (if Iz (ict:ns Iz) "-") " A") 7)
-      (ict:satir (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) bfk)
-                         (if akim-ok " UYGUNDUR." " UYGUN DEĞİLDİR.")) (if akim-ok 7 1))
-      ;; branşman şeması
-      (setq y (- y (* 3.5 h)) seg (max (* 26.0 h) (+ (* (strlen (ict:kablo-adi btip (car bsatir) bfk)) h 0.75) (* 18.0 h))))
-      (ict:cizgi (list x0 y) (list (+ x0 seg) y) 7)
-      (ict:yazi (list (+ x0 (/ seg 2.0)) (+ y (* 0.6 h))) (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) bfk)) h 3 8)
-      (ict:yazi (list (+ x0 (/ seg 2.0)) (- y (* 0.6 h))) (strcat (ict:ns bL) " m") h 3 2)
-      (ict:pano (+ x0 seg (* 1.2 h)) y h)
-      (ict:yazi (list (+ x0 seg (* 3.5 h)) y) (strcat "NT= " (ict:n0 nt) " W") h 7 4)
-      (setq y (- y (* 4.5 h))))
-    (progn
-      (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YOĞUNLUĞU HESABI" h)
-      (setq y (- y (* 4.0 h)))
-      (ict:satir (strcat "In = Nk / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = "
-                         (if (ict:sadece-sayi-mi talep-s) (ict:n0 nt) (ict:parantezli (ict:islem-yaz talep-s)))
-                         " / " (ict:ns bolen) " = " (ict:n2 In) " A") 7)
-      (ict:satir "BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR." 1)
-      (ict:bos)))
-
-  (ict:baslik (+ x0 (* 8.0 h)) y "GERİLİM DÜŞÜMÜ HESABI" h)
-  (setq y (- y (* 4.0 h)))
-
-  ;; hat listesi: (no faz-kodu iletken S L P nt? açıklama ad)
+  ;; --- hat listesi: (no faz-kodu iletken S L P nt? açıklama kablo-adı hat-adı)
   (setq liste '() no (if mevcut 1 2))
   (if mevcut
     (setq liste (list (list no bfk (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) bfk) "BRANŞMAN HATTI"))
@@ -744,52 +723,132 @@
                                           (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1"))
                                           (ict:hat-ismi i (length hatlar)))))
           no (1+ no) i (1+ i)))
-
   (setq toplam 0.0 adlar "" degerler "")
   (foreach x liste
-    (setq c (ict:katsayi (nth 1 x) (nth 2 x))
-          e (/ (* c (nth 5 x) (nth 4 x)) (nth 3 x))
-          eY (atof (rtos e 2 2))
+    (setq eY (atof (rtos (/ (* (ict:katsayi (nth 1 x) (nth 2 x)) (nth 5 x) (nth 4 x)) (nth 3 x)) 2 2))
           toplam (+ toplam eY)
           adlar (strcat adlar (if (= adlar "") "" " + ") "%e" (itoa (nth 0 x)))
-          degerler (strcat degerler (if (= degerler "") "" " + ") (ict:n2 eY)))
-    (ict:satir (strcat (nth 9 x) " (" (nth 8 x) ")" (if (/= (nth 7 x) "") (strcat ": " (nth 7 x)) "")) 7)
-    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (if (nth 6 x) "Nt" "N") " x L / S") 7)
-    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (ict:n0 (nth 5 x)) " x " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))) 7)
-    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:n2 eY)) 7)
-    (ict:bos))
+          degerler (strcat degerler (if (= degerler "") "" " + ") (ict:n2 eY))))
   (setq toplam (atof (rtos toplam 2 2)))
+  (if mevcut (setq Iz (nth bdos (caddr bsatir)) akim-ok (and Iz (<= In Iz))) (setq akim-ok T))
 
-  ;; iç hatlar şeması
-  (setq y (- y (* 3.0 h)) px (+ x0 (* 1.2 h)))
-  (ict:pano px y h)
+  ;; --- çizim
+  (setq *ict-adim* "çizim")
+  (command "_.UNDO" "_BE")
+  (setq *ict-undo* T)
+  (ict:sinir-sifirla)
+  (ict:stil)
+  (setq x0 (car pt) y (cadr pt) y0 y m (* 2.0 h))
+  ;; çerçeve genişliği: şemaya ve en uzun satıra göre
+  (setq g (+ (* 5.0 h) (if mevcut 0.0 (* 21.0 h))))
+  (foreach x liste (setq g (+ g (ict:parca-genislik (nth 8 x) h) (* 3.2 h))))
+  (setq g (max (* 66.0 h) (+ g (* 8.0 h))))
+  (defun ict:satir (str renk) (ict:yazi (list (+ x0 m) y) str h renk 1) (setq y (- y (* 1.75 h))))
+  (defun ict:bos () (setq y (- y (* 0.9 h))))
+  (defun ict:ayrac () (ict:cizgi (list (+ x0 m) y) (list (- (+ x0 g) m) y) 251) (setq y (- y (* 1.2 h))))
+  (defun ict:bolum (str)
+    (setq y (- y (* 0.6 h)))
+    (ict:bant x0 y (+ x0 g) (- y (* 2.6 h)) 250)
+    (ict:bant x0 y (+ x0 (* 0.6 h)) (- y (* 2.6 h)) 30)
+    (ict:yazi (list (+ x0 m) (- y (* 1.3 h))) (ict:kalin str) (* 1.05 h) 7 4)
+    (setq y (- y (* 3.8 h))))
+  (defun ict:bilgi (etiket deger)
+    (ict:yazi (list (+ x0 m) y) etiket h 254 1)
+    (ict:yazi (list (+ x0 (* 17.0 h)) y) deger h 7 1)
+    (setq y (- y (* 1.9 h))))
+
+  ;; üst başlık
+  (ict:bant x0 y (+ x0 g) (- y (* 4.2 h)) 160)
+  (ict:yazi (list (+ x0 (/ g 2.0)) (- y (* 2.1 h))) (ict:kalin "GERİLİM DÜŞÜMÜ VE AKIM HESABI") (* 1.45 h) 7 5)
+  (setq y (- y (* 5.6 h)))
+
+  ;; güç bilgileri
+  (if kurulu (ict:bilgi "Kurulu güç" (strcat (ict:n0 kurulu) " W")))
+  (ict:bilgi "Talep güç (Nt)"
+             (strcat (if (ict:sadece-sayi-mi talep-s) "" (strcat (ict:islem-yaz talep-s) " = "))
+                     (ict:kalin (strcat (ict:n0 nt) " W"))))
+  (ict:bilgi "Sistem" (strcat (if (= bfk "3") "Trifaze " "Monofaze ") (ict:ns u) " V · cos φ " (ict:ns cosfi)))
+
+  ;; akım
+  (if mevcut
+    (progn
+      (ict:bolum "AKIM YÖNÜNDEN KONTROL")
+      (ict:satir (strcat "In = Nt / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen)
+                         " = " (ict:renkli (ict:kalin (strcat (ict:n2 In) " A")) 2)
+                         (if akim-ok " < " " > ") (if Iz (ict:ns Iz) "-") " A") 7)
+      (ict:satir (ict:kalin (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) bfk)
+                                    (if akim-ok " UYGUNDUR." " UYGUN DEĞİLDİR."))) (if akim-ok 3 1)))
+    (progn
+      (ict:bolum "AKIM YOĞUNLUĞU HESABI")
+      (ict:satir (strcat "In = Nk / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = "
+                         (if (ict:sadece-sayi-mi talep-s) (ict:n0 nt) (ict:parantezli (ict:islem-yaz talep-s)))
+                         " / " (ict:ns bolen) " = " (ict:renkli (ict:kalin (strcat (ict:n2 In) " A")) 2)) 7)
+      (ict:satir (ict:kalin "BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR.") 30)))
+
+  ;; gerilim düşümü, hat hat
+  (ict:bolum "GERİLİM DÜŞÜMÜ HESABI")
+  (setq i 0)
+  (foreach x liste
+    (setq c (ict:katsayi (nth 1 x) (nth 2 x))
+          eY (atof (rtos (/ (* c (nth 5 x) (nth 4 x)) (nth 3 x)) 2 2)))
+    (ict:satir (strcat (ict:renkli (ict:kalin (strcat "%e" (itoa (nth 0 x)) "   " (nth 9 x))) 4)
+                       "    " (nth 8 x) " · " (ict:ns (nth 4 x)) " m · " (if (nth 6 x) "Nt" "N") " = " (ict:n0 (nth 5 x)) " W"
+                       (if (/= (nth 7 x) "") (strcat " · " (nth 7 x)) "")) 7)
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (if (nth 6 x) "Nt" "N") " x L / S") 254)
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (ict:n0 (nth 5 x)) " x " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))
+                       " = " (ict:renkli (ict:kalin (ict:n2 eY)) 2)) 7)
+    (setq i (1+ i))
+    (ict:ayrac))
+
+  ;; tek hat şeması
+  (ict:yazi (list (+ x0 m) y) (ict:kalin "TEK HAT ŞEMASI") (* 0.85 h) 254 1)
+  (setq y (- y (* 6.0 h)) px (+ x0 (* 5.0 h)))
+  (ict:nokta px y h)
+  (ict:yazi (list px (+ y (* 1.4 h))) "ŞEBEKE" (* 0.8 h) 254 8)
   (if (not mevcut)
     (progn
-      (ict:yazi (list px (+ y (* 2.4 h))) "AT" h 7 8)
-      (ict:yazi (list px (- y (* 2.4 h))) (strcat (if kurulu (strcat (ict:n0 kurulu) " W\\P") "") (ict:n0 nt) " W") h 7 2)))
+      (ict:kesikli (+ px (* 0.5 h)) (+ px (* 18.0 h)) y 30 h)
+      (ict:yazi (list (+ px (* 9.0 h)) (+ y (* 0.7 h))) "BAĞLANTI HATTI" (* 0.8 h) 30 8)
+      (ict:yazi (list (+ px (* 9.0 h)) (- y (* 0.7 h))) "ileride projelendirilecek" (* 0.8 h) 30 2)
+      (setq px (+ px (* 18.0 h) (* 1.6 h)))
+      (ict:pano px y h)
+      (ict:yazi (list px (+ y (* 1.6 h))) (ict:kalin "AT") (* 0.9 h) 7 8)
+      (ict:yazi (list px (- y (* 1.6 h))) (strcat "Nt = " (ict:n0 nt) " W") (* 0.8 h) 254 2)
+      (setq px (+ px (* 1.6 h))))
+    (setq px (+ px (* 0.5 h))))
   (setq i 0)
-  (foreach x hatlar
-    (setq hat-ad (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1"))
-          seg (max (* 18.0 h) (+ (* (strlen hat-ad) h 0.75) (* 4.0 h)))
-          son (= i (1- (length hatlar))))
-    (ict:cizgi (list (+ px (* 1.2 h)) y) (list (+ px (* 1.2 h) seg) y) 7)
-    (ict:yazi (list (+ px (* 1.2 h) (/ seg 2.0)) (+ y (* 0.6 h))) hat-ad h 7 8)
-    (ict:yazi (list (+ px (* 1.2 h) (/ seg 2.0)) (- y (* 0.6 h))) (strcat (ict:ns (nth 3 x)) " m") h 7 2)
+  (foreach x liste
+    (setq seg (ict:parca-genislik (nth 8 x) h)
+          son (= i (1- (length liste))))
+    (ict:parca px (+ px seg) y h (nth 0 x) (nth 8 x) (nth 4 x))
+    (setq px (+ px seg))
     (if son
-      (ict:yuk (+ px (* 1.2 h) seg) y h (nth 4 x))
+      (ict:yuk px y h (nth 5 x))
       (progn
-        (setq px (+ px (* 2.4 h) seg))
+        (setq px (+ px (* 1.6 h)))
         (ict:pano px y h)
-        (ict:yazi (list px (- y (* 2.4 h))) (strcat (ict:n0 (nth 4 (nth (1+ i) hatlar))) " W") h 7 2)))
+        (ict:yazi (list px (+ y (* 1.6 h)))
+                  (ict:kalin (cond ((nth 6 x) "AT") ((= i (if mevcut 1 0)) "TN") (T (strcat "TN" (itoa (- i (if mevcut 0 -1))))))) (* 0.9 h) 7 8)
+        (ict:yazi (list px (- y (* 1.6 h)))
+                  (strcat (if (nth 6 x) "Nt" "N") " = " (ict:n0 (nth 5 x)) " W") (* 0.8 h) 254 2)
+        (setq px (+ px (* 1.6 h)))))
     (setq i (1+ i)))
-  (setq y (- y (* 8.0 h)))
+  (setq y (- y (* 6.0 h)))
 
-  (ict:satir "TOPLAM" 7)
-  (ict:satir adlar 7)
-  (ict:satir (strcat degerler " = " (ict:n2 toplam) " " (if (<= toplam limit) "<" ">") " " (ict:ns limit)
-                     (if (<= toplam limit) "   UYGUNDUR." "   UYGUN DEĞİLDİR.")) (if (<= toplam limit) 7 1))
-  (if (and (not mevcut) (<= toplam limit))
-    (ict:satir (strcat "%et: " (ict:n2 toplam) " < " (ict:ns limit) " olduğundan kullanılan tüm kesitler uygundur.") 7))
+  ;; sonuç
+  (ict:bolum "SONUÇ")
+  (ict:satir (strcat adlar " = " degerler " = " (ict:renkli (ict:kalin (ict:n2 toplam)) 2)
+                     (if (<= toplam limit) " < " " > ") (ict:ns limit)) 7)
+  (setq y (- y (* 0.4 h)))
+  (ict:yazi (list (+ x0 m) y)
+            (ict:kalin (cond ((not akim-ok) "BRANŞMAN AKIM YÖNÜNDEN UYGUN DEĞİLDİR.")
+                             ((> toplam limit) "GERİLİM DÜŞÜMÜ UYGUN DEĞİLDİR.")
+                             (mevcut "UYGUNDUR.")
+                             (T "KULLANILAN TÜM KESİTLER UYGUNDUR.")))
+            (* 1.3 h) (if (and akim-ok (<= toplam limit)) 3 1) 1)
+  (setq y (- y (* 3.2 h)))
+  ;; dış çerçeve
+  (ict:dortgen x0 y0 (+ x0 g) y 253)
 
   (command "_.UNDO" "_E")
   (setq *ict-undo* nil)
