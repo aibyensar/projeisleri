@@ -142,10 +142,11 @@
 
   <div class="kart">
     <h2 style="margin-top:0">8. Vaziyet planı ve resimler</h2>
-    <p class="not">TKGM resminin üzerinde önce <b>enerji alınacak direği / box'ı</b>, sonra <b>sayaç panosunun yerini</b> tıklayın. Kablo güzergâhı kıvrılıyorsa aradaki dönüş noktalarını da ekleyin. Paftada bu noktalara sembol, güzergâh ve yazılar çizilir.</p>
+    <p class="not">TKGM resminin üzerinde önce <b>enerji alınacak direği / box'ı</b>, sonra <b>sayaç panosunun yerini</b>, sonra panonun dayandığı <b>parsel sınırı üzerinde iki nokta</b> tıklayın (pano bu çizgiye paralel çizilir). Kablo güzergâhı kıvrılıyorsa aradaki dönüş noktalarını da ekleyin. Paftada bu noktalara sembol, güzergâh ve yazılar çizilir.</p>
     <div class="secim" id="isaretMod">
       <button type="button" data-v="nokta" aria-pressed="true" id="b-nokta">1. Direk / box</button>
       <button type="button" data-v="bina" aria-pressed="false">2. Sayaç panosu</button>
+      <button type="button" data-v="sinir" aria-pressed="false">3. Parsel sınırı (2 nokta)</button>
       <button type="button" data-v="ara" aria-pressed="false">Dönüş noktası ekle</button>
     </div>
     <div id="vazKutu" style="position:relative;display:none;border:1px solid var(--cizgi);border-radius:6px;overflow:hidden;background:#fff;cursor:crosshair;touch-action:manipulation">
@@ -394,7 +395,7 @@ $('notlar').addEventListener('input', () => { D.notlarElle = true; onizle(); });
 $('notSifirla').addEventListener('click', () => { D.notlarElle = false; guncelle(); });
 
 // ---- Vaziyet planı işaretleme (resim kesirleri: sol üst 0,0 — sağ alt 1,1) ----
-D.isaret = { nokta: null, bina: null, ara: [] };
+D.isaret = { nokta: null, bina: null, ara: [], sinir: [] };
 let isaretMod = 'nokta';
 $('isaretMod').addEventListener('click', e => {
   const btn = e.target.closest('button'); if (!btn) return;
@@ -404,11 +405,15 @@ $('isaretMod').addEventListener('click', e => {
 $('vazKutu').addEventListener('click', e => {
   const r = $('r-vaziyet').getBoundingClientRect();
   const p = [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height].map(v => Math.round(Math.min(1, Math.max(0, v)) * 1e4) / 1e4);
-  if (isaretMod === 'ara') D.isaret.ara.push(p); else D.isaret[isaretMod] = p;
-  if (isaretMod === 'nokta') { isaretMod = 'bina'; for (const x of $('isaretMod').children) x.setAttribute('aria-pressed', x.dataset.v === 'bina'); }
+  const gec = m => { isaretMod = m; for (const x of $('isaretMod').children) x.setAttribute('aria-pressed', x.dataset.v === m); };
+  if (isaretMod === 'ara') D.isaret.ara.push(p);
+  else if (isaretMod === 'sinir') { if (D.isaret.sinir.length >= 2) D.isaret.sinir = []; D.isaret.sinir.push(p); }
+  else D.isaret[isaretMod] = p;
+  if (isaretMod === 'nokta') gec('bina');
+  else if (isaretMod === 'bina' && D.isaret.sinir.length < 2) gec('sinir');
   isaretCiz(); guncelle();
 });
-$('isaretSil').addEventListener('click', () => { D.isaret = { nokta: null, bina: null, ara: [] }; isaretMod = 'nokta';
+$('isaretSil').addEventListener('click', () => { D.isaret = { nokta: null, bina: null, ara: [], sinir: [] }; isaretMod = 'nokta';
   for (const x of $('isaretMod').children) x.setAttribute('aria-pressed', x.dataset.v === 'nokta'); isaretCiz(); guncelle(); });
 function kaynakAdi() { const v = ($('a-direk') && $('a-direk').value.trim()) || (D.gdz && D.gdz.direk) || ''; return v || ($('a-baglanti') && $('a-baglanti').value === 'box' ? 'AG BOX' : 'AG DİREĞİ'); }
 function isaretCiz() {
@@ -418,10 +423,12 @@ function isaretCiz() {
   if (yol.length > 1) o += `<polyline points="${yol.map(p => p.join(',')).join(' ')}" fill="none" stroke="#c0392b" stroke-width="4" stroke-dasharray="14 8"/>`;
   if (i.nokta) { const [x, y] = P(i.nokta); o += `<circle cx="${x}" cy="${y}" r="12" fill="#fff" stroke="#c0392b" stroke-width="4"/><text x="${x}" y="${y - 18}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700" stroke="#fff" stroke-width="5" paint-order="stroke">${kac(kaynakAdi())}</text>`; }
   i.ara.forEach(p => { const [x, y] = P(p); o += `<circle cx="${x}" cy="${y}" r="6" fill="#c0392b"/>`; });
-  if (i.bina) { const [x, y] = P(i.bina); o += `<rect x="${x - 14}" y="${y - 9}" width="28" height="18" fill="#c0392b"/><text x="${x}" y="${y - 16}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700" stroke="#fff" stroke-width="5" paint-order="stroke">SAYAÇ PANOSU</text>`; }
+  (i.sinir || []).forEach(p => { const [x, y] = P(p); o += `<path d="M${x - 8} ${y - 8}L${x + 8} ${y + 8}M${x - 8} ${y + 8}L${x + 8} ${y - 8}" stroke="#1f6feb" stroke-width="4"/>`; });
+  if (i.sinir && i.sinir.length === 2) { const [a, b] = i.sinir.map(P); o += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#1f6feb" stroke-width="3"/>`; }
+  if (i.bina) { const [x, y] = P(i.bina), ac = -BHPCizim.panoAci(i, 1000, 528) * 180 / Math.PI; o += `<rect x="${x - 14}" y="${y - 9}" width="28" height="18" fill="#c0392b" transform="rotate(${ac.toFixed(1)} ${x} ${y})"/><text x="${x}" y="${y - 16}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700" stroke="#fff" stroke-width="5" paint-order="stroke">SAYAÇ PANOSU</text>`; }
   $('vazIsaret').innerHTML = o;
   $('b-nokta').textContent = '1. ' + kaynakAdi();
-  durum('d-isaret', !i.nokta ? `Resimde ${kaynakAdi()} noktasını tıklayın.` : !i.bina ? 'Şimdi sayaç panosunun yerini tıklayın.' : `İşaretlendi${i.ara.length ? ' (' + i.ara.length + ' dönüş noktası)' : ''}. Paftada bu güzergâh çizilecek.`, i.nokta && i.bina ? 'iyi' : '');
+  durum('d-isaret', !i.nokta ? `Resimde ${kaynakAdi()} noktasını tıklayın.` : !i.bina ? 'Şimdi sayaç panosunun yerini tıklayın.' : (i.sinir || []).length < 2 ? `Panonun dayandığı parsel sınırı üzerinde ${2 - (i.sinir || []).length} nokta daha tıklayın (pano bu çizgiye paralel çizilir).` : `İşaretlendi${i.ara.length ? ' (' + i.ara.length + ' dönüş noktası)' : ''}. Paftada bu güzergâh çizilecek.`, i.nokta && i.bina ? 'iyi' : '');
 }
 
 // ---- Kablo seçimi ----
@@ -474,6 +481,7 @@ function guncelle() {
   if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
   if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
   else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (8. bölüm)');
+  else if ((D.isaret.sinir || []).length < 2) uyari.push('vaziyet planında parsel sınırı işaretlenmedi, sayaç panosu yatay çizilecek (8. bölüm)');
   $('indir').disabled = eksik.length > 0;
   if (eksik.length) durum('d-indir', 'İndirmek için eksik: ' + eksik.join(' · '), 'kotu');
   else durum('d-indir', uyari.length ? 'Hazır. Dikkat: ' + uyari.join(' · ') : 'Hazır.', uyari.length ? '' : 'iyi');

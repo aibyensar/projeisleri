@@ -242,7 +242,10 @@
       c.cokgen(yol, { katman: 'BHP-KABLO', lt: 'DASHED', kalin: true });
       if (v.baglanti === 'box') { c.kutu(a[0] - 4, a[1] - 2.8, a[0] + 4, a[1] + 2.8, K); c.cizgi(a[0] - 4, a[1] - 2.8, a[0] + 4, a[1] + 2.8, K); c.cizgi(a[0] - 4, a[1] + 2.8, a[0] + 4, a[1] - 2.8, K); }
       else c.daire(a[0], a[1], 2.8, K);
-      c.kutu(b[0] - 3.5, b[1] - 2, b[0] + 3.5, b[1] + 2, K); c.dolgu([[b[0] - 3.5, b[1] - 2], [b[0] + 3.5, b[1] + 2], [b[0] + 3.5, b[1] - 2]], K);
+      // sayaç panosu: uzun kenarı parsel sınırına paralel (kullanıcı sınır üzerinde 2 nokta tıklar)
+      const aci = panoAci(isaret, W, H), ca = Math.cos(aci), sa = Math.sin(aci);
+      const R = (dx, dy) => [b[0] + dx * ca - dy * sa, b[1] + dx * sa + dy * ca];
+      c.cokgen([R(-3.5, -2), R(3.5, -2), R(3.5, 2), R(-3.5, 2)], { ...K, kapali: true }); c.dolgu([R(-3.5, -2), R(3.5, 2), R(3.5, -2)], K);
       // etiketler: beyaz zeminli kutu; birbirine ve çerçeve kenarına çarpmayan ilk yere konur
       const dolu = [];
       const kesisir = (r, q) => !(r[2] < q[0] || r[0] > q[2] || r[3] < q[1] || r[1] > q[3]);
@@ -282,6 +285,15 @@
       c.kutu(x0 + 2, y0 + 2, x0 + 2 + w, y0 + 2 + hh, K);
       s.forEach((t, i) => c.yazi(t, x0 + 4, y0 + 2 + hh - 1.5 - (i + 0.5) * h * 1.45, h, { katman: 'BHP-VAZIYET', stil: i % 2 ? KALIN : INCE }));
     }
+  }
+
+  // Parsel sınırı yönü (radyan, çizim koordinatında; -90°..+90°). Sınır işaretlenmediyse 0 (yatay).
+  function panoAci(isaret, W, H) {
+    const s = isaret && isaret.sinir;
+    if (!s || s.length < 2) return 0;
+    let a = Math.atan2(-(s[1][1] - s[0][1]) * H, (s[1][0] - s[0][0]) * W);
+    if (a > Math.PI / 2) a -= Math.PI; else if (a <= -Math.PI / 2) a += Math.PI;
+    return a;
   }
 
   function hepsi(v, bilgi) {
@@ -374,6 +386,6 @@
     return o + '</svg>';
   }
 
-  const BHPCizim = { Cizim, hepsi, genislik, tekHat, hesap, gucTablosu, malzemeListesi, notlar, vaziyet, dxfeEkle, bilgiOku, svg, sayiYaz, satirlaraBol };
+  const BHPCizim = { Cizim, hepsi, panoAci, genislik, tekHat, hesap, gucTablosu, malzemeListesi, notlar, vaziyet, dxfeEkle, bilgiOku, svg, sayiYaz, satirlaraBol };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHPCizim; else kok.BHPCizim = BHPCizim;
 })(typeof window !== 'undefined' ? window : globalThis);

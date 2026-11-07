@@ -127,7 +127,12 @@ talep 57839 W, kurulu 198700 W, koruma TMŞ+YKŞ 4x125A 300mA, KONUT, SIĞ+Z+3, 
 sayaç önü sigortaları tabloda, tek hatta (her grup ayrı kol: sigorta → sayaç → iç tesisat) ve malzemede; indir butonu yalnız
 gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullanıcının uyarısı: "eksik olursa revize gelir, eksiksiz olmalı".
 
+**8 Kasım oturumu:** kullanıcı "sayaç panosu parsel çizgisine paralel olmalı, çizimler amatörce, montaj detayı eksik, projede baya eksik var" dedi.
+Yapılan: vaziyette "3. Parsel sınırı (2 nokta)" işareti (D.isaret.sinir); pano sembolü bu çizgiye paralel döner (BHPCizim.panoAci); yayınlandı (sürüm 8).
+Kullanıcıdan istendi: onaylanmış, beğendiği bir BHP örneği (DWG/PDF) ve montaj detayında beklediği çizimler; eksiklerin listesi.
+
 **AÇIK KONULAR (sıradaki)**
+0. ÖNCELİK: çizim kalitesi ve montaj detayı (kullanıcı örneğine göre baştan elden geçirilecek).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
    soruldu (resimden oku mu, satır üret mi). Cevaba göre resimden okumayı sağlamlaştır.
 2. Kullanıcı v6 zip'lerini (tek pafta, sayaç önü sigortalı) AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
