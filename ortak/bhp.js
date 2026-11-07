@@ -240,14 +240,26 @@
     }
     return liste.sort((a, b) => a.kesit - b.kesit);
   }
-  function hesap(k, N, L) {
+  // Ana kesici akımı (In): aşırı akıma karşı koruyan cihazlardan (sigorta, TMŞ, TMŞ+YKŞ); kaçak akım rölesi sayılmaz.
+  // "4x125A 300mA" → 125. Birden çoksa en küçüğü.
+  function anaKesiciA(korumalar) {
+    const l = (korumalar || []).filter(k => k && ['sigorta', 'tms', 'tmsyks'].includes(k.tur)).map(k => {
+      const m = String(k.deger || '').replace(',', '.').match(/(?:^|[x×*\s])(\d+(?:\.\d+)?)\s*A(?![a-zA-Z])/i);
+      return m ? parseFloat(m[1]) : NaN;
+    }).filter(x => x > 0);
+    return l.length ? Math.min(...l) : null;
+  }
+  // Kablo uygunluğu: %e ≤ 1,5; I ≤ Iz; koruma uyumu I ≤ In ≤ Iz (In: ana kesici)
+  function hesap(k, N, L, In) {
     const faz = k.faz || 3, c = C[faz][k.iletken];
     const e = c * N * L / k.kesit, I = N / BOLEN[faz];
-    return { c, e, I, uygun: e <= 1.5 && I <= k.iz, eUygun: e <= 1.5, iUygun: I <= k.iz };
+    const kUygun = In > 0 ? In <= k.iz : true, ibUygun = In > 0 ? I <= In : true;
+    return { c, e, I, In: In > 0 ? In : null, eUygun: e <= 1.5, iUygun: I <= k.iz, kUygun, ibUygun,
+      uygun: e <= 1.5 && I <= k.iz && kUygun };
   }
-  function kabloOner(iletken, N, L, enKucuk, faz = 3) {
+  function kabloOner(iletken, N, L, enKucuk, faz = 3, In) {
     const l = kablolar(iletken, faz);
-    return l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L).uygun) || l[l.length - 1];
+    return l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L, In).uygun) || l[l.length - 1];
   }
 
   // ---------- Bilgileri birleştir ----------
@@ -353,7 +365,7 @@
   function cizimVerisi(b, kablo, malzeme, notlar) {
     const N = b.talepW, L = b.uzunluk, faz = kablo.faz || 3;
     return {
-      baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L), faz, bolen: BOLEN[faz],
+      baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L, anaKesiciA(b.korumalar)), faz, bolen: BOLEN[faz],
       korumalar: (b.korumalar || []).filter(k => k.tur),
       sayacAdet: b.sayacAdet || 1, sayacTip: b.sayac, sayacTur: b.reaktif ? 'Aktif-Reaktif (kombi)' : 'Aktif',
       satirlar: b.satirlar, kuruluToplam: b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0) || b.kuruluW,
@@ -381,6 +393,6 @@
   }
 
   const BHP = { gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
-    virgul, baslikHarf, LOGO_DOSYA, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
+    virgul, baslikHarf, LOGO_DOSYA, anaKesiciA, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);

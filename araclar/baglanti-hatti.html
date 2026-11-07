@@ -113,13 +113,24 @@
       <span class="durum" id="d-gdz">Henüz yüklenmedi</span></label>
     <div class="resim-oku" id="ro-gdz" hidden><button type="button" class="kucuk-dugme" id="b-ro-gdz">GDZ yazısını resimden oku</button>
       <span class="durum" id="d-ro-gdz"></span></div>
-    <div id="hatSecim" hidden>
-      <b>Bağlantı hattı</b>
-      <div class="secim" id="hatTur">
-        <button type="button" data-v="yeralti" aria-pressed="false">Yeraltı</button>
-        <button type="button" data-v="havai" aria-pressed="false">Havai</button>
+    <div id="gdzKontrol" hidden class="iki" style="margin-top:14px">
+      <div>
+        <div id="hatSecim">
+          <b>Bağlantı hattı</b>
+          <div class="secim" id="hatTur">
+            <button type="button" data-v="yeralti" aria-pressed="false">Yeraltı</button>
+            <button type="button" data-v="havai" aria-pressed="false">Havai</button>
+          </div>
+          <span class="durum" id="d-hat"></span>
+        </div>
+        <h3 style="margin:14px 0 8px;font-size:1rem">GDZ yazısından okunanlar</h3>
+        <div class="alanlar" id="alan-gdz"></div>
+        <label id="gdzOnayKutu" class="onay"><input type="checkbox" id="gdzOnay"> GDZ bilgilerini yazıyla karşılaştırdım, doğru.</label>
       </div>
-      <span class="durum" id="d-hat"></span>
+      <div class="kontrol" id="gdzKutu">
+        <div class="secim" id="gdzSayfa" style="margin:0 0 6px"></div>
+        <img id="gdzResim" alt="GDZ bağlantı görüşü sayfası">
+      </div>
     </div>
   </div>
 
@@ -217,8 +228,7 @@
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">4. Bağlantı hattı ve kablo</h2>
-    <div class="alanlar" id="alan-gdz"></div>
+    <h2 style="margin-top:0">4. Kablo seçimi ve hesap</h2>
     <div class="kablo-satir">
       <div class="secim" id="iletken">
         <button type="button" data-v="cu" aria-pressed="false">Bakır (NYY)</button>
@@ -420,7 +430,7 @@ function yakinKur(id) {
   new ResizeObserver(() => Z.sigdir()).observe(kutu);
 }
 function yakinSigdir(id) { requestAnimationFrame(() => YK[id] && YK[id].sigdir()); }
-yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim');
+yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('gdzResim');
 
 // ---- Hat türü: GDZ'ye göre yeraltı ya da havai sayfası açılır ----
 function hatSec(tur) {
@@ -429,8 +439,18 @@ function hatSec(tur) {
   $('sayfaYeralti').hidden = tur !== 'yeralti'; $('sayfaHavai').hidden = tur !== 'havai';
 }
 $('hatTur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) hatSec(b.dataset.v); });
+async function gdzSayfaGoster(p) {
+  if (!D.gdzDoc) return;
+  const n = D.gdzDoc.numPages;
+  $('gdzSayfa').innerHTML = n > 1 ? Array.from({ length: n }, (_, i) => `<button type="button" data-p="${i + 1}" aria-pressed="${i + 1 === p}">${i + 1}. sayfa</button>`).join('') : '';
+  const bl = await bolgeResmi(D.gdzDoc, p, [0, 0, 1, 1], 2200);
+  D.gdzResimUrl && URL.revokeObjectURL(D.gdzResimUrl); D.gdzResimUrl = URL.createObjectURL(bl);
+  $('gdzResim').src = D.gdzResimUrl; yakinSigdir('gdzResim');
+}
+$('gdzSayfa').addEventListener('click', e => { const b = e.target.closest('button'); if (b) gdzSayfaGoster(+b.dataset.p); });
+$('gdzOnay').addEventListener('change', () => guncelle());
 function hatGoster() {
-  const h = D.gdz && D.gdz.hatTipi; $('hatSecim').hidden = false;
+  const h = D.gdz && D.gdz.hatTipi; $('gdzKontrol').hidden = false; $('gdzOnay').checked = false; gdzSayfaGoster(1);
   if (h) { hatSec(h === 'HAVAI' ? 'havai' : 'yeralti'); durum('d-hat', `GDZ yazısına göre ${h === 'HAVAI' ? 'havai' : 'yeraltı'} hat. Yanlışsa diğerini seçin.`, 'iyi'); }
   else durum('d-hat', 'GDZ yazısında hat türü bulunamadı; seçin.', 'kotu');
 }
@@ -442,7 +462,7 @@ const ALANLAR = [
     ['il', 'İl'], ['ilce', 'İlçe'], ['belediye', 'Belediye'], ['mahalle', 'Mahalle'], ['pafta', 'Pafta'], ['ada', 'Ada'], ['parsel', 'Parsel'],
     ['kat', 'Kat adedi'], ['alan', 'Toplam alan (m²)'], ['bagimsiz', 'Bağımsız bölüm (antet)'], ['yapiSinifi', 'Yapı sınıfı']]],
   ['', [['kuruluW', 'Kurulu güç (W)', '', 'number'], ['talepW', 'Talep gücü (W)', '', 'number']]],
-  ['', [['baglanti', 'Enerji alınan yer', '', 'select:direk=Direk|box=AG box'], ['faz', 'Bağlantı', '', 'select:3=Trifaze (380 V)|1=Monofaze (220 V)'], ['direk', 'Direk / box adı', 'genis'],
+  ['', [['basvuruNo', 'Başvuru no'], ['baglanti', 'Enerji alınan yer', '', 'select:direk=Direk|box=AG box'], ['faz', 'Bağlantı', '', 'select:3=Trifaze (380 V)|1=Monofaze (220 V)'], ['direk', 'Direk / box adı', 'genis'],
     ['Ldis', 'Parsel dışı (m)', '', 'number'], ['Lic', 'Parsel içi (m)', '', 'number'], ['projeTarihi', 'Proje tarihi']]],
   ['', [['k1tur', 'Ana kesici (1. koruma)', '', KORUMA], ['k1deger', '1. değer (4x40A 10kA gibi)'],
     ['k2tur', 'Ana kesici (2. koruma, varsa)', '', KORUMA], ['k2deger', '2. değer (4x40A 300mA gibi)'],
@@ -483,7 +503,7 @@ function alanlariDoldur() {
   const kaynak = { malSahibi: i.malSahibi || g.sahibi, kullanim: i.kullanim || g.kullanim, adres: i.adres || g.adres, il: i.il || g.adres,
     ilce: i.ilce || g.adres, belediye: i.belediye || g.adres, mahalle: i.mahalle || g.adres, pafta: i.pafta, ada: i.ada || g.ada, parsel: i.parsel || g.parsel,
     kat: i.kat, alan: i.alan, bagimsiz: g.bagimsiz, kuruluW: ok(i.kuruluW) ? i.kuruluW : g.kuruluKW, talepW: ok(i.talepW) ? i.talepW : g.talepKW,
-    baglanti: g.baglantiSekli, direk: g.direk, Ldis: g.sinira, Lic: g.sinira != null ? g.parselIci : undefined,
+    basvuruNo: g.basvuruNo, baglanti: g.baglantiSekli, direk: g.direk, Ldis: g.sinira, Lic: g.sinira != null ? g.parselIci : undefined,
     k1deger: i.sigortaA, k2deger: i.karMA, sayacAdet: g.bagimsiz, sayacTur: i.karMA };
   for (const [, liste] of ALANLAR) for (const [id] of liste) {
     const el = $('a-' + id); const v = b[id];
@@ -509,7 +529,7 @@ function bilgiler() {
   }
   b.uzunluk = (b.Ldis || 0) + (b.Lic || 0);
   b.reaktif = b.sayacTur === 'Aktif-Reaktif';
-  b.basvuruNo = (D.gdz && D.gdz.basvuruNo) || 'bhp';
+  b.basvuruNo = String(b.basvuruNo || (D.gdz && D.gdz.basvuruNo) || 'bhp').replace(/[\\/:*?"<>|\s]+/g, '-');
   b.alan = /\d/.test(b.alan) ? b.alan.replace(/\s*m²?$/, '') : '-';
   b.korumalar = [{ tur: b.k1tur, deger: b.k1deger }, { tur: b.k2tur, deger: b.k2deger }].filter(k => k.tur);
   b.sayacAdet = Math.max(1, Math.round(b.sayacAdet || D.satirlar.length || 1));
@@ -637,13 +657,14 @@ function guncelle() {
   const sel = $('kesit'), b = bilgiler();
   const N = b.talepW, L = b.uzunluk;
   let kablo = null;
+  const In = BHP.anaKesiciA(b.korumalar);                    // ana kesici akımı: kablo Iz ≥ In olmalı
   if (D.iletken && N > 0 && L > 0) {
     const liste = BHP.kablolar(D.iletken, b.faz);
-    const oneri = BHP.kabloOner(D.iletken, N, L, parseFloat($('enKucuk').value) || 0, b.faz);
+    const oneri = BHP.kabloOner(D.iletken, N, L, parseFloat($('enKucuk').value) || 0, b.faz, In);
     const secili = D.elleSecilen || oneri.ad;
     sel.disabled = false;
     sel.innerHTML = liste.map(k => {
-      const h = BHP.hesap(k, N, L);
+      const h = BHP.hesap(k, N, L, In);
       return `<option value="${k.ad}" ${k.ad === secili ? 'selected' : ''}>${k.yazi}${k.ad === oneri.ad ? ' (önerilen)' : ''}${h.uygun ? '' : ' — uygun değil'}</option>`;
     }).join('');
     kablo = liste.find(k => k.ad === secili);
@@ -653,20 +674,28 @@ function guncelle() {
   if (!D.notlarElle) $('notlar').value = BHP.notlarOner(b).join('\n');
   const s = $('sonuc');
   if (kablo) {
-    const h = BHP.hesap(kablo, N, L), v = BHP.virgul;
+    const h = BHP.hesap(kablo, N, L, In), v = BHP.virgul;
     s.innerHTML = `
       <div class="sonuc-satir"><b>Gerilim düşümü</b><span class="formul">%e = ${v(h.c, 7)} × ${N} × ${String(L).replace('.', ',')} / ${String(kablo.kesit).replace('.', ',')} = ${v(h.e, 5)} ≈ %${v(h.e, 2)} &lt; %1,5</span>
         <span class="${h.eUygun ? 'uygun' : 'degil'}"> ${h.eUygun ? 'uygun' : 'UYGUN DEĞİL'}</span></div>
       <div class="sonuc-satir"><b>Akım kontrolü</b><span class="formul">I = ${N} / ${b.faz === 1 ? 176 : 527} = ${v(h.I, 2)} A &lt; ${kablo.iz} A</span>
         <span class="${h.iUygun ? 'uygun' : 'degil'}"> ${h.iUygun ? 'uygun' : 'UYGUN DEĞİL'}</span>
-        <span class="durum">${kablo.yazi}, toprakta ${kablo.iz} A (Öznur Kablo kataloğu)</span></div>`;
+        <span class="durum">${kablo.yazi}, toprakta ${kablo.iz} A (Öznur Kablo kataloğu)</span></div>
+      <div class="sonuc-satir"><b>Koruma uyumu (ana kesici)</b>${In ? `<span class="formul">I = ${v(h.I, 2)} A ${h.ibUygun ? '≤' : '>'} In = ${String(In).replace('.', ',')} A ${h.kUygun ? '≤' : '>'} Iz = ${kablo.iz} A</span>
+        <span class="${h.kUygun && h.ibUygun ? 'uygun' : 'degil'}"> ${h.kUygun ? (h.ibUygun ? 'uygun' : 'ANA KESİCİ YÜK AKIMINDAN KÜÇÜK') : 'UYGUN DEĞİL: kablo ana kesiciyi taşımıyor'}</span>`
+          : '<span class="degil">Ana kesici değeri girilmedi (3. bölüm, sayaç panosu); kablo ana kesiciye göre kontrol edilemiyor.</span>'}</div>`;
   }
   onizle();
   const eksik = [], uyari = [];
   if (!D.sablon) eksik.push('çizim şablonu yüklenemedi (sayfayı yenileyin)');
   if (!D.gdz) eksik.push('GDZ bağlantı görüşü (1. bölüm)');
+  else if (!$('gdzOnay').checked) eksik.push('GDZ bilgileri: 1. bölümde yazıyla karşılaştırıp "doğru" kutusunu işaretleyin');
   if (!D.iletken) eksik.push('bakır / alüminyum seçimi (4. bölüm)');
   else if (!kablo) eksik.push('kablo: talep gücü (3. bölüm) ve hat uzunluğu (4. bölüm) girilmeli');
+  if (kablo && !In) eksik.push('ana kesici değeri (3. bölüm, sayaç panosu): kablo ana kesiciye göre seçilir');
+  else if (kablo && In) { const h = BHP.hesap(kablo, N, L, In);
+    if (!h.kUygun) eksik.push(`kablo ana kesiciyi taşımıyor: Iz ${kablo.iz} A < In ${In} A (4. bölümde daha büyük kesit seçin)`);
+    if (!h.ibUygun) uyari.push(`ana kesici (${In} A) yük akımından (${BHP.virgul(h.I, 1)} A) küçük; iç tesisatı kontrol edin`); }
   if (!D.satirlar.length) eksik.push('güç dağıtım tablosu (3. bölüm)');
   else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (3. bölüm, "Sayaç önü sigorta"; tek hat şeması için)');
   const gOnay = $('gucOnay').checked, pOnay = $('panoOnay').checked;

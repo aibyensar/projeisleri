@@ -177,6 +177,16 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    panoResim) · 4. Bağlantı hattı (alan-gdz: GDZ alanları) ve kablo + hesap + açılır çizim önizlemesi · 5. Vaziyet (TKGM yükleme burada;
    uydu seçimi yalnız bulunamazsa) · 6. İndir. ALANLAR grupları HEDEF ile kutulara dağıtılır. Toplu satır üretme açılır kutuda
    (tablo yoksa kendiliğinden açılır). HAVAİ HAT: sayfaHavai'yi doldurmak sıradaki büyük iş (örnek proje istenecek).
+1i. ANA KESİCİ – KABLO UYUMU (7 Kasım 2026; kullanıcı: "125 A ana kesicili yere Iz 118 A kablo koyarsan ne olur?"): kural I ≤ In ≤ Iz.
+   bhp.js anaKesiciA(korumalar): sigorta/TMŞ/TMŞ+YKŞ değerinden A (K.A.R sayılmaz, birden çoksa en küçük); hesap(k,N,L,In) → kUygun
+   (In ≤ Iz), ibUygun (I ≤ In); uygun = %e ≤ 1,5 ve I ≤ Iz ve In ≤ Iz; kabloOner In ile. Web: "Koruma uyumu" satırı; ana kesici yoksa ya da
+   Iz < In ise indirilmez; In < I uyarı. DXF hesap çizelgesi: "Ana kesici anma akımı In" satırı + "3. KORUMA UYUMU" adımı + sonuç cümlesi.
+1j. GDZ KONTROL PANELİ: 1. bölümde GDZ okununca solda hat türü + "GDZ yazısından okunanlar" (alan-gdz: başvuru no [dosya adı], enerji
+   alınan yer, faz, direk/box, parsel dışı/içi, proje tarihi) + gdzOnay; sağda GDZ sayfası (yakınlaştırılır, sayfa düğmeleri). gdzOnay
+   olmadan indirilmez. 4. bölüm artık "Kablo seçimi ve hesap". Deneme: test/sahte-gdz.py (yazılı sahte GDZ; havai için 2. argüman) +
+   isaretle-dene.js <tmp> <ic.pdf> <gdz.pdf> [havai-gdz.pdf] → indirme ve zip içeriği dahil.
+   AÇIK (kullanıcının 7 Kasım listesi): 1) tasarım daha iyi olabilir, 3) semboller özellikle tek hatta istediği gibi değil, 4) pafta düzeni
+   iyileştirilmeli — üçü için kullanıcıdan ayrıntı / örnek istendi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 (async () => {
   const S = process.argv[2], NM = S + '/nd/node_modules/';
   const b = await chromium.launch();
-  const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+  const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
   await p.route('https://cdnjs.cloudflare.com/**', r => { const u = r.request().url();
     const yol = u.includes('pdf.worker') ? NM + 'pdfjs-dist/build/pdf.worker.min.mjs' : u.includes('pdf.min') ? NM + 'pdfjs-dist/build/pdf.min.mjs' : NM + 'jszip/dist/jszip.min.js';
     r.fulfill({ path: yol, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
@@ -28,7 +28,14 @@ const { chromium } = require('playwright');
   }, process.env.SENARYO || '');
   await p.goto('http://localhost:8765/araclar/baglanti-hatti.html');
   await p.waitForTimeout(1500);
-  await p.evaluate(() => { document.getElementById('hatSecim').hidden = false; document.querySelector('#hatTur [data-v=yeralti]').click(); });   // GDZ yüklenmeden yeraltı sayfası
+  if (process.argv[4]) {                                        // GDZ: önce havai yazısı (havai sayfası), sonra yeraltı
+    if (process.argv[5]) { await p.setInputFiles('#f-gdz', process.argv[5]); await p.waitForFunction(() => !document.getElementById('gdzKontrol').hidden, null, { timeout: 30000 });
+      console.log('havai GDZ:', await p.textContent('#d-hat'), '| havai sayfa:', await p.isVisible('#sayfaHavai'), '| yeraltı sayfa:', await p.isVisible('#sayfaYeralti')); }
+    await p.setInputFiles('#f-gdz', process.argv[4]);
+    await p.waitForFunction(() => /yeraltı/.test(document.getElementById('d-hat').textContent), null, { timeout: 30000 });
+    console.log('GDZ:', await p.textContent('#d-gdz'), '|', await p.textContent('#d-hat'), '| GDZ resmi:', await p.isVisible('#gdzResim'));
+    console.log('   GDZ alanları:', await p.inputValue('#a-basvuruNo'), await p.inputValue('#a-direk'), await p.inputValue('#a-Ldis'), await p.inputValue('#a-Lic'), await p.inputValue('#a-baglanti'));
+  } else await p.evaluate(() => { document.getElementById('gdzKontrol').hidden = false; document.querySelector('#hatTur [data-v=yeralti]').click(); });
   await p.setInputFiles('#f-ic', process.argv[3]);
   await p.waitForSelector('#gPanel:not([hidden])', { timeout: 30000 }); await p.waitForTimeout(800);
   console.log('panel:', await p.textContent('#gTarif'));
@@ -77,7 +84,15 @@ const { chromium } = require('playwright');
   if (process.env.SENARYO === 'A') { await p.fill('#onuListe input[data-j="2"]', '3x25A'); for (const j of [0, 1, 3, 4, 5]) await p.fill(`#onuListe input[data-j="${j}"]`, '3x32A 6kA');
     console.log('   tek tek düzeltildi:', JSON.stringify(await p.$$eval('#onuListe input', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'), '|', await p.getAttribute('#a-onuHepsi', 'placeholder')); }
   console.log('   onaydan önce indir:', (await p.textContent('#d-indir')).slice(0, 260));
+  await p.click('#iletken button[data-v=cu]'); await p.fill('#a-talepW', '40000'); await p.fill('#a-Ldis', '25'); await p.fill('#a-Lic', '5'); await p.dispatchEvent('#a-Lic', 'input');
+  console.log('   kablo:', await p.$eval('#kesit', e => e.options[e.selectedIndex].text), '|', (await p.textContent('#sonuc')).replace(/\s+/g, ' ').trim());
+  await p.fill('#a-k1deger', '4x40A 300mA'); await p.dispatchEvent('#a-k1deger', 'input');
+  console.log('   40A ile kablo:', await p.$eval('#kesit', e => e.options[e.selectedIndex].text), '|', (await p.textContent('#sonuc')).replace(/\s+/g, ' ').trim().slice(-150));
+  await p.fill('#a-k1deger', '4x100A 300mA'); await p.dispatchEvent('#a-k1deger', 'input');
   await p.check('#panoOnay'); await p.check('#gucOnay');
+  if (process.argv[4]) { console.log('   GDZ onayı öncesi:', (await p.textContent('#d-indir')).slice(0, 160)); await p.check('#gdzOnay');
+    console.log('   indir düğmesi açık:', await p.isEnabled('#indir'));
+    const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#indir')]); await dl.saveAs(S + '/indirilen.zip'); console.log('   indirildi:', dl.suggestedFilename()); }
   await p.screenshot({ path: S + '/genel.png', fullPage: true });
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle

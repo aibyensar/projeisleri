@@ -268,7 +268,7 @@
       ['Güç katsayısı', 'cos φ', '0,8'],
       ['Gerilim düşümü katsayısı', 'c', vg(h.c, 7)],
       ['Akım taşıma kapasitesi (toprak)', 'Iz', `${v.kablo.iz} A`],
-    ];
+    ].concat(h.In ? [['Ana kesici anma akımı', 'In', `${sayiYaz(h.In)} A`]] : []);
     const sh = Math.min(9, (ust - ya - 16) / (satir.length + 1));
     c.cizgi(xc, ya, xc, ust, T);
     c.yazi('HESAPTA KULLANILAN DEĞERLER', (xa + xc) / 2, ust - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
@@ -315,9 +315,15 @@
     satirY(mono ? `I = N / (U · cos φ) = ${v.N} / (220 · 0,8) = ${v.N} / ${v.bolen}` : `I = N / (√3 · U · cos φ) = ${v.N} / (√3 · 380 · 0,8) = ${v.N} / ${v.bolen}`);
     sonuc(h.iUygun, 'AKIM YÖNÜNDEN', y);
     satirY(`I = ${vg(h.I, 2)} A  ${h.iUygun ? '<' : '>'}  Iz = ${v.kablo.iz} A`, 2.9, { stil: KALIN });
+    if (h.In) {
+      y -= 4;
+      baslik('3. KORUMA UYUMU (ANA KESİCİ)');
+      sonuc(h.kUygun && h.ibUygun, 'KORUMA YÖNÜNDEN', y);
+      satirY(`I = ${vg(h.I, 2)} A  ${h.ibUygun ? '≤' : '>'}  In = ${sayiYaz(h.In)} A  ${h.kUygun ? '≤' : '>'}  Iz = ${v.kablo.iz} A`, 2.9, { stil: KALIN });
+    }
     // sonuç satırı (alt kenarda)
     c.cizgi(xc, ya + 11, x1, ya + 11, T);
-    c.yazi(`SONUÇ: ${v.kablo.yazi} kablo ${h.uygun ? 'gerilim düşümü ve akım taşıma yönünden uygundur.' : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`, X, ya + 5.5, 2.8, { stil: KALIN });
+    c.yazi(`SONUÇ: ${v.kablo.yazi} kablo ${h.uygun ? (h.In ? 'gerilim düşümü, akım taşıma ve koruma uyumu yönünden uygundur.' : 'gerilim düşümü ve akım taşıma yönünden uygundur.') : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`, X, ya + 5.5, 2.8, { stil: KALIN });
   }
 
   // ---------- Güç dağıtım tablosu (kullanıcının onaylı projelerindeki sütunlar) ----------
