@@ -266,7 +266,7 @@ $('iletken').addEventListener('click', e => {
   const btn = e.target.closest('button'); if (!btn) return;
   D.iletken = btn.dataset.v;
   for (const x of $('iletken').children) x.setAttribute('aria-pressed', x === btn);
-  $('enKucuk').value = D.iletken === 'al' ? 16 : 10;
+  $('enKucuk').value = D.iletken === 'al' ? 10 : 6;   // kullanıcının kuralı: bakırda en az 6, alüminyumda en az 10 mm²
   D.elleSecilen = null; guncelle();
 });
 $('enKucuk').addEventListener('input', () => { D.elleSecilen = null; guncelle(); });

@@ -71,8 +71,8 @@ müşteri listesi, periyodik kontrol hatırlatıcı. Her yeni araçta önce kull
 ## Bağlantı hattı projesi (BHP) aracı — ilk sürüm yayında, kullanıcının denemesi bekleniyor (7 Kasım 2026)
 Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Araç bunu hızlandırır.
 - Web: `araclar/baglanti-hatti.html`. Yüklenenler: GDZ görüşü PDF + iç tesisat PDF + TKGM ekran görüntüsü.
-  Kullanıcı Bakır/Alüminyum seçer (kendi isteği), araç en küçük uygun kesiti önerir (en küçük kesit varsayılanı Cu 10, Al 16 —
-  BU BENİM VARSAYIMIM, kullanıcıya onaylatılacak). İndirilen .zip: BHP-<başvuruNo>.dxf + 2 resim (aynı klasörde durmalı).
+  Kullanıcı Bakır/Alüminyum seçer (kendi isteği), araç en küçük uygun kesiti önerir (en küçük kesit: Cu 6, Al 10 — kullanıcının kuralı, 7 Kasım 2026)
+  İndirilen .zip: BHP-<başvuruNo>.dxf + 2 resim (aynı klasörde durmalı).
 - Ortak kod: `ortak/bhp.js` (PDF yazılarından okuma, kablo seçimi, hesap, şablon doldurma). Tarayıcı ve Node aynı kodu kullanır.
 - Şablon: `baglanti-hatti/BHP-SABLON.dxf`, kullanıcının kendi çiziminden (harmandalı_BHP.dxf, depoda YOK: kişisel bilgi)
   `baglanti-hatti/sablon-olustur.py` (ezdxf) ile üretilir. Değişen yazılar `{{ANAHTAR}}`; Excel/resim (OLE) nesneleri silindi,
