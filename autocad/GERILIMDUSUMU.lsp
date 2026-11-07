@@ -604,20 +604,33 @@
   (ict:say (entmakex (append (list '(0 . "SOLID")) (ict:ortak)
                   (list '(100 . "AcDbTrace") (cons 10 (ict:p3 p1)) (cons 11 (ict:p3 p2)) (cons 12 (ict:p3 p3)) (cons 13 (ict:p3 p3)))))))
 (defun ict:kalin (s) (strcat "{\\fArial|b1;" s "}"))
-;; Pano (dağıtım tablosu): çerçeve, köşegen, yarısı dolu
+;; Sembol ölçüsü: dikdörtgen 3,2h x 2,2h
+;; Işık tali dağıtım tablosu (TN): dikdörtgen, sol üstten sağ alta köşegen, alt yarısı dolu
 (defun ict:pano (x y h / w v)
   (setq w (* 1.6 h) v (* 1.1 h))
   (ict:katman "GD-DOLGU")
-  (ict:ucgen (list (- x w) (- y v)) (list (+ x w) (- y v)) (list (+ x w) (+ y v)))
+  (ict:ucgen (list (- x w) (+ y v)) (list (- x w) (- y v)) (list (+ x w) (- y v)))
   (ict:katman "GD-SEMA")
   (ict:dortgen (- x w) (- y v) (+ x w) (+ y v))
-  (ict:cizgi (list (- x w) (- y v)) (list (+ x w) (+ y v))))
+  (ict:cizgi (list (- x w) (+ y v)) (list (+ x w) (- y v))))
+;; Sayaç panosu (AT): kalın çerçeveli dikdörtgen, içinde AT
+(defun ict:sayac-panosu (x y h / w v)
+  (setq w (* 1.6 h) v (* 1.1 h))
+  (ict:katman "GD-SEMA")
+  (ict:say (entmakex (append (list '(0 . "LWPOLYLINE")) (ict:ortak)
+                  (list '(100 . "AcDbPolyline") '(90 . 4) '(70 . 1) (cons 43 (* 0.18 h))
+                        (list 10 (- x w) (- y v)) (list 10 (+ x w) (- y v))
+                        (list 10 (+ x w) (+ y v)) (list 10 (- x w) (+ y v))))))
+  (ict:sinir (- x w) (- y v)) (ict:sinir (+ x w) (+ y v))
+  (ict:katman "GD-YAZI")
+  (ict:yazi (list x y) (ict:kalin "AT") (* 0.9 h) 5))
 ;; Şebeke bağlantı noktası: dolu küçük kare
 (defun ict:nokta (x y h / r)
   (setq r (* 0.45 h))
   (ict:katman "GD-SEMA")
-  (ict:ucgen (list (- x r) (+ y r)) (list (+ x r) (+ y r)) (list (+ x r) (- y r)))
-  (ict:ucgen (list (- x r) (+ y r)) (list (- x r) (- y r)) (list (+ x r) (- y r))))
+  (ict:say (entmakex (append (list '(0 . "SOLID")) (ict:ortak)
+                  (list '(100 . "AcDbTrace") (cons 10 (ict:p3 (list (- x r) (+ y r)))) (cons 11 (ict:p3 (list (+ x r) (+ y r))))
+                        (cons 12 (ict:p3 (list (- x r) (- y r)))) (cons 13 (ict:p3 (list (+ x r) (- y r)))))))))
 ;; Yük: aşağı inen çizgi ve dolu ok
 (defun ict:yuk (x y h guc)
   (ict:katman "GD-SEMA")
@@ -775,8 +788,8 @@
   (ict:stil)
   (setq x0 (car pt) y (cadr pt) y0 y m (* 1.6 h) satirh (* 2.2 h) tx (* 0.85 h))
   ;; tablo sütunları (genişlik, başlık)
-  (setq kol (list (list (* 13.0 h) "HAT") (list (* 14.0 h) "KABLO") (list (* 7.5 h) "FAZ") (list (* 6.0 h) "L (m)")
-                  (list (* 8.0 h) "N (W)") (list (* 6.5 h) "S (mm²)") (list (* 9.0 h) "KATSAYI") (list (* 6.5 h) "%e")))
+  (setq kol (list (list (* 13.0 h) "HAT") (list (* 14.0 h) "KABLO") (list (* 7.5 h) "FAZ") (list (* 6.0 h) "L [m]")
+                  (list (* 8.0 h) "N [W]") (list (* 6.5 h) "S [mm²]") (list (* 9.0 h) "c") (list (* 6.5 h) "%e")))
   ;; çerçeve genişliği: tablo ve şemaya göre
   (setq g (+ (* 5.0 h) (if mevcut 0.0 (* 21.0 h))))
   (foreach x liste (setq g (+ g (ict:parca-genislik (nth 8 x) h) (* 3.2 h))))
@@ -795,8 +808,9 @@
   (ict:katman "GD-BASLIK")
   (ict:yazi (list (+ x0 m) (- y (* 1.2 h))) (ict:kalin "GERİLİM DÜŞÜMÜ VE AKIM HESABI") (* 1.4 h) 1)
   (ict:katman "GD-YAZI")
-  (ict:yazi (list (- (+ x0 g) m) (- y (* 1.5 h)))
-            (if mevcut "Branşman mevcut" "Branşman ileride projelendirilecek") tx 3)
+  (if mevcut
+    (ict:yazi (list (- (+ x0 g) m) (- y (* 1.5 h)))
+              (strcat "Mevcut branşman: " (ict:kablo-adi btip (car bsatir) bfk) " · L = " (ict:ns bL) " m") tx 3))
   (setq y (- y (* 4.0 h)))
   (ict:katman "GD-CERCEVE") (ict:cizgi (list x0 (+ y (* 0.25 h))) (list (+ x0 g) (+ y (* 0.25 h))))
 
@@ -817,17 +831,20 @@
   (if mevcut
     (progn
       (ict:bolum "1. AKIM YÖNÜNDEN KONTROL")
-      (ict:satir (strcat "In = Nt / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen)
-                         " = " (ict:kalin (strcat (ict:n2 In) " A")) (if akim-ok " < " " > ")
-                         (if Iz (ict:ns Iz) "-") " A  (" (ict:kablo-adi btip (car bsatir) bfk) ", " bdos-ad ")") "GD-YAZI")
+      (ict:satir (strcat "In = Nt / (" (if (= bfk "3") "√3 · " "") "U · cos φ) = " (ict:n0 nt) " / ("
+                         (if (= bfk "3") "√3 · " "") (ict:ns u) " · " (ict:ns cosfi) ") = "
+                         (ict:kalin (strcat (ict:n2 In) " A")) (if akim-ok "  ≤  " "  >  ")
+                         "Iz = " (if Iz (ict:ns Iz) "-") " A") "GD-YAZI")
+      (ict:satir (strcat "Iz: " (ict:kablo-adi btip (car bsatir) bfk) " " bdos-ad " akım taşıma kapasitesi") "GD-YAZI")
       (ict:satir (ict:kalin (strcat "Mevcut branşman " (ict:kablo-adi btip (car bsatir) bfk)
                                     (if akim-ok " uygundur." " uygun değildir.")))
                  (if akim-ok "GD-SONUC" "GD-UYARI")))
     (progn
       (ict:bolum "1. AKIM YOĞUNLUĞU HESABI")
-      (ict:satir (strcat "In = Nk / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = "
+      (ict:satir (strcat "In = Nk / (" (if (= bfk "3") "√3 · " "") "U · cos φ) = "
                          (if (ict:sadece-sayi-mi talep-s) (ict:n0 nt) (ict:parantezli (ict:islem-yaz talep-s)))
-                         " / " (ict:ns bolen) " = " (ict:kalin (strcat (ict:n2 In) " A"))) "GD-YAZI")
+                         " / (" (if (= bfk "3") "√3 · " "") (ict:ns u) " · " (ict:ns cosfi) ") = "
+                         (ict:kalin (strcat (ict:n2 In) " A"))) "GD-YAZI")
       (ict:satir (ict:kalin "Bağlantı hattı ileride projelendirilecektir.") "GD-UYARI")))
   (setq y (- y (* 0.6 h)))
 
@@ -851,12 +868,12 @@
     (setq c (ict:katsayi (nth 1 x) (nth 2 x))
           eY (atof (rtos (/ (* c (nth 5 x) (nth 4 x)) (nth 3 x)) 2 2)))
     (ict:tablo-satir (list (strcat "%e" (itoa (nth 0 x)) " " (nth 10 x))
-                           (nth 8 x) (if (= (nth 1 x) "3") "Trifaze" "Monofaze") (ict:ns (nth 4 x))
+                           (nth 8 x) (if (= (nth 1 x) "3") "3~" "1~") (ict:ns (nth 4 x))
                            (ict:n0 (nth 5 x)) (ict:ns (nth 3 x)) (ict:ns c) (ict:n2 eY)) nil))
   ;; toplam satırı
   (setq x (+ tx0 (apply '+ (mapcar 'car (reverse (cdr (reverse kol)))))))
   (ict:katman "GD-YAZI")
-  (ict:yazi (list (- x m) (- y (/ satirh 2.0))) (ict:kalin "TOPLAM GERİLİM DÜŞÜMÜ") tx 6)
+  (ict:yazi (list (- x m) (- y (/ satirh 2.0))) (ict:kalin "TOPLAM GERİLİM DÜŞÜMÜ  Σ%e") tx 6)
   (ict:katman (if (<= toplam limit) "GD-SONUC" "GD-UYARI"))
   (ict:yazi (list (+ x (/ (car (last kol)) 2.0)) (- y (/ satirh 2.0))) (ict:kalin (ict:n2 toplam)) tx 5)
   (setq y (- y satirh))
@@ -870,11 +887,15 @@
     (ict:cizgi (list x ys) (list x (if (equal c (last kol)) y (+ y satirh)))))
   (setq y (- y (* 1.4 h)))
   ;; formüller
-  (ict:satir "Formül: %e = katsayı x N x L / S     (katsayı: trifaze 100 / (k x U²), monofaze 200 / (k x U²))" "GD-YAZI")
+  (ict:satir (strcat (ict:kalin "%e = c · N · L / S") "      N: hat gücü [W]   L: hat uzunluğu [m]   S: iletken kesiti [mm²]") "GD-YAZI")
+  (ict:satir (strcat "c = 100 / (κ · U²) üç fazlı,   c = 200 / (κ · U²) tek fazlı;   κ [m/Ω·mm²]: Cu "
+                     (ict:ns (ict:ayar "KCU" 56.0)) ", Al " (ict:ns (ict:ayar "KAL" 35.0))
+                     ";   U: " (ict:ns (ict:ayar "U3" 380.0)) " V / " (ict:ns (ict:ayar "U1" 220.0)) " V") "GD-YAZI")
+  (setq y (- y (* 0.4 h)))
   (foreach x liste
     (setq c (ict:katsayi (nth 1 x) (nth 2 x))
           eY (atof (rtos (/ (* c (nth 5 x) (nth 4 x)) (nth 3 x)) 2 2)))
-    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (ict:n0 (nth 5 x)) " x " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " · " (ict:n0 (nth 5 x)) " · " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))
                        " = " (ict:kalin (ict:n2 eY))) "GD-YAZI"))
   (setq y (- y (* 0.6 h)))
 
@@ -891,9 +912,8 @@
       (ict:yazi (list (+ px (* 9.0 h)) (+ y (* 0.7 h))) "Bağlantı hattı" (* 0.75 h) 8)
       (ict:yazi (list (+ px (* 9.0 h)) (- y (* 0.7 h))) "ileride projelendirilecek" (* 0.75 h) 2)
       (setq px (+ px (* 18.0 h) (* 1.6 h)))
-      (ict:pano px y h)
+      (ict:sayac-panosu px y h)
       (ict:katman "GD-YAZI")
-      (ict:yazi (list px (+ y (* 1.6 h))) (ict:kalin "AT") (* 0.85 h) 8)
       (ict:yazi (list px (- y (* 1.6 h))) (strcat "Nt = " (ict:n0 nt) " W") (* 0.75 h) 2)
       (setq px (+ px (* 1.6 h))))
     (setq px (+ px (* 0.5 h))))
@@ -907,10 +927,13 @@
       (ict:yuk px y h (nth 5 x))
       (progn
         (setq px (+ px (* 1.6 h)))
-        (ict:pano px y h)
+        (if (nth 6 x)
+          (ict:sayac-panosu px y h)
+          (progn
+            (ict:pano px y h)
+            (ict:katman "GD-YAZI")
+            (ict:yazi (list px (+ y (* 1.6 h))) (ict:kalin (strcat "TN" (itoa (- i (if mevcut 0 -1))))) (* 0.85 h) 8)))
         (ict:katman "GD-YAZI")
-        (ict:yazi (list px (+ y (* 1.6 h)))
-                  (ict:kalin (cond ((nth 6 x) "AT") ((= i (if mevcut 1 0)) "TN") (T (strcat "TN" (itoa (- i (if mevcut 0 -1))))))) (* 0.85 h) 8)
         (ict:yazi (list px (- y (* 1.6 h))) (strcat (if (nth 6 x) "Nt" "N") " = " (ict:n0 (nth 5 x)) " W") (* 0.75 h) 2)
         (setq px (+ px (* 1.6 h)))))
     (setq i (1+ i)))
@@ -921,8 +944,8 @@
   (setq y (- y (* 1.8 h)))
   (ict:katman "GD-YAZI")
   (ict:yazi (list (+ x0 m) y)
-            (strcat (ict:kalin "SONUÇ:   ") adlar " = " degerler " = " (ict:kalin (ict:n2 toplam))
-                    (if (<= toplam limit) " < " " > ") (ict:ns limit)) tx 4)
+            (strcat (ict:kalin "SONUÇ:   ") "Σ%e = " adlar " = " degerler " = " (ict:kalin (ict:n2 toplam))
+                    (if (<= toplam limit) "  ≤  " "  >  ") (ict:ns limit)) tx 4)
   (ict:katman (if (and akim-ok (<= toplam limit)) "GD-SONUC" "GD-UYARI"))
   (ict:yazi (list (- (+ x0 g) m) y)
             (ict:kalin (cond ((not akim-ok) "BRANŞMAN UYGUN DEĞİLDİR")

@@ -58,7 +58,7 @@ function svg(nesneler) {
   }
   for (const n of nesneler) {
     if (n.tip === 'LINE') parcalar.push(`<line x1="${X(n.x1)}" y1="${Y(n.y1)}" x2="${X(n.x2)}" y2="${Y(n.y2)}" stroke="${renk(n.renk)}" stroke-width="${Math.max(0.12, (n.kalinlik || 25) / 100)}"/>`);
-    else if (n.tip === 'LWPOLYLINE') parcalar.push(`<polygon points="${n.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}" fill="none" stroke="${renk(n.renk)}" stroke-width="${Math.max(0.12, (n.kalinlik || 25) / 100)}"/>`);
+    else if (n.tip === 'LWPOLYLINE') parcalar.push(`<polygon points="${n.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}" fill="none" stroke="${renk(n.renk)}" stroke-width="${n.genislik || Math.max(0.12, (n.kalinlik || 25) / 100)}"/>`);
     else if (n.tip === 'CIRCLE') parcalar.push(`<circle cx="${X(n.x)}" cy="${Y(n.y)}" r="${n.r}" fill="none" stroke="${renk(n.renk)}" stroke-width="0.25"/>`);
     else if (n.tip === 'MTEXT') {
       const satirlar = mtextSatirlari(n.yazi, renk(n.renk));

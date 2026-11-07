@@ -248,7 +248,7 @@ function hesapla() {
   $('bransmanKart').hidden = !mevcut;
   const faz = $('sfaz').querySelector('[aria-pressed="true"]').dataset.v;
   const U = ayar('u-' + faz), cosfi = ayar('cosfi'), limit = ayar('limit');
-  const kok = faz === '3' ? '√3 x ' : '';
+  const kok = faz === '3' ? '√3 · ' : '';
   const kurulu = islem($('kurulu').value);
   const Nt = islem($('talep').value);
   const talepIslemMi = isFinite(Nt) && !/^\s*[\d.,]+\s*$/.test($('talep').value);
@@ -269,11 +269,11 @@ function hesapla() {
     const ad = kabloAdi(tip, b.etiket, faz);
     akimUygun = Iz != null && In <= Iz;
     satirlarCikti.push('AKIM YÖNÜNDEN KONTROL');
-    satirlarCikti.push(`In = Nt / (${kok}U x CosQ) = ${tr(Nt, 0)} W / ${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A ${akimUygun ? '<' : '>'} ${Iz ?? '-'} A`);
+    satirlarCikti.push(`In = Nt / (${kok}U · cos φ) = ${tr(Nt, 0)} W / ${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A ${akimUygun ? '<' : '>'} ${Iz ?? '-'} A`);
     satirlarCikti.push(`MEVCUT BRANŞMAN ${ad} ${akimUygun ? 'UYGUNDUR.' : 'UYGUN DEĞİLDİR.'}`);
   } else {
     satirlarCikti.push('AKIM YOĞUNLUĞU HESABI');
-    satirlarCikti.push(`In = Nk / (${kok}U x CosQ) = ${talepIslemMi ? (/[+\-]/.test($('talep').value) && !/^\s*\(.*\)\s*$/.test($('talep').value) ? '(' + yazilanIslem($('talep').value) + ')' : yazilanIslem($('talep').value)) + ' / ' : tr(Nt, 0) + ' / '}${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A`);
+    satirlarCikti.push(`In = Nk / (${kok}U · cos φ) = ${talepIslemMi ? (/[+\-]/.test($('talep').value) && !/^\s*\(.*\)\s*$/.test($('talep').value) ? '(' + yazilanIslem($('talep').value) + ')' : yazilanIslem($('talep').value)) + ' / ' : tr(Nt, 0) + ' / '}${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A`);
     satirlarCikti.push('BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR.');
   }
   satirlarCikti.push('', 'GERİLİM DÜŞÜMÜ HESABI', '');
@@ -300,8 +300,8 @@ function hesapla() {
     toplam += eY; adlar.push(`%e${no}`); degerler.push(tr(eY));
     if (h.hatNo != null) $('hb-' + h.hatNo).textContent = `%e${no} · ${h.isim.charAt(0) + h.isim.slice(1).toLocaleLowerCase('tr')} · ${h.kablo} · ${h.faz === '3' ? 'trifaze' : 'monofaze'}`;
     satirlarCikti.push(`${h.isim} (${h.kablo})${h.ad ? ': ' + h.ad : ''}`);
-    satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${h.nt ? 'Nt' : 'N'} x L / S`);
-    satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${tr(h.P, 0)} x ${trSerbest(h.L)} / ${trSerbest(h.S)}`);
+    satirlarCikti.push(`%e${no} = ${trSerbest(c)} · ${h.nt ? 'Nt' : 'N'} · L / S`);
+    satirlarCikti.push(`%e${no} = ${trSerbest(c)} · ${tr(h.P, 0)} · ${trSerbest(h.L)} / ${trSerbest(h.S)}`);
     satirlarCikti.push(`%e${no} = ${tr(eY)}`, '');
   });
   toplam = +toplam.toFixed(2);

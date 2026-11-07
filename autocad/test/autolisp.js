@@ -254,7 +254,7 @@ const nesneYap = dxf => {
     ekle({ tip, x1: num(a[0]), y1: num(a[1]), x2: num(b[0]), y2: num(b[1]) });
   } else if (tip === 'LWPOLYLINE') {
     const pts = l.filter(x => !x.dot && x[0] === 10).map(x => [num(x[1]), num(x[2])]);
-    ekle({ tip, pts });
+    ekle({ tip, pts, genislik: grup(43) != null ? num(grup(43)) : null });
   } else if (tip === 'SOLID') {
     ekle({ tip, pts: [10, 11, 12, 13].map(k => grup(k)).map(p => [num(p[0]), num(p[1])]) });
   } else throw new LispError('entmake bilinmeyen tip ' + tip);
