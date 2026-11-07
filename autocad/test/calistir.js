@@ -2,7 +2,7 @@
 // Çalıştırma: node autocad/test/calistir.js
 const fs = require('fs');
 const path = require('path');
-const L = require('./autolisp.js');
+const L = require('../../ortak/autolisp.js');
 
 L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8'));
 

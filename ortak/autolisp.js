@@ -1,6 +1,7 @@
-// Küçük bir AutoLISP yorumlayıcısı: GERILIMDUSUMU.lsp dosyasını AutoCAD olmadan
-// sırayla verilen cevaplarla çalıştırıp hataları yakalamak için.
+// Küçük bir AutoLISP yorumlayıcısı: GERILIMDUSUMU.lsp komutunu AutoCAD olmadan,
+// sırayla verilen cevaplarla çalıştırır. Hem testlerde (Node) hem web aracında (tarayıcı) kullanılır.
 // Gerçek AutoCAD'in yalnızca komutta kullanılan kısmını taklit eder.
+(function () {
 'use strict';
 
 class Sym { constructor(n) { this.n = n; } toString() { return this.n; } }
@@ -282,4 +283,6 @@ function komut(ad, girdiler) {
     throw e;
   }
 }
-module.exports = { yukle, komut, durum, oku };
+const api = { yukle, komut, durum, oku };
+if (typeof module !== 'undefined' && module.exports) module.exports = api; else window.AutoLISP = api;
+})();

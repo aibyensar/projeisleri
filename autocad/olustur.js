@@ -27,6 +27,9 @@ const veri = `;;; Kablo verisi: (tip iletken (döşemeler) ((etiket kesit (akım
 const kaynak = fs.readFileSync(path.join(__dirname, 'kaynak', 'gerilimdusumu-kaynak.lsp'), 'utf8');
 const cikti = kaynak.replace(';;@@VERI@@', veri).replace(/\r?\n/g, '\r\n');
 fs.writeFileSync(path.join(__dirname, 'GERILIMDUSUMU.lsp'), cikti, 'utf8');
+// Web aracı aynı komutu tarayıcıda çalıştırır
+fs.writeFileSync(path.join(__dirname, '..', 'ortak', 'gerilimdusumu-lsp.js'),
+  '// autocad/olustur.js tarafından üretilir; elle değiştirmeyin.\nwindow.GD_LSP = ' + JSON.stringify(cikti) + ';\n', 'utf8');
 
 // Parantez dengesi kontrolü (yazıların ve yorumların dışında)
 let derinlik = 0, yazida = false, yorumda = false, enDusuk = 0;
