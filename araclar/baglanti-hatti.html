@@ -125,7 +125,7 @@
     <div id="onizleme"></div>
   </div>
 
-  <div class="kart">
+  <div class="kart" hidden>
     <h2 style="margin-top:0">6. Malzeme listesi</h2>
     <p class="not">Uzunluk ve bağlantı türüne göre önerildi. Miktarları düzeltebilir, satır ekleyip silebilirsiniz.</p>
     <div class="tablo-kutu"><table class="duz" id="malzeme"></table></div>
@@ -133,7 +133,7 @@
     <button type="button" class="kucuk-dugme" id="malzemeSifirla" style="margin-top:8px">Öneriye dön</button>
   </div>
 
-  <div class="kart">
+  <div class="kart" hidden>
     <h2 style="margin-top:0">7. Genel notlar</h2>
     <p class="not">Paftadaki notlar. Kaynakları: sizin kablo kanalı detayınız ve şartname metniniz, GDZ bağlantı görüşü eki. Her satır bir madde; düzeltebilir, ekleyip silebilirsiniz.</p>
     <textarea id="notlar" rows="12" style="width:100%;font:inherit;font-size:.85rem;padding:8px;border-radius:6px;border:1px solid var(--cizgi);background:var(--zemin);color:var(--yazi)"></textarea>
@@ -167,9 +167,9 @@
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <p class="durum" id="d-indir"></p>
     <ol class="adimlar">
-      <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>4 dosya aynı yerde</b> kalsın: çizim, logo ve 2 resim.</li>
+      <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>3 dosya aynı yerde</b> kalsın: çizim ve 2 resim.</li>
       <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
-      <li>Proje tek paftadır; TEDAŞ kablo uygulama usul ve esasları (sizin metniniz) paftanın sağ sütunundadır.</li>
+      <li>Pafta, GDZ'den onaylı iki projenizin düzenindedir (açıklamalar, boru çapı tablosu, sembol tabloları, kablo kanalı ve montaj detayı, TEDAŞ metni sizin çiziminizden).</li>
       <li>Resim görünmezse: <code>XREF</code> yazıp Enter, resmin yolunu zip'i açtığınız klasör olarak gösterin.</li>
     </ol>
   </div>
@@ -496,7 +496,7 @@ function onizle() {
   if (!D.kablo) { $('onizleme').innerHTML = ''; return; }
   if (!D.sablon) return;
   const { c, bilgi } = cizim(), B = bilgi.bolgeler, pay = k => [B[k][0] - 2, B[k][1] - 2, B[k][2] + 2, B[k][3] + 2];
-  $('onizleme').innerHTML = [['Tek hat şeması', 'tekhat'], ['Gerilim düşümü ve akım hesabı', 'hesap'], ['Güç dağılım tablosu', 'guc'], ['Malzeme listesi', 'malzeme'], ['Genel notlar', 'notlar']]
+  $('onizleme').innerHTML = [['Tek hat şeması', 'tekhat'], ['Yük dağılımı ve tablo yükleme cetveli', 'cetvel'], ['Gerilim düşümü ve akım hesabı', 'hesap'], ['Güç dağıtım tablosu', 'guc']]
     .map(([ad, k]) => `<div class="onizleme"><h4>${ad}</h4>${BHPCizim.svg(c, pay(k), 900)}</div>`).join('');
 }
 
@@ -508,7 +508,6 @@ $('indir').addEventListener('click', async () => {
   klasor.file(`BHP-${ad}.dxf`, dxf);
   if (D.uydu) klasor.file(uyduAd, D.uydu);
   if (D.vaziyet) klasor.file(vazAd, D.vaziyet);
-  klasor.file('agy-logo.png', await logoAl());
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const dosyaAdi = `BHP-${ad}.zip`;
   // claude.ai içinde sayfa kendisi indiremez; platformun "dosya kaydet" izniyle verilir

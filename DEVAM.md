@@ -127,12 +127,22 @@ talep 57839 W, kurulu 198700 W, koruma TMŞ+YKŞ 4x125A 300mA, KONUT, SIĞ+Z+3, 
 sayaç önü sigortaları tabloda, tek hatta (her grup ayrı kol: sigorta → sayaç → iç tesisat) ve malzemede; indir butonu yalnız
 gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullanıcının uyarısı: "eksik olursa revize gelir, eksiksiz olmalı".
 
-**8 Kasım oturumu:** kullanıcı "sayaç panosu parsel çizgisine paralel olmalı, çizimler amatörce, montaj detayı eksik, projede baya eksik var" dedi.
-Yapılan: vaziyette "3. Parsel sınırı (2 nokta)" işareti (D.isaret.sinir); pano sembolü bu çizgiye paralel döner (BHPCizim.panoAci); yayınlandı (sürüm 8).
-Kullanıcıdan istendi: onaylanmış, beğendiği bir BHP örneği (DWG/PDF) ve montaj detayında beklediği çizimler; eksiklerin listesi.
+**8 Kasım oturumu (v7 — onaylı proje düzeni, yayında sürüm 9):** kullanıcı "çizimler amatörce, montaj detayı eksik, pano parsel
+çizgisine paralel olmalı" dedi ve GDZ'den onaylı iki projesini (boxlu: Aslı İnan, direkli: Semih Işık; PDF + DWG) gönderdi.
+- Şablon artık kullanıcının onaylı boxlu DWG'sinin kendisi (aynı kâğıt -269.5..684.6 x 5393.6..6293.6). Kurulum:
+  `node baglanti-hatti/araclar/dwg-oku.mjs X.dwg X.json` (npm i @mlightcad/libredwg-web, araclar klasöründe çalıştırılır) →
+  `python3 baglanti-hatti/sablon-olustur.py box.json direk.json baglanti-hatti/BHP-SABLON.dxf`.
+  `baglanti-hatti/araclar/json-dxf.py` libredwg JSON'unu DXF'e çevirir (dwg2dxf derlemek izin verilmedi). DWG/JSON'lar depoda YOK (kişisel bilgi).
+- DWG'deki Excel tabloları ve resimler OLE olduğu için gelmez: boru çapı tablosu şablonda çizildi; güç dağıtım tablosu, yük dağılımı
+  cetveli (yeni, BHPCizim.cetvel), gerilim düşümü, tek hat (kullanıcının düzeni: daire/box, kesikli kablo + ok, kesikli "mühürlenebilir alan")
+  bhp-cizim.js ile 999 bölgelerine çizilir. Montaj detayı: boxlu ve direkli projeden ayrı bloklar (kullanılmayan silinir).
+- Malzeme listesi ve genel notlar paftadan çıktı (onaylı projelerde yok); web sayfasında o kartlar gizli. Zip'te logo yok (3 dosya).
+- Vaziyette "3. Parsel sınırı (2 nokta)": pano bu çizgiye paralel; pano sembolü kullanıcının sembol tablosundaki gibi (iki dolu üçgen),
+  güzergâh kırmızı kesikli. Çizgi tipleri BHP-KESIK / BHP-GIZLI (kullanıcının DASHED'i çok sık).
+- Eşzamanlılık katsayısı satırı konmadı (onaylı projedeki 0,43 hesapla tutmuyor); kullanıcıya sorulacak.
 
 **AÇIK KONULAR (sıradaki)**
-0. ÖNCELİK: çizim kalitesi ve montaj detayı (kullanıcı örneğine göre baştan elden geçirilecek).
+0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
    soruldu (resimden oku mu, satır üret mi). Cevaba göre resimden okumayı sağlamlaştır.
 2. Kullanıcı v6 zip'lerini (tek pafta, sayaç önü sigortalı) AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.

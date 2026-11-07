@@ -1,294 +1,187 @@
-# Bağlantı hattı projesi (BHP) şablonu — 3. sürüm (düzenli pafta).
+# Bağlantı hattı projesi (BHP) şablonu — 4. sürüm: kullanıcının GDZ'den onaylı iki projesi temel alınır.
 #
 # Kullanım (depo kökünden):
-#   python3 baglanti-hatti/sablon-olustur.py <direkli-proje.dxf> <boxlu-proje.dxf> <kapak.json> <logo.png> <cikis.dxf>
-#   kapak.json: kullanıcının KAPAK.dwg dosyasının libredwg-web ile okunmuş hali (baglanti-hatti/araclar/dwg-oku.mjs)
+#   node baglanti-hatti/araclar/dwg-oku.mjs <boxlu-BHP.dwg> box.json      (aynısı direkli proje için)
+#   python3 baglanti-hatti/sablon-olustur.py box.json direk.json baglanti-hatti/BHP-SABLON.dxf
 #
-# Pafta: kullanıcının paftasıyla aynı kâğıt (954 x 900 mm), antet (kapak) sol altta.
-# Tek pafta: çerçeveli bölümler; sağ sütunda TEDAŞ kablo uygulama usul ve esasları (kullanıcının metni, aynen).
-# Sabit kısımlar burada çizilir; her işte değişenleri (tek hat, hesap, güç dağılım, malzeme, notlar, vaziyet
-# işaretleri) web aracı ortak/bhp-cizim.js ile bu dosyanın başındaki 999 açıklamasında yazan bölgelere çizer.
-import sys, json, math, ezdxf
+# Taban: boxlu onaylı proje (çok bağımsız bölümlü; yük dağılım cetveline yer var). Sabit kısımlar aynen kalır:
+# elektrik tesisatı açıklamaları, kablo kanalı detayı ve uyarı yazısı, kuvvetli/zayıf akım sembolleri, TEDAŞ metni,
+# vaziyet sembol kutusu, "geçiş izinleri" uyarısı, antet. Direkli projenin montaj detayı ayrı blok olarak eklenir;
+# web aracı kullanılmayanı siler.
+# DWG'deki gömülü Excel tabloları ve resimler (OLE) DXF'e geçmez; onların yerine:
+#   - PVC boru çapı tablosu burada çizgi + yazı olarak çizilir (kullanıcının tablosu, aynen),
+#   - güç dağıtım tablosu, yük dağılımı cetveli, gerilim düşümü hesabı, tek hat şeması ve vaziyet işaretleri
+#     her işte ortak/bhp-cizim.js ile bu dosyanın başındaki 999 açıklamasında yazan bölgelere çizilir,
+#   - uydu ve vaziyet resimleri IMAGE olarak bağlanır (dosyalar DXF ile aynı klasörde).
+import sys, os, json, tempfile, ezdxf
 from ezdxf import bbox
 from ezdxf.addons import Importer
 from ezdxf.enums import TextEntityAlignment as A
-from ezdxf.math import Matrix44
 
-kaynak, kaynakBox, kapakJson, logoPng, cikis = sys.argv[1:6]
-from PIL import Image
-LOGO_PX = Image.open(logoPng).size
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'araclar'))
+import importlib.util
+_sp = importlib.util.spec_from_file_location('jsondxf', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'araclar', 'json-dxf.py'))
+jsondxf = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(jsondxf)
 
-d = ezdxf.new('R2018', setup=False, units=4)
+boxJson, direkJson, cikis = sys.argv[1:4]
+PAFTA = (-269.5, 5393.6, 684.6, 6293.6)                  # kullanıcının kâğıdı (954 x 900 mm)
+gecici = tempfile.mkdtemp()
+jsondxf.cevir(boxJson, os.path.join(gecici, 'box.dxf'), [PAFTA[0] - 6, PAFTA[1] - 6, PAFTA[2] + 6, PAFTA[3] + 6])
+jsondxf.cevir(direkJson, os.path.join(gecici, 'direk.dxf'), [PAFTA[0] - 6, PAFTA[1] - 6, PAFTA[2] + 6, PAFTA[3] + 6])
+d = ezdxf.readfile(os.path.join(gecici, 'box.dxf'))
+dd = ezdxf.readfile(os.path.join(gecici, 'direk.dxf'))
 m = d.modelspace()
-d.header['$LTSCALE'] = 1.0
-d.header['$PSLTSCALE'] = 0
 
-# ---------- Yazı stilleri ve katmanlar (siyah baskı, tek yazı tipi) ----------
-d.styles.add('BHP', font='arial.ttf')
-d.styles.add('BHP-K', font='arialbd.ttf')
-KAT = {  # ad: (renk, çizgi kalınlığı 1/100 mm)
-    'BHP-CERCEVE': (7, 70), 'BHP-BOLUM': (7, 35), 'BHP-BASLIK': (7, 25), 'BHP': (7, 25), 'BHP-YAZI': (7, 18),
-    'BHP-SEMBOL': (7, 35), 'BHP-KABLO': (1, 50), 'BHP-DOLGU': (254, 0), 'BHP-RESIM': (7, 13), 'BHP-PARSEL': (1, 50),
-    'BHP-DETAY': (7, 18), 'BHP-DETAY-DIREK': (7, 18), 'BHP-DETAY-BOX': (7, 18), 'BHP-ANTET': (7, 25), 'BHP-VAZIYET': (1, 35),
-}
-for ad, (renk, lw) in KAT.items():
-    d.layers.add(ad, color=renk, lineweight=lw)
-for lt, desen in (('DASHED', [4.0, 2.5, -1.5]), ('HIDDEN', [1.5, 0.75, -0.75])):
+
+def kut(e):
+    b = bbox.extents([e])
+    return (b.extmin.x, b.extmin.y, b.extmax.x, b.extmax.y) if b.has_data else None
+
+
+def icinde(e, x0, y0, x1, y1):
+    k = kut(e)
+    return k and k[0] >= x0 and k[1] >= y0 and k[2] <= x1 and k[3] <= y1
+
+
+def metin(e):
+    t = e.dxftype()
+    if t == 'TEXT': return e.dxf.text
+    if t == 'MTEXT': return e.plain_text()
+    return ''
+
+
+def sil(bolge, koru=lambda e: False, yer=m):
+    n = 0
+    for e in list(yer):
+        if icinde(e, *bolge) and not koru(e): yer.delete_entity(e); n += 1
+    return n
+
+
+# ---------- Katmanlar ve yazı stilleri (üretilen çizimler için) ----------
+d.styles.add('BHP', font='arial.ttf') if 'BHP' not in d.styles else None
+d.styles.add('BHP-K', font='arialbd.ttf') if 'BHP-K' not in d.styles else None
+for ad, (renk, lw) in {'BHP': (7, 25), 'BHP-SEMBOL': (7, 35), 'BHP-KABLO': (7, 50), 'BHP-DOLGU': (254, 0), 'BHP-RESIM': (7, 13),
+                       'BHP-TABLO': (7, 25), 'BHP-DETAY-DIREK': (7, 18), 'BHP-DETAY-BOX': (7, 18), 'BHP-VAZIYET': (1, 35),
+                       'BHP-ANTET': (7, 25)}.items():
+    if ad not in d.layers: d.layers.add(ad, color=renk, lineweight=lw)
+for lt, desen in (('BHP-KESIK', [4.0, 2.5, -1.5]), ('BHP-GIZLI', [1.5, 0.75, -0.75])):
     if lt not in d.linetypes: d.linetypes.add(lt, pattern=desen, description=lt)
 
-def yazi(t, x, y, h=2.5, stil='BHP', hiza=A.MIDDLE_LEFT, katman='BHP-YAZI', yer=None):
-    yer = yer or m
-    yer.add_text(t, height=h, dxfattribs={'style': stil, 'layer': katman}).set_placement((x, y), align=hiza)
-def cizgi(x1, y1, x2, y2, katman='BHP', lt=None, yer=None):
-    a = {'layer': katman}
-    if lt: a['linetype'] = lt
-    (yer or m).add_line((x1, y1), (x2, y2), dxfattribs=a)
-def kutu(x1, y1, x2, y2, katman='BHP', yer=None, lt=None):
-    a = {'layer': katman}
-    if lt: a['linetype'] = lt
-    (yer or m).add_lwpolyline([(x1, y1), (x2, y1), (x2, y2), (x1, y2)], close=True, dxfattribs=a)
-def dolu(noktalar, katman='BHP-SEMBOL', renk=7, yer=None):
-    h = (yer or m).add_hatch(color=renk, dxfattribs={'layer': katman}); h.paths.add_polyline_path(noktalar, is_closed=True)
+# ---------- Her işte değişen kısımlar: silinir (yerlerine web aracı çizer) ----------
+SEMBOL_BASLIK = lambda e: any(s in metin(e).upper() for s in ('KUVVETL', 'ZAYIF', 'SEMBOLLER'))
+print('tek hat silindi', sil((-35, 5712, 390, 5796), SEMBOL_BASLIK))
+GECIS = lambda e: 'GEÇİŞ' in metin(e).upper() or 'GECIS' in metin(e).upper()
+VAZ_RESIM = (-263.2, 5822.0, 13.7, 5989.7)               # boxlu projede TKGM resminin yeri
+UYDU_RESIM = (-261.5, 5994.8, 52.7, 6159.8)              # GDZ uydu görüntüsünün yeri
+print('vaziyet yazıları silindi', sil((VAZ_RESIM[0] - 2, VAZ_RESIM[1] - 2, VAZ_RESIM[2] + 2, VAZ_RESIM[3] + 2), GECIS))
+print('uydu üstü silindi', sil(UYDU_RESIM, GECIS))
 
-# ---------- Kâğıt ve bölümler ----------
-PX0, PY0, PX1, PY1 = -269.5, 5393.6, 684.6, 6293.6      # kullanıcının paftası (954 x 900 mm)
-G = 5.0                                                   # bölümler arası boşluk
-BAS = 9.0                                                 # bölüm başlık şeridi yüksekliği
-BOLUM = {                                                 # ad: (x0, y0, x1, y1, no, başlık)  — tek pafta, numarasız
-    'vaziyet': (-264.5, 6088.6, 88.0, 6288.6, 0, 'VAZİYET PLANI (TKGM PARSEL SORGU)'),
-    'kroki':   (93.0, 6088.6, 386.0, 6288.6, 0, 'GDZ BAĞLANTI KROKİSİ (BAĞLANTI GÖRÜŞÜ EKİ)'),
-    'detay':   (-264.5, 5919.6, -34.5, 6083.6, 0, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI'),
-    'kanal':   (-264.5, 5754.6, -34.5, 5914.6, 0, 'KABLO KANALI DETAYI'),
-    'tekhat':  (-29.5, 5939.6, 386.0, 6083.6, 0, 'TEK HAT ŞEMASI'),
-    'hesap':   (-29.5, 5754.6, 386.0, 5934.6, 0, 'GERİLİM DÜŞÜMÜ VE AKIM HESABI'),
-    'guc':     (-29.5, 5564.6, 176.0, 5749.6, 0, 'GÜÇ DAĞILIM TABLOSU'),
-    'malzeme': (181.0, 5564.6, 386.0, 5749.6, 0, 'MALZEME LİSTESİ'),
-    'sembol':  (-29.5, 5479.6, 386.0, 5559.6, 0, 'SEMBOL LİSTESİ'),
-    'notlar':  (-29.5, 5398.6, 386.0, 5474.6, 0, 'GENEL NOTLAR'),
-    'sartname': (391.0, 5418.6, 679.6, 6288.6, 0, 'ELEKTRİK DAĞITIM ŞEBEKELERİ ENERJİ KABLOLARI UYGULAMA USUL VE ESASLARI (TEDAŞ)'),
-}
-ANTET = (-264.5, 5398.6, -34.5, 5749.6)
-SERIT = (391.0, 5398.6, 679.6, 5413.6)                    # tarih / başvuru / pafta no şeridi
+# ---------- Montaj detayları: boxlu ve direkli projeden ayrı bloklar ----------
+DETAY = (55, 6139.5, 388, 6292)                           # iki projede de aynı yer (çerçeve çizgileri hariç)
+cerceve = lambda e: e.dxftype() == 'LINE' and kut(e) and ((kut(e)[2] - kut(e)[0]) > 200 or (kut(e)[3] - kut(e)[1]) > 140)
 
-def bolum(x0, y0, x1, y1, no, ad, yer=None):
-    kutu(x0, y0, x1, y1, 'BHP-BOLUM', yer)
-    dolu([(x0, y1 - BAS), (x1, y1 - BAS), (x1, y1), (x0, y1)], 'BHP-DOLGU', 254, yer)
-    cizgi(x0, y1 - BAS, x1, y1 - BAS, 'BHP-BOLUM', yer=yer)
-    yazi(f'{no}. {ad}' if no else ad, x0 + 3, y1 - BAS / 2, 3.2, 'BHP-K', yer=yer, katman='BHP-BASLIK')
 
-kutu(PX0, PY0, PX1, PY1, 'BHP-CERCEVE')
-for ad, (x0, y0, x1, y1, no, baslik) in BOLUM.items():
-    bolum(x0, y0, x1, y1, no, baslik)
-# şerit (tarih, başvuru no, pafta)
-x0, y0, x1, y1 = SERIT
-kutu(x0, y0, x1, y1, 'BHP-BOLUM')
-for i, (et, yt) in enumerate((('PROJE TARİHİ', '{{TARIH}}'), ('GDZ BAŞVURU NO', '{{BASVURU}}'), ('ÖLÇEK', 'ÖLÇEKSİZ'), ('PAFTA', '1 / 1'))):
-    w = (x1 - x0) / 4; xx = x0 + i * w
-    if i: cizgi(xx, y0, xx, y1, 'BHP-BOLUM')
-    yazi(et, xx + w / 2, y1 - 3.6, 2.0, 'BHP', A.MIDDLE_CENTER)
-    yazi(yt, xx + w / 2, y0 + 4.4, 3.0, 'BHP-K', A.MIDDLE_CENTER)
-
-# ---------- Kullanıcının çizimlerinden detay blokları ----------
-def icinde(e, x0, y0, x1, y1):
-    b = bbox.extents([e])
-    return b.has_data and b.extmin.x >= x0 and b.extmax.x <= x1 and b.extmin.y >= y0 and b.extmax.y <= y1
-def blok_al(kaynakDoc, ad, bolge, haric=lambda e: False, kablo_yaz=True):
-    sm = kaynakDoc.modelspace()
-    secilen = [e for e in sm if e.dxftype() not in ('OLE2FRAME', 'IMAGE') and icinde(e, *bolge) and not haric(e)]
-    if kablo_yaz:
-        for e in secilen:
-            if e.dxftype() == 'TEXT' and 'NAYY' in e.dxf.text.upper(): e.dxf.text = '{{KABLO}}'
+def detay_blok(kaynak, ad):
+    sm = kaynak.modelspace()
+    sec = [e for e in sm if icinde(e, *DETAY) and not cerceve(e)]
+    for e in sec:
+        if e.dxftype() == 'TEXT':
+            t = e.dxf.text.strip().upper()
+            if 'NAYY' in t or 'NYY' in t: e.dxf.text = '{{KABLO}}'
     b = d.blocks.new(ad)
-    imp = Importer(kaynakDoc, d); imp.import_entities(secilen, target_layout=b); imp.finalize()
+    if kaynak is d:
+        for e in sec:
+            b.add_entity(e.copy()); sm.delete_entity(e)
+    else:
+        imp = Importer(kaynak, d); imp.import_entities(sec, target_layout=b); imp.finalize()
     return b
-src = ezdxf.readfile(kaynak); srcb = ezdxf.readfile(kaynakBox)
-# Ölçü (DIMENSION) nesneleri içe alınırken kayboluyor: önce çizgi + yazıya çevir
-for kd in (src, srcb):
-    for e in list(kd.modelspace().query('DIMENSION')):
-        try: e.explode()
-        except Exception as x: print('ölçü çevrilemedi', e.dxf.handle, x)
-# Detay yazılarında Türkçe karakter ve kablo adı düzeltmeleri
+
+
+bBox = detay_blok(d, 'BHP_DETAY_BOX')
+bDirek = detay_blok(dd, 'BHP_DETAY_DIREK')
+m.add_blockref(bBox.name, (0, 0), dxfattribs={'layer': 'BHP-DETAY-BOX'})
+m.add_blockref(bDirek.name, (0, 0), dxfattribs={'layer': 'BHP-DETAY-DIREK'})
+
+# ---------- Yazı düzeltmeleri (Türkçe karakter) ve kablo adı ----------
 DUZELT = {'BITMIS ZEMIN KOTU': 'BİTMİŞ ZEMİN KOTU', 'IKAZ SERIDI': 'İKAZ ŞERİDİ', 'TUGLA': 'TUĞLA', 'NYY KABLO': '{{KABLO}}',
-          'YOL GEÇISLERINDE 100lük': "YOL GEÇİŞLERİNDE Ø100'lük", 'PVC BORU': 'PVC BORU', 'GDZ': 'GDZ'}
-for kd in (src, srcb):
-    for e in kd.modelspace().query('TEXT'):
-        t = e.dxf.text.strip()
-        if t in DUZELT: e.dxf.text = DUZELT[t]
-# direk detayı: çerçeve çizgileri ve eski başlık hariç
-cer = lambda e: (e.dxftype() == 'LINE' and (abs(e.dxf.start.y - e.dxf.end.y) < 0.01 or abs(e.dxf.start.x - e.dxf.end.x) < 0.01)
-                 and (bbox.extents([e]).size.x > 150 or bbox.extents([e]).size.y > 100)) or \
-                (e.dxftype() == 'TEXT' and 'TESİS/UYGULAMA/MONTAJ' in e.dxf.text)
-bDirek = blok_al(src, 'BHP_DETAY_DIREK', (123.0, 6145.0, 331.5, 6289.0), cer)
-bBox = blok_al(srcb, 'BHP_DETAY_BOX', (117.0, 6141.0, 325.5, 6285.0), cer)
-alinti = lambda e: e.dxf.layer == 'LINYE' and ((e.dxftype() == 'TEXT' and abs(e.dxf.height - 3.2) < 0.05) or (e.dxftype() == 'MTEXT' and abs(e.dxf.char_height - 3.2) < 0.05))
-bKanal = blok_al(src, 'BHP_KANAL', (98.0, 5980.0, 353.0, 6137.5), alinti)
-# şartname metni: iki sütun; her biri iki yarıya bölünüp 2. paftaya 4 sütun olarak büyük yazılır
-def sart_parcalari(n=4):
-    """Metni okuma sırasıyla (1. sütun yukarıdan aşağı, sonra 2. sütun) tek akış yapar ve n eşit sütuna böler."""
-    sm = src.modelspace()
-    ogeler = [e for e in sm if e.dxftype() in ('TEXT', 'MTEXT') and icinde(e, 400.0, 5410.0, 690.0, 6270.0) and not alinti(e)]
-    akis = []
-    for k in (0, 1):
-        l = []
-        for e in ogeler:
-            bb_ = bbox.extents([e])
-            if (bb_.center.x < 551.0) == (k == 0): l.append((bb_.extmax.y, bb_, e))
-        l.sort(key=lambda t: -t[0])
-        akis += [(k, t) for t in l]
-    SOL = {0: 405.0, 1: 548.0}
-    # her satıra akış içinde yerel bir y ver (aralıklar korunur, sütun geçişinde bir satır boşluk)
-    yer, imlec, onceki = [], 0.0, None
-    for k, (ust, bb_, e) in akis:
-        if onceki is not None:
-            pk, pust, pbb = onceki
-            imlec -= (min(max(pust - ust, 0.0), 12.0)) if pk == k else (pbb.size.y + 3.0)
-        yer.append((k, ust, bb_, e, imlec)); onceki = (k, ust, bb_)
-    toplam = -yer[-1][4] + yer[-1][2].size.y
-    parcalar, bas = [], 0
-    for i in range(1, n):
-        hedef = -toplam * i / n
-        j = min(range(bas + 1, len(yer)), key=lambda j: abs(yer[j][4] - hedef))
-        parcalar.append(yer[bas:j]); bas = j
-    parcalar.append(yer[bas:])
-    bloklar = []
-    for i, p in enumerate(parcalar):
-        b = d.blocks.new(f'BHP_SARTNAME_{i + 1}')
-        imp = Importer(src, d); imp.import_entities([t[3] for t in p], target_layout=b); imp.finalize()
-        y0 = p[0][4]
-        for (k, ust, bb_, e, yy), yeni_e in zip(p, list(b)):
-            yeni_e.translate(-SOL[k], (yy - y0) - ust, 0)
-        bloklar.append(b)
-    return bloklar
-bSartlar = sart_parcalari(2)
+          'YOL GEÇISLERINDE 100lük': "YOL GEÇİŞLERİNDE Ø100'lük"}
+for e in m.query('TEXT'):
+    t = e.dxf.text.strip()
+    if t in DUZELT: e.dxf.text = DUZELT[t]
 
-# İçe alınanları sadeleştir: tek yazı tipi, siyah baskı (taramalar gri)
-for b in (bDirek, bBox, bKanal):          # detay yazıları 1,5 mm idi; basılınca okunaklı olsun
-    for e in b:
-        if e.dxftype() == 'TEXT' and e.dxf.height < 2.2: e.dxf.height = e.dxf.height * 1.25
-        elif e.dxftype() == 'MTEXT' and e.dxf.char_height < 2.2: e.dxf.char_height = e.dxf.char_height * 1.25
-for b in (bDirek, bBox, bKanal, *bSartlar):
-    for e in b:
-        if e.dxftype() == 'HATCH': e.dxf.color = 8
-        else: e.dxf.color = 0          # BYBLOCK: bloğu yerleştiren katmanın rengini alır (siyah)
-        if e.dxftype() in ('TEXT', 'MTEXT', 'DIMENSION'):
-            pass
-        e.dxf.lineweight = -2          # BYBLOCK
-for s in list(d.styles):
-    if s.dxf.name not in ('BHP', 'BHP-K'):
-        s.dxf.font = 'arial.ttf'
-        if s.dxf.get('bigfont'): s.dxf.bigfont = ''
+# kablo kanalı üstündeki uyarı yazısı "BİTMİŞ ZEMİN KOTU" yazısına biniyordu: biraz küçült (üst kenarı yerinde kalır)
+for e in m.query('MTEXT'):
+    if 'demiryolu' in e.plain_text() and kut(e)[2] < 390:
+        e.dxf.char_height = e.dxf.char_height * 0.86
 
-def yerlestir(blok, katman, kutu_):
-    """Bloğu bölümün içine (başlık şeridinin altına) ortalayarak, oranı bozmadan sığdırır."""
-    bb = bbox.extents(blok)
-    x0, y0, x1, y1 = kutu_[0] + 4, kutu_[1] + 4, kutu_[2] - 4, kutu_[3] - BAS - 4
-    s = min((x1 - x0) / bb.size.x, (y1 - y0) / bb.size.y, 1.6)
-    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    ins = (cx - bb.center.x * s, cy - bb.center.y * s)
-    m.add_blockref(blok.name, ins, dxfattribs={'layer': katman, 'xscale': s, 'yscale': s})
-    return s
-yerlestir(bDirek, 'BHP-DETAY-DIREK', BOLUM['detay'])
-yerlestir(bBox, 'BHP-DETAY-BOX', BOLUM['detay'])
-yerlestir(bKanal, 'BHP-DETAY', BOLUM['kanal'])
-
-# ---------- Sembol listesi ----------
-SEMBOLLER = [
-    ('direk', 'Mevcut AG direği (enerji alınacak nokta)'), ('box', 'AG saha dağıtım kutusu (box)'),
-    ('nokta', 'Bağlantı noktası'), ('yeralti', 'Yeraltı kablosu (bağlantı hattı)'),
-    ('havai', 'Havai hat (mevcut AG şebekesi)'), ('baslik', 'Kablo başlığı'),
-    ('boru', 'Koruma borusu (yol geçişi / direk inişi)'), ('pano', 'Sayaç panosu (mühürlenebilir bölüm)'),
-    ('sigorta', 'Sigorta'), ('kar', 'Kaçak akım rölesi (K.A.R)'), ('tms', 'Termik manyetik şalter (TMŞ)'),
-    ('tmsyks', 'TMŞ + yük koruma (kaçak akımlı)'), ('sayac', 'Elektronik sayaç'), ('toprak', 'Topraklama'),
-    ('parsel', 'Parsel sınırı'), ('ok', 'Enerji yönü'),
+# ---------- Antet değerleri → yer tutucular ----------
+ANTET = [  # (yaklaşık sol alt x, y, yer tutucu)
+    (-221.9, 5537.3, '{{MALSAHIBI}}'), (-221.8, 5530.7, '{{KULLANIM}}'), (-221.2, 5523.2, '{{ADRES}}'),
+    (-261.8, 5500.6, '{{IL}}'), (-239.9, 5501.2, '{{ILCE}}'), (-211.5, 5501.2, '{{BELEDIYE}}'), (-180.0, 5500.9, '{{MAHALLE}}'),
+    (-144.1, 5501.0, '{{PAFTA}}'), (-116.3, 5501.2, '{{ADA}}'), (-96.2, 5501.2, '{{PARSEL}}'),
+    (-209.0, 5468.9, '{{KURULU}}'), (-173.6, 5468.9, '{{TALEP}}'), (-137.8, 5469.2, '{{BB}}'), (-117.7, 5469.2, '{{KAT}}'),
+    (-97.3, 5469.0, '{{ALAN}}'),
 ]
-def sembol(tur, x, y):
-    s = 'BHP-SEMBOL'
-    if tur == 'direk': m.add_circle((x, y), 3.2, dxfattribs={'layer': s})
-    elif tur == 'box':
-        kutu(x - 6, y - 3.5, x + 6, y + 3.5, s); cizgi(x - 6, y - 3.5, x + 6, y + 3.5, s); cizgi(x - 6, y + 3.5, x + 6, y - 3.5, s)
-    elif tur == 'nokta': dolu([(x + 1.6 * math.cos(a / 12 * 2 * math.pi), y + 1.6 * math.sin(a / 12 * 2 * math.pi)) for a in range(12)])
-    elif tur == 'yeralti': cizgi(x - 14, y, x + 14, y, 'BHP-KABLO', 'DASHED')
-    elif tur == 'havai': cizgi(x - 14, y, x + 14, y, s); cizgi(x - 1.5, y - 2, x + 1.5, y + 2, s)
-    elif tur == 'baslik': cizgi(x - 12, y, x - 3, y, s); dolu([(x - 3, y), (x + 4, y + 2.8), (x + 4, y - 2.8)]); cizgi(x + 4, y, x + 12, y, s)
-    elif tur == 'boru': cizgi(x - 12, y + 1.8, x + 12, y + 1.8, s); cizgi(x - 12, y - 1.8, x + 12, y - 1.8, s); cizgi(x - 14, y, x + 14, y, 'BHP-KABLO', 'DASHED')
-    elif tur == 'pano': kutu(x - 8, y - 4, x + 8, y + 4, s); dolu([(x - 8, y - 4), (x + 8, y + 4), (x + 8, y - 4)])
-    elif tur == 'sigorta': cizgi(x - 12, y, x - 5, y, s); kutu(x - 5, y - 2, x + 5, y + 2, s); cizgi(x - 5, y, x + 5, y, s); cizgi(x + 5, y, x + 12, y, s)
-    elif tur in ('kar', 'tms', 'tmsyks'):
-        cizgi(x - 12, y, x - 4, y, s); cizgi(x - 4, y, x + 4, y + 3.6, s); cizgi(x + 5, y, x + 12, y, s)
-        if tur in ('tms', 'tmsyks'): cizgi(x + 3.4, y - 1, x + 6.4, y + 1, s); cizgi(x + 3.4, y + 1, x + 6.4, y - 1, s)
-        if tur in ('kar', 'tmsyks'): kutu(x - 2, y - 5.2, x + 2, y - 2.8, s); cizgi(x, y - 2.8, x, y + 1.6, s, 'HIDDEN')
-    elif tur == 'sayac':
-        kutu(x - 5, y - 4, x + 5, y + 4, s); cizgi(x - 5, y + 0.6, x + 5, y + 0.6, s)
-        yazi('kWh', x, y + 2.3, 1.6, 'BHP', A.MIDDLE_CENTER, s)
-    elif tur == 'toprak':
-        cizgi(x, y + 4, x, y + 1, s)
-        for i, w in enumerate((4, 2.7, 1.4)): cizgi(x - w, y + 1 - i * 1.3, x + w, y + 1 - i * 1.3, s)
-    elif tur == 'parsel': m.add_lwpolyline([(x - 14, y), (x + 14, y)], dxfattribs={'layer': 'BHP-PARSEL', 'const_width': 0.7})
-    elif tur == 'ok': cizgi(x - 12, y, x + 5, y, s); dolu([(x + 12, y), (x + 4, y + 2.6), (x + 4, y - 2.6)])
-x0, y0, x1, y1 = BOLUM['sembol'][:4]
-iki = (x1 - x0) / 2
-satir = (y1 - BAS - y0 - 4) / 8
-for i, (tur, anlam) in enumerate(SEMBOLLER):
-    kol, sira = divmod(i, 8)
-    xs = x0 + kol * iki
-    yy = y1 - BAS - 2 - satir * (sira + 0.5)
-    sembol(tur, xs + 18, yy)
-    yazi(anlam, xs + 36, yy, 2.5)
-cizgi(x0 + iki, y0, x0 + iki, y1 - BAS, 'BHP-BOLUM')
+for x, y, yt in ANTET:
+    aday = [e for e in m.query('TEXT') if kut(e) and abs(kut(e)[0] - x) < 1.2 and abs(kut(e)[1] - y) < 1.2]
+    if len(aday) != 1: raise SystemExit(f'antet yeri bulunamadı: {yt} {len(aday)}')
+    e = aday[0]
+    # hücrenin ortasına hizala (değerler uzunluğa göre taşmasın diye ortalı yazılır)
+    if yt in ('{{MALSAHIBI}}', '{{KULLANIM}}', '{{ADRES}}'):
+        e.dxf.text = yt
+    else:
+        k = kut(e); cx = {'{{IL}}': -252.0, '{{ILCE}}': -225.5, '{{BELEDIYE}}': -197.0, '{{MAHALLE}}': -167.5, '{{PAFTA}}': -140.0,
+                         '{{ADA}}': -113.5, '{{PARSEL}}': -89.0, '{{KURULU}}': -200.0, '{{TALEP}}': -165.0, '{{BB}}': -136.5,
+                         '{{KAT}}': -116.5, '{{ALAN}}': -90.5}[yt]
+        e.dxf.text = yt
+        e.set_placement((cx, (k[1] + k[3]) / 2), align=A.MIDDLE_CENTER)
 
-# ---------- Antet (kullanıcının KAPAK çizimi) ----------
-kap = json.load(open(kapakJson, encoding='utf-8'))
-KX0, KY0, KX1, KY1 = 3771.62, 1796.93, 4718.76, 3274.35
-s_ant = min((ANTET[2] - ANTET[0]) / (KX1 - KX0), (ANTET[3] - ANTET[1]) / (KY1 - KY0))
-ax = ANTET[0]; ay = ANTET[1]
-def T(x, y): return (ax + (x - KX0) * s_ant, ay + (y - KY0) * s_ant)
-BASLIK_KUTU = (3785.0, 3068.0, 4708.0, 3262.0)             # kapakta logo + iletişim bölümü
-for e in kap['entities']:
-    t = e['type']
-    if t == 'LINE':
-        a, b = e['startPoint'], e['endPoint']; cizgi(*T(a['x'], a['y']), *T(b['x'], b['y']), 'BHP-ANTET')
-    elif t == 'LWPOLYLINE':
-        p = [T(v['x'], v['y']) for v in e['vertices']]
-        m.add_lwpolyline(p, close=bool(e.get('flag', 0) & 1) or len(p) == 4, dxfattribs={'layer': 'BHP-ANTET'})
-    elif t == 'TEXT':
-        x, y = T(e['startPoint']['x'], e['startPoint']['y'])
-        h = e['textHeight'] * s_ant
-        st = 'BHP-K' if e['textHeight'] > 20 else 'BHP'
-        metin = e['text'].strip()
-        # kapaktaki küçük yazım düzeltmeleri: ikinci "YAPININ" arsa bilgileri başlığıdır; Türkçe karakterler
-        if metin == 'YAPININ' and e['startPoint']['y'] < 2500: metin = 'ARSA BİLGİLERİ'
-        metin = {'ODA SICIL NO': 'ODA SİCİL NO', 'BURO TESCİL NO': 'BÜRO TESCİL NO'}.get(metin, metin)
-        m.add_text(metin, height=h, dxfattribs={'style': st, 'layer': 'BHP-ANTET', 'insert': (x, y)})
-# değer yerleri (kapaktaki boş hücreler)
-DEGER = [  # (yer tutucu, x, y, yükseklik, hiza) kapak koordinatlarında
-    ('{{MALSAHIBI}}', 4070, 2563, 16, A.MIDDLE_LEFT), ('{{KULLANIM}}', 4070, 2530, 16, A.MIDDLE_LEFT),
-    ('{{ADRES}}', 4070, 2497, 13, A.MIDDLE_LEFT),
-    ('{{IL}}', 3831, 2381, 14, A.MIDDLE_CENTER), ('{{ILCE}}', 3947, 2381, 14, A.MIDDLE_CENTER),
-    ('{{BELEDIYE}}', 4100, 2381, 14, A.MIDDLE_CENTER), ('{{MAHALLE}}', 4291, 2381, 14, A.MIDDLE_CENTER),
-    ('{{PAFTA}}', 4448, 2381, 14, A.MIDDLE_CENTER), ('{{ADA}}', 4550, 2381, 14, A.MIDDLE_CENTER),
-    ('{{PARSEL}}', 4656, 2381, 14, A.MIDDLE_CENTER),
-    ('{{KURULU}}', 3892, 2216, 15, A.MIDDLE_CENTER), ('{{TALEP}}', 4102, 2216, 15, A.MIDDLE_CENTER),
-    ('{{BB}}', 4268, 2216, 15, A.MIDDLE_CENTER), ('{{KAT}}', 4395, 2216, 13, A.MIDDLE_CENTER),
-    ('{{ALAN}}', 4525, 2216, 15, A.MIDDLE_CENTER), ('{{YAPISINIFI}}', 4649, 2216, 15, A.MIDDLE_CENTER),
-]
-for t, x, y, h, hz in DEGER:
-    m.add_text(t, height=h * s_ant, dxfattribs={'style': 'BHP-K', 'layer': 'BHP-ANTET'}).set_placement(T(x, y), align=hz)
-# başlık bölümü: solda logo, sağda iletişim
-bx0, by0, bx1, by1 = BASLIK_KUTU
-lh = (by1 - by0) - 22; lw = lh * LOGO_PX[0] / LOGO_PX[1]
-lx0, ly0 = bx0 + 12, by0 + 11
-cizgi(*T(lx0 + lw + 16, by0 + 14), *T(lx0 + lw + 16, by1 - 14), 'BHP-ANTET')
-ix = lx0 + lw + 32
-for i, (et, deger) in enumerate((('Adres', 'Atatürk Mh. 5925/1 Sk. No:7/9'), ('', 'Yunusemre / MANİSA'), ('Tel', '0542 321 45 23'),
-                                 ('E-posta', 'agyenerjimuhendislik@gmail.com'), ('Web', 'www.agymuhendislik.com'))):
-    yy = by1 - 30 - i * 33
-    if et: m.add_text(et, height=13 * s_ant, dxfattribs={'style': 'BHP-K', 'layer': 'BHP-ANTET'}).set_placement(T(ix, yy), align=A.MIDDLE_LEFT)
-    m.add_text(deger, height=14 * s_ant, dxfattribs={'style': 'BHP', 'layer': 'BHP-ANTET'}).set_placement(T(ix + 78, yy), align=A.MIDDLE_LEFT)
-logo_ins = T(lx0, ly0)
-
-# ---------- Resimler (dosyalar DXF ile aynı klasörde) ----------
-def resim(ad, isim, kutu_, px, py):
-    x0, y0, x1, y1 = kutu_[0] + 3, kutu_[1] + 3, kutu_[2] - 3, kutu_[3] - BAS - 3
+# ---------- PVC boru çapı tablosu (kullanıcının tablosu; DWG'de Excel olarak gömülüydü) ----------
+BX0, BY0, BX1, BY1 = -263.0, 6167.3, -163.3, 6289.9
+L = 'BHP-TABLO'
+def cz(x1, y1, x2, y2): m.add_line((x1, y1), (x2, y2), dxfattribs={'layer': L})
+def yz(t, x, y, h=2.3, hiza=A.MIDDLE_CENTER, st='BHP'):
+    m.add_text(t, height=h, dxfattribs={'style': st, 'layer': L}).set_placement((x, y), align=hiza)
+KES = ['1,5', '2,5', '4', '6', '10', '16', '25', '35', '50', '70', '95', '120', '150', '185']
+CAP = [[14, 14, 14, 18], [14, 14, 14, 18], [14, 14, 18, 26], [14, 18, 26, 26], [14, 26, 26, 32], [14, 26, 32, 32], [18, 32, 32, 40],
+       [18, 40, 40, 50], [26, 40, 50, 50], [26, 50, 50, 50], [32, 50, 50, 50], [32, 50, 50, '-'], [40, 50, '-', '-'], [40, '-', '-', '-']]
+W = BX1 - BX0
+kx = [BX0, BX0 + W * 0.29] + [BX0 + W * (0.29 + 0.1775 * i) for i in range(1, 5)]
+y = BY1
+m.add_lwpolyline([(BX0, BY0), (BX1, BY0), (BX1, BY1), (BX0, BY1)], close=True, dxfattribs={'layer': L})
+yz('NV (NYA) iletkenleri kullanılması durumunda gerekli', (BX0 + BX1) / 2, y - 3.2, 2.3)
+yz('en küçük PVC boru çapları', (BX0 + BX1) / 2, y - 6.4, 2.3)
+y -= 8.6; cz(BX0, y, BX1, y)
+ust = y; y -= 15.5                                       # daire resimleri satırı
+for i in range(4):
+    cx, cy, r = (kx[i + 1] + kx[i + 2]) / 2, ust - 7.4, 6.6
+    m.add_circle((cx, cy), r, dxfattribs={'layer': L})
+    yer = {0: [(0, 0)], 1: [(-2.9, 0), (2.9, 0)], 2: [(0, 2.9), (-2.9, -1.9), (2.9, -1.9)], 3: [(-2.4, 2.4), (2.4, 2.4), (-2.4, -2.4), (2.4, -2.4)]}[i]
+    rr = 2.6 if i < 2 else 2.1
+    for dx, dy in yer:
+        h = m.add_hatch(color=7, dxfattribs={'layer': L}); h.paths.add_polyline_path(
+            [(cx + dx + rr * __import__('math').cos(a / 16 * 6.2832), cy + dy + rr * __import__('math').sin(a / 16 * 6.2832)) for a in range(16)], is_closed=True)
+        m.add_circle((cx + dx, cy + dy), rr, dxfattribs={'layer': L})
+cz(kx[1], y, BX1, y)
+for t, yy in (('İletkenlerin', ust - 6), ('boru içindeki', ust - 9.6), ('durumu', ust - 13.2)): yz(t, (kx[0] + kx[1]) / 2, yy, 2.2)
+yz('Boru İç Çapı', (kx[1] + BX1) / 2, y - 3.4, 2.3)
+y -= 6.8; cz(BX0, y, BX1, y)
+bas = y; y -= 12
+for t, yy in (('İletken', bas - 2.6), ('kesiti', bas - 6), ('mm²', bas - 9.4)): yz(t, (kx[0] + kx[1]) / 2, yy, 2.2)
+for i in range(4):
+    for t, yy in (('Sıva', bas - 2.6), ('altı', bas - 6), ('mm', bas - 9.4)): yz(t, (kx[i + 1] + kx[i + 2]) / 2, yy, 2.2)
+cz(BX0, y, BX1, y)
+sh = (y - BY0) / len(KES)
+for j, k in enumerate(KES):
+    yy = y - sh * (j + 0.5)
+    yz(k, (kx[0] + kx[1]) / 2, yy, 2.2)
+    for i in range(4): yz(str(CAP[j][i]), (kx[i + 1] + kx[i + 2]) / 2, yy, 2.2)
+    if j: cz(BX0, y - sh * j, BX1, y - sh * j)
+cz(kx[1], BY0, kx[1], ust)
+for i in range(2, 5): cz(kx[i], BY0, kx[i], ust);
+# ---------- Resimler ----------
+def resim(ad, isim, k, px, py):
+    x0, y0, x1, y1 = k
     w, h = x1 - x0, y1 - y0
     s = min(w / px, h / py); gw, gh = px * s, py * s
     ins = (x0 + (w - gw) / 2, y0 + (h - gh) / 2)
@@ -296,36 +189,22 @@ def resim(ad, isim, kutu_, px, py):
     r = m.add_image(tanim, insert=ins, size_in_units=(gw, gh), rotation=0, dxfattribs={'layer': 'BHP-RESIM'})
     return r, [round(ins[0], 4), round(ins[1], 4), round(ins[0] + gw, 4), round(ins[1] + gh, 4)]
 UYDU_PX, VAZ_PX = (2000, 1087), (2000, 1056)
-r1, kUydu = resim('{{UYDU}}', 'BHP-UYDU', BOLUM['kroki'], *UYDU_PX)
-r2, kVaz = resim('{{VAZIYET}}', 'BHP-VAZIYET', BOLUM['vaziyet'], *VAZ_PX)
-tl = d.add_image_def(filename='.\\agy-logo.png', size_in_pixel=LOGO_PX, name='BHP-LOGO')
-r3 = m.add_image(tl, insert=logo_ins, size_in_units=(lw * s_ant, lh * s_ant), rotation=0, dxfattribs={'layer': 'BHP-ANTET'})
+r1, kUydu = resim('{{UYDU}}', 'BHP-UYDU', UYDU_RESIM, *UYDU_PX)
+r2, kVaz = resim('{{VAZIYET}}', 'BHP-VAZIYET', VAZ_RESIM, *VAZ_PX)
 m.set_redraw_order([(r1.dxf.handle, '1'), (r2.dxf.handle, '2')])
 
-# ---------- Şartname metni (kullanıcının metni, aynen): sağ sütunda iki sütun halinde ----------
-sx0, sy0, sx1, sy1 = BOLUM['sartname'][:4]
-kw = (sx1 - sx0 - 6) / 2
-bbs = [bbox.extents(b) for b in bSartlar]
-s2 = min(min((kw - 4) / b.size.x for b in bbs), min((sy1 - BAS - sy0 - 8) / b.size.y for b in bbs), 1.3)
-for i, (b, bb) in enumerate(zip(bSartlar, bbs)):
-    kx0 = sx0 + 3 + i * kw
-    if i: cizgi(kx0, sy0 + 3, kx0, sy1 - BAS - 3, 'BHP')
-    ust = sy1 - BAS - 4
-    m.add_blockref(b.name, (kx0 + kw / 2 - bb.center.x * s2, ust - bb.extmax.y * s2), dxfattribs={'layer': 'BHP-DETAY', 'xscale': s2, 'yscale': s2})
-DX = 0.0
-
-# ---------- Kaydet; web aracının ihtiyaç duyduğu bilgileri başa yaz ----------
-# AutoCAD açılışta çizimin tamamını göstersin: sınırlar ve aktif görünüm (yoksa boş bir yere bakar)
-TX0, TY0, TX1, TY1 = PX0 - 10, PY0 - 10, PX1 + DX + 10, PY1 + 10
-m.dxf.extmin = (TX0, TY0, 0); m.dxf.extmax = (TX1, TY1, 0)          # ezdxf kayıtta başlığa bunları yazar
-m.dxf.limmin = (TX0, TY0); m.dxf.limmax = (TX1, TY1)
+# ---------- Kaydet; web aracının bölgelerini başa yaz ----------
+TX0, TY0, TX1, TY1 = PAFTA[0] - 10, PAFTA[1] - 10, PAFTA[2] + 10, PAFTA[3] + 10
+m.dxf.extmin = (TX0, TY0, 0); m.dxf.extmax = (TX1, TY1, 0)
+d.header['$EXTMIN'] = (TX0, TY0, 0); d.header['$EXTMAX'] = (TX1, TY1, 0)
+d.header['$LIMMIN'] = (TX0, TY0); d.header['$LIMMAX'] = (TX1, TY1)
 d.set_modelspace_vport(height=(TY1 - TY0) * 1.05, center=((TX0 + TX1) / 2, (TY0 + TY1) / 2))
 d.audit()
 d.saveas(cikis, encoding='utf-8')
-ic = lambda k: [BOLUM[k][0] + 3, BOLUM[k][1] + 3, BOLUM[k][2] - 3, BOLUM[k][3] - BAS - 3]
-bilgi = {'model': m.block_record_handle,
-         'bolgeler': {k: ic(k) for k in ('tekhat', 'hesap', 'guc', 'malzeme', 'notlar')},
+bilgi = {'model': m.block_record_handle, 'surum': 4,
+         'bolgeler': {'tekhat': [-30, 5714, 386, 5794], 'cetvel': [16, 5930, 383, 5985], 'hesap': [16, 5795, 383, 5927],
+                      'guc': [-267.5, 5673, -79, 5803]},
          'resim': {'uydu': kUydu, 'vaziyet': kVaz}}
 s = open(cikis, encoding='utf-8').read()
 open(cikis, 'w', encoding='utf-8').write('999\nBHP ' + json.dumps(bilgi) + '\n' + s)
-print(json.dumps(bilgi), 'antet ölçeği', round(s_ant, 4), 'şartname ölçeği', round(s2, 3))
+print(json.dumps(bilgi))
