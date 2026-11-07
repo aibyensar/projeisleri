@@ -57,8 +57,8 @@ function svg(nesneler) {
     }
   }
   for (const n of nesneler) {
-    if (n.tip === 'LINE') parcalar.push(`<line x1="${X(n.x1)}" y1="${Y(n.y1)}" x2="${X(n.x2)}" y2="${Y(n.y2)}" stroke="${renk(n.renk)}" stroke-width="0.25"/>`);
-    else if (n.tip === 'LWPOLYLINE') parcalar.push(`<polygon points="${n.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}" fill="none" stroke="${renk(n.renk)}" stroke-width="0.25"/>`);
+    if (n.tip === 'LINE') parcalar.push(`<line x1="${X(n.x1)}" y1="${Y(n.y1)}" x2="${X(n.x2)}" y2="${Y(n.y2)}" stroke="${renk(n.renk)}" stroke-width="${Math.max(0.12, (n.kalinlik || 25) / 100)}"/>`);
+    else if (n.tip === 'LWPOLYLINE') parcalar.push(`<polygon points="${n.pts.map(p => `${X(p[0])},${Y(p[1])}`).join(' ')}" fill="none" stroke="${renk(n.renk)}" stroke-width="${Math.max(0.12, (n.kalinlik || 25) / 100)}"/>`);
     else if (n.tip === 'CIRCLE') parcalar.push(`<circle cx="${X(n.x)}" cy="${Y(n.y)}" r="${n.r}" fill="none" stroke="${renk(n.renk)}" stroke-width="0.25"/>`);
     else if (n.tip === 'MTEXT') {
       const satirlar = mtextSatirlari(n.yazi, renk(n.renk));
@@ -79,7 +79,7 @@ async function main() {
   const klasor = process.argv[2] || '.';
   L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8'));
   const senaryolar = {
-    mevcut: ['Evet', '32200', '(16220*0,45)+5000', 'NYY', '4x6', '15', '', '2',
+    mevcut: ['Evet', '32200', '(16220*0,45)+5000', 'NYY', '4x6', 'Havai', '15', '', '2',
       'Trifaze', 'NYM', '5x6', '9', '5000', 'Monofaze', 'NYA', '2.5', '4', '2500', '2.5', '0,0'],
     yok: ['Hayir', '36140', '13136+4380', '', '2',
       'Trifaze', 'NYM', '4x10', '4', '13136', 'Monofaze', 'NYA', '2.5', '6', '2500', '2.5', '0,0'],
@@ -90,10 +90,14 @@ async function main() {
     const r = L.komut('GERILIMDUSUMU', girdi);
     if (!r.tamam) { console.log(ad, 'HATA', r.hata); continue; }
     const s = svg(L.durum.nesneler);
+    const kagit = svg(L.durum.nesneler.map(n => ({ ...n, renk: 250 }))).replace('fill="#000"', 'fill="#fff"');
     fs.writeFileSync(path.join(klasor, `onizleme-${ad}.svg`), s);
     const p = await b.newPage({ viewport: { width: 900, height: 1200 } });
     await p.setContent(`<body style="margin:0;background:#000">${s.replace(/width="[\d.]+" height="[\d.]+"/, 'width="900"')}</body>`);
     await p.locator('svg').screenshot({ path: path.join(klasor, `onizleme-${ad}.png`) });
+    const p2 = await b.newPage({ viewport: { width: 900, height: 1200 } });
+    await p2.setContent(`<body style="margin:0;background:#fff">${kagit.replace(/width="[\d.]+" height="[\d.]+"/, 'width="900"')}</body>`);
+    await p2.locator('svg').screenshot({ path: path.join(klasor, `onizleme-${ad}-kagit.png`) });
     console.log(ad, '→', path.join(klasor, `onizleme-${ad}.png`), L.durum.nesneler.length, 'nesne');
   }
   await b.close();

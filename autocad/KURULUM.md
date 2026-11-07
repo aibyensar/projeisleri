@@ -25,7 +25,7 @@ Komut satırına **`GERILIMDUSUMU`** yazın. Sırayla şunlar sorulur. Köşeli 
 1. Branşman mevcut mu? `Evet / Hayir`
 2. Kurulu güç (W). Yazılmayacaksa `.` girin.
 3. Talep güç (W). Sayı veya işlem yazabilirsiniz, örnek `(16220*0,45)+5000`.
-4. Branşman mevcutsa: kablo tipi, kesit (örnek `4x6`), uzunluk, faz. Taşıma akımı katalogdaki havai değerden alınır.
+4. Branşman mevcutsa: kablo tipi, kesit (örnek `4x6`), döşeme (`Yeralti / Havai`, taşıma akımı buna göre), uzunluk, faz.
    Faz kablodan tahmin edilir (2x, 3x → monofaze; 4x, 5x, 3x25/16 → trifaze), Enter ile kabul edin.
    Branşman yoksa bağlantının fazı sorulur.
 5. İç hat sayısı (genelde 2: kolon hattı + linye hattı)
@@ -39,6 +39,12 @@ Hesapta %e1 branşman hattı, %e2 kolon hattı, %e3 linye hattıdır.
 8. Çizimde hesabın yerleşeceği nokta (sol üst köşe)
 
 Hepsi tek seferde çizilir. Beğenmezseniz `U` (geri al) bir kerede hepsini siler.
+
+## Katmanlar
+
+Çizim katmanlara ayrılır; renk ve çizgi kalınlığı katmandan gelir, çıktı alırken (monochrome.ctb) temiz basılır:
+`GD-CERCEVE` (0,50 mm), `GD-TABLO` (0,18), `GD-YAZI`, `GD-BASLIK`, `GD-SONUC`, `GD-UYARI`, `GD-SEMA` (0,35), `GD-DOLGU`.
+Renkleri veya kalınlıkları beğenmezseniz katman yöneticisinden (LAYER) değiştirebilirsiniz.
 
 ## Ayarlar
 

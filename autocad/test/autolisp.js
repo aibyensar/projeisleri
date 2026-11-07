@@ -189,6 +189,7 @@ B('APPEND', (...a) => { const r = a.flatMap(lst); return r.length ? r : NIL; });
 B('LENGTH', v => lst(v).length);
 B('NTH', (n, l) => { if (typeof n !== 'number') throw new LispError('bad argument type: fixnump: ' + yaz(n)); if (l === NIL) throw new LispError('bad argument type: consp nil'); return lst(l)[n] ?? NIL; });
 B('LAST', l => { const a = lst(l); return a[a.length - 1] ?? NIL; });
+B('LAST2', l => NIL);
 B('REVERSE', l => { const a = [...lst(l)].reverse(); return a.length ? a : NIL; });
 B('ASSOC', (k, l) => lst(l).find(x => x !== NIL && esit(car(x), k)) ?? NIL);
 B('MEMBER', (k, l) => { const a = lst(l); const i = a.findIndex(x => esit(x, k)); return i < 0 ? NIL : a.slice(i); });
@@ -204,7 +205,7 @@ B('VL-LOAD-COM', () => NIL);
 B('EXIT', () => { throw new Exit('quit / exit abort'); });
 
 // ---------------------------------------------------------------- AutoCAD taklidi
-const durum = { cikti: '', girdiler: [], nesneler: [], vars: { DIMZIN: 8, CMDECHO: 1, TEXTSIZE: 2.5 }, envler: {}, stiller: new Set(['STANDARD']), initget: null, komutlar: [] };
+const durum = { cikti: '', girdiler: [], nesneler: [], vars: { DIMZIN: 8, CMDECHO: 1, TEXTSIZE: 2.5 }, envler: {}, stiller: new Set(['STANDARD']), katmanlar: { '0': { renk: 7, kalinlik: 25 } }, initget: null, komutlar: [] };
 B('PRINC', v => { if (v !== NIL && v !== undefined) durum.cikti += isStr(v) ? v.str : yaz(v); return v ?? { str: '' }; });
 B('PRINT', v => { durum.cikti += '\n' + yaz(v); return v; });
 B('PROMPT', v => { durum.cikti += str(v); return NIL; });
@@ -235,24 +236,27 @@ B('GETINT', soru => { const { g } = sonrakiGirdi(str(soru)); if (g === '') retur
 B('GETSTRING', (a, b) => { const { g } = sonrakiGirdi(str(b ?? a)); return { str: g }; });
 B('GETPOINT', (a, b) => { const { g } = sonrakiGirdi(str(isStr(a) ? a : b)); if (g === '') return NIL; return g.split(',').map(x => R(parseFloat(x))); });
 B('TRANS', p => p);
-B('TBLSEARCH', (t, n) => str(t).toUpperCase() === 'STYLE' && durum.stiller.has(str(n).toUpperCase()) ? [[0, { str: 'STYLE' }]] : NIL);
+B('TBLSEARCH', (t, n) => { const tip = str(t).toUpperCase(); if (tip === 'STYLE') return durum.stiller.has(str(n).toUpperCase()) ? [[0, { str: 'STYLE' }]] : NIL; if (tip === 'LAYER') return durum.katmanlar[str(n)] ? [[0, { str: 'LAYER' }]] : NIL; return NIL; });
 const nesneYap = dxf => {
-  const l = lst(dxf);
+  const l = lst(dxf).filter(x => !((x.dot ? x.car[0] : x[0]) === 100));
   const tip = str(cdr(l[0]) ?? l[0].cdr);
   const grup = k => { const g = l.find(x => (x.dot ? x.car[0] : x[0]) === k); return g ? (g.dot ? g.cdr : g.slice(1)) : undefined; };
   if (tip === 'STYLE') { durum.stiller.add(str(grup(2)).toUpperCase()); return { str: 'stil' }; }
+  if (tip === 'LAYER') { durum.katmanlar[str(grup(2))] = { renk: num(grup(62)), kalinlik: num(grup(370) ?? 25) }; return { str: 'katman' }; }
+  const katman = grup(8) ? str(grup(8)) : '0'; const kat = durum.katmanlar[katman] || durum.katmanlar['0'];
+  const ekle = o => durum.nesneler.push({ katman, kalinlik: kat.kalinlik, ...o, renk: grup(62) != null ? num(grup(62)) : kat.renk });
   if (tip === 'MTEXT') {
     const st = grup(7); if (st && !durum.stiller.has(str(st).toUpperCase())) return NIL;
     const p = grup(10); if (!Array.isArray(p) || p.length < 2) throw new LispError('MTEXT nokta hatalı: ' + yaz(p));
-    durum.nesneler.push({ tip, x: num(p[0]), y: num(p[1]), h: num(grup(40)), renk: num(grup(62) ?? 256), hiza: num(grup(71) ?? 1), yazi: str(grup(1)) });
+    ekle({ tip, x: num(p[0]), y: num(p[1]), h: num(grup(40)), hiza: num(grup(71) ?? 1), yazi: str(grup(1)) });
   } else if (tip === 'LINE') {
     const a = grup(10), b = grup(11);
-    durum.nesneler.push({ tip, x1: num(a[0]), y1: num(a[1]), x2: num(b[0]), y2: num(b[1]), renk: num(grup(62) ?? 256) });
+    ekle({ tip, x1: num(a[0]), y1: num(a[1]), x2: num(b[0]), y2: num(b[1]) });
   } else if (tip === 'LWPOLYLINE') {
     const pts = l.filter(x => !x.dot && x[0] === 10).map(x => [num(x[1]), num(x[2])]);
-    durum.nesneler.push({ tip, pts, renk: num(grup(62) ?? 256) });
+    ekle({ tip, pts });
   } else if (tip === 'SOLID') {
-    durum.nesneler.push({ tip, pts: [10, 11, 12, 13].map(k => grup(k)).map(p => [num(p[0]), num(p[1])]), renk: num(grup(62) ?? 256) });
+    ekle({ tip, pts: [10, 11, 12, 13].map(k => grup(k)).map(p => [num(p[0]), num(p[1])]) });
   } else throw new LispError('entmake bilinmeyen tip ' + tip);
   return { str: 'ent' + durum.nesneler.length };
 };

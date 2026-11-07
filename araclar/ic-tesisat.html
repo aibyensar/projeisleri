@@ -69,10 +69,10 @@
     <div class="izgara2">
       <label>Kablo tipi<select id="b-tip"></select></label>
       <label>Kablo<select id="b-satir"></select></label>
-      <label hidden>Döşeme<select id="b-doseme"></select></label>
+      <label>Döşeme<select id="b-doseme"></select></label>
       <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
     </div>
-    <p class="not">Taşıma akımı katalogdaki havai değerden alınır. Gerilim düşümünde talep güç (Nt) kullanılır. Faz, seçilen kabloya göre kendiliğinden ayarlanır: 2x ve 3x → monofaze, 4x, 5x ve 3x25/16 gibi → trifaze. Gerekirse üstten değiştirin.</p>
+    <p class="not">Gerilim düşümünde talep güç (Nt) kullanılır. Faz, seçilen kabloya göre kendiliğinden ayarlanır: 2x ve 3x → monofaze, 4x, 5x ve 3x25/16 gibi → trifaze. Gerekirse üstten değiştirin.</p>
   </div>
 
   <div class="kart">
@@ -135,10 +135,10 @@ function satirlar(tip) {
     return { etiket: et, damar: m[1] || null, S: +m[2], akim: r.slice(t.akimSutun).map(sayiMi) };
   }));
 }
-// Projede yazılan kablo adı: 4X6 mm² NYY, 3X2,5 mm² NYA, 3X25/16 mm² NYY
+// Projede yazılan kablo adı: 4x6 mm² NYY, 3x2,5 mm² NYA, 3x25/16 mm² NYY
 function kabloAdi(tip, etiket, faz) {
-  let et = etiket.replace(/\./g, ',').toUpperCase();
-  if (!/X/.test(et)) et = (faz === '3' ? '5X' : '3X') + et;
+  let et = etiket.replace(/\./g, ',');
+  if (!/x/.test(et)) et = (faz === '3' ? '5x' : '3x') + et;
   return `${et} mm² ${tip}`;
 }
 function tipSecenekleri(sel, secili) {
@@ -211,8 +211,7 @@ function bransmanSecenekleri() {
   const s = KABLOLAR[tip].sutunlar;
   const eski = $('b-doseme').value;
   $('b-doseme').innerHTML = s.map((x, i) => `<option value="${i}">${DOSEME_ADI[x]}</option>`).join('');
-  // Branşman taşıma akımı katalogdaki havai değerden alınır
-  $('b-doseme').value = String(Math.max(0, s.indexOf('hava')));
+  $('b-doseme').value = eski && s[+eski] ? eski : String(Math.max(0, s.indexOf('hava')));
 }
 tipSecenekleri($('b-tip'), 'NYY');
 bransmanSecenekleri();

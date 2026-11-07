@@ -9,14 +9,14 @@ L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8')
 const senaryolar = {
   'Branşman mevcut (proje örneği 1)': [
     'Evet', '32200', '(16220x0,45)+5000=',
-    'NYY', '4x6', '15', '',                  // branşman: tip, kesit, uzunluk, faz (Enter)
+    'NYY', '4x6', 'Havai', '15', '',         // branşman: tip, kesit, döşeme, uzunluk, faz (Enter)
     '2',                                     // iç hat sayısı
     'Trifaze', 'NYM', '5x6', '9', '5000',
     'Monofaze', 'NYA', '2.5', '4', '2500',
     '2.5', '0,0'
   ],
   'Monofaze branşman 2x6': [
-    'Evet', '', '8000', 'NYY', '2x6', '15', '', '2',
+    'Evet', '', '8000', 'NYY', '2x6', '', '15', '', '2',
     '', '', '', '', '', '', '', '', '', '', '', '0,0'
   ],
   'Branşman yok (proje örneği 2)': [
