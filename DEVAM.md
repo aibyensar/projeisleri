@@ -169,6 +169,14 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    (tekerlek, sürükle, çift tık / Sığdır). İndir: "doğru" kutusu işaretlenince gucKontrol hataları ve kırmızılar kilitlemez, "Dikkat" olur
    (gucOnay artık 4. bölümde tablonun altında, hata/kırmızı/resim varsa görünür). Eksikler 7. bölümde madde madde. Bölümler: 1-5, 6 Vaziyet,
    7 İndir (malzeme/notlar gizli). Test görüntüsü 1440 px.
+1h. SAYFA YAPISI (7 Kasım 2026): kullanıcı "kontrol resmi değerlerle aynı hizada, yan yana olsun; gereksiz şeyleri gösterme; ileride havai
+   hat eklenecek, önce GDZ yüklensin, havaiyse havai sayfası, yeraltıysa yeraltı sayfası açılsın (havai şimdilik boş)" dedi.
+   Düzen: 1. GDZ (yükleme + hat türü seçimi #hatTur, GDZ'deki hatTipi'ne göre seçilir, değiştirilebilir) → #sayfaHavai (boş, "hazırlanıyor")
+   ya da #sayfaYeralti: 2. İç tesisat (yükleme + işaretleme paneli) · 3. Okunan bilgileri kontrol: üç blok, her biri solda değerler sağda
+   yakınlaştırılabilir resim (Antet → alan-antet + antetResim [yeni], Güç tablosu → tablo + gucResim, Sayaç panosu → alan-pano + onuListe +
+   panoResim) · 4. Bağlantı hattı (alan-gdz: GDZ alanları) ve kablo + hesap + açılır çizim önizlemesi · 5. Vaziyet (TKGM yükleme burada;
+   uydu seçimi yalnız bulunamazsa) · 6. İndir. ALANLAR grupları HEDEF ile kutulara dağıtılır. Toplu satır üretme açılır kutuda
+   (tablo yoksa kendiliğinden açılır). HAVAİ HAT: sayfaHavai'yi doldurmak sıradaki büyük iş (örnek proje istenecek).
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

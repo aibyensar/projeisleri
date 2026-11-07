@@ -28,6 +28,7 @@ const { chromium } = require('playwright');
   }, process.env.SENARYO || '');
   await p.goto('http://localhost:8765/araclar/baglanti-hatti.html');
   await p.waitForTimeout(1500);
+  await p.evaluate(() => { document.getElementById('hatSecim').hidden = false; document.querySelector('#hatTur [data-v=yeralti]').click(); });   // GDZ yüklenmeden yeraltı sayfası
   await p.setInputFiles('#f-ic', process.argv[3]);
   await p.waitForSelector('#gPanel:not([hidden])', { timeout: 30000 }); await p.waitForTimeout(800);
   console.log('panel:', await p.textContent('#gTarif'));
