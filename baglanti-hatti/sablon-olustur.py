@@ -101,6 +101,18 @@ def blok_al(kaynakDoc, ad, bolge, haric=lambda e: False, kablo_yaz=True):
     imp = Importer(kaynakDoc, d); imp.import_entities(secilen, target_layout=b); imp.finalize()
     return b
 src = ezdxf.readfile(kaynak); srcb = ezdxf.readfile(kaynakBox)
+# Ölçü (DIMENSION) nesneleri içe alınırken kayboluyor: önce çizgi + yazıya çevir
+for kd in (src, srcb):
+    for e in list(kd.modelspace().query('DIMENSION')):
+        try: e.explode()
+        except Exception as x: print('ölçü çevrilemedi', e.dxf.handle, x)
+# Detay yazılarında Türkçe karakter ve kablo adı düzeltmeleri
+DUZELT = {'BITMIS ZEMIN KOTU': 'BİTMİŞ ZEMİN KOTU', 'IKAZ SERIDI': 'İKAZ ŞERİDİ', 'TUGLA': 'TUĞLA', 'NYY KABLO': '{{KABLO}}',
+          'YOL GEÇISLERINDE 100lük': "YOL GEÇİŞLERİNDE Ø100'lük", 'PVC BORU': 'PVC BORU', 'GDZ': 'GDZ'}
+for kd in (src, srcb):
+    for e in kd.modelspace().query('TEXT'):
+        t = e.dxf.text.strip()
+        if t in DUZELT: e.dxf.text = DUZELT[t]
 # direk detayı: çerçeve çizgileri ve eski başlık hariç
 cer = lambda e: (e.dxftype() == 'LINE' and (abs(e.dxf.start.y - e.dxf.end.y) < 0.01 or abs(e.dxf.start.x - e.dxf.end.x) < 0.01)
                  and (bbox.extents([e]).size.x > 150 or bbox.extents([e]).size.y > 100)) or \
@@ -149,6 +161,10 @@ def sart_parcalari(n=4):
 bSartlar = sart_parcalari()
 
 # İçe alınanları sadeleştir: tek yazı tipi, siyah baskı (taramalar gri)
+for b in (bDirek, bBox, bKanal):          # detay yazıları 1,5 mm idi; basılınca okunaklı olsun
+    for e in b:
+        if e.dxftype() == 'TEXT' and e.dxf.height < 2.2: e.dxf.height = e.dxf.height * 1.25
+        elif e.dxftype() == 'MTEXT' and e.dxf.char_height < 2.2: e.dxf.char_height = e.dxf.char_height * 1.25
 for b in (bDirek, bBox, bKanal, *bSartlar):
     for e in b:
         if e.dxftype() == 'HATCH': e.dxf.color = 8

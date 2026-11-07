@@ -53,7 +53,8 @@
     let xb;
     if (v.baglanti === 'box') { sembol.box(c, -16, yh); xb = -7; c.yazi('AG BOX (GDZ ŞEBEKESİ)', -16, yh + 10, 2.4, { hiza: 'orta' }); }
     else { sembol.direk(c, -16, yh); xb = -10; c.yazi('MEVCUT AG DİREĞİ (GDZ)', -16, yh + 10, 2.4, { hiza: 'orta' }); }
-    c.yazi(v.kaynakAd || '', -16, yh - 11, 2.6, { stil: KALIN, hiza: 'orta' });
+    const ad = v.kaynakAd || '', adx = Math.max(-16, -38 + genislik(ad, 2.6) / 2);   // uzun ad çerçeveden taşmasın
+    c.yazi(ad, adx, yh - 11, 2.6, { stil: KALIN, hiza: 'orta' });
     sembol.nokta(c, xb, yh);
     let x = xb;
     if (v.baglanti !== 'box') { c.cizgi(x, yh, x + 6, yh, S); sembol.baslik(c, x + 6, yh); x += 13; }
@@ -67,7 +68,7 @@
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', lt: 'DASHED' });
     c.yazi('SAYAÇ PANOSU (mühürlenebilir bölüm)', (px1 + px2) / 2, py2 - 4, 2.6, { stil: KALIN, hiza: 'orta' });
     x = px1;
-    c.cizgi(x, yh, x + 6, yh, S); x += 6;
+    c.cizgi(x, yh, x + 12, yh, S); x += 12;   // ilk cihaz yazısı pano sınırına binmesin
     for (const k of v.korumalar) {
       const w = CIHAZ_GENISLIK[k.tur] || 12;
       sembol[k.tur](c, x, yh);
@@ -103,7 +104,7 @@
     const sari = (t, x1, x2, y, hh = 3.4) => { c.dolgu([[x1, y - 2.6], [x2, y - 2.6], [x2, y + 2.6], [x1, y + 2.6]], { katman: 'BHP-DOLGU', renk: 254 }); c.yazi(t, (x1 + x2) / 2, y, hh, { stil: KALIN, hiza: 'orta' }); };
     const y = (t, x, yy, hh = 3.4, o = {}) => c.yazi(t, X + x, Y - yy, hh, o);
     const U = mono ? 220 : 380, k = v.kablo.iletken === 'al' ? 35 : 56;
-    y(v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)', 33, 18, 3.2, { stil: KALIN, hiza: 'sag' });
+    y(v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)', 33, 18, 2.6, { stil: KALIN, hiza: 'sag' });
     c.dolgu([[X + 36, Y - 21], [X + 44, Y - 21], [X + 44, Y - 15], [X + 36, Y - 15]], { katman: 'BHP-SEMBOL' });
     c.cizgi(X + 44, Y - 18, X + 186, Y - 18);
     sari(v.kablo.yazi, X + 70, X + 160, Y - 11);
@@ -234,16 +235,30 @@
       if (v.baglanti === 'box') { c.kutu(a[0] - 4, a[1] - 2.8, a[0] + 4, a[1] + 2.8, K); c.cizgi(a[0] - 4, a[1] - 2.8, a[0] + 4, a[1] + 2.8, K); c.cizgi(a[0] - 4, a[1] + 2.8, a[0] + 4, a[1] - 2.8, K); }
       else c.daire(a[0], a[1], 2.8, K);
       c.kutu(b[0] - 3.5, b[1] - 2, b[0] + 3.5, b[1] + 2, K); c.dolgu([[b[0] - 3.5, b[1] - 2], [b[0] + 3.5, b[1] + 2], [b[0] + 3.5, b[1] - 2]], K);
-      // etiketler: noktanın dışına doğru, beyaz zeminli kutu içinde
+      // etiketler: beyaz zeminli kutu; birbirine ve çerçeve kenarına çarpmayan ilk yere konur
+      const dolu = [];
+      const kesisir = (r, q) => !(r[2] < q[0] || r[0] > q[2] || r[3] < q[1] || r[1] > q[3]);
       const etiket = (p, satirlar, yon) => {
         const h = 2.4, w = Math.max(...satirlar.map(s => genislik(s, h))) + 3, hh = satirlar.length * h * 1.45 + 2;
-        let ex = p[0] + (yon > 0 ? 6 : -6 - w), ey = p[1] + 5;
-        ex = Math.max(x0 + 1, Math.min(x1 - w - 1, ex)); ey = Math.max(y0 + 1, Math.min(y1 - hh - 1, ey));
+        const adaylar = [[6, 5], [6, -5 - hh], [-6 - w, 5], [-6 - w, -5 - hh], [6, 14], [-6 - w, 14], [6, -14 - hh], [-6 - w, -14 - hh], [-w / 2, 9], [-w / 2, -9 - hh]];
+        if (yon < 0) adaylar.sort((m, n) => m[0] - n[0]);
+        let sec = null;
+        for (const [dx, dy] of adaylar) {
+          let ex = p[0] + dx, ey = p[1] + dy;
+          ex = Math.max(x0 + 1, Math.min(x1 - w - 1, ex)); ey = Math.max(y0 + 1, Math.min(y1 - hh - 1, ey));
+          const r = [ex - 1, ey - 1, ex + w + 1, ey + hh + 1];
+          if (!dolu.some(q => kesisir(r, q))) { sec = [ex, ey, r]; break; }
+          if (!sec) sec = [ex, ey, r, true];
+        }
+        const [ex, ey, r] = sec; dolu.push(r);
         c.dolgu([[ex, ey], [ex + w, ey], [ex + w, ey + hh], [ex, ey + hh]], { katman: 'BHP-VAZIYET', renk: 255, beyaz: true });
         c.kutu(ex, ey, ex + w, ey + hh, K);
         satirlar.forEach((s, i) => c.yazi(s, ex + 1.5, ey + hh - 1 - (i + 0.5) * h * 1.45, h, { katman: 'BHP-VAZIYET', stil: i === 0 ? KALIN : INCE }));
-        c.cizgi(p[0], p[1], yon > 0 ? ex : ex + w, ey, K);
+        const bx = Math.max(ex, Math.min(ex + w, p[0])), by = p[1] < ey ? ey : (p[1] > ey + hh ? ey + hh : p[1]);
+        c.cizgi(p[0], p[1], bx, by, K);
       };
+      // işaret noktalarının çevresi de dolu sayılır (etiket sembolün üstüne binmesin)
+      for (const q of [a, b]) dolu.push([q[0] - 5, q[1] - 4, q[0] + 5, q[1] + 4]);
       const sol = a[0] < b[0];
       etiket(a, [v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Bağlantı noktası: AG box (GDZ)' : 'Bağlantı noktası: AG direği (GDZ)'], sol ? -1 : 1);
       etiket(b, ['SAYAÇ PANOSU', `Ada ${v.ada} / Parsel ${v.parsel}`], sol ? 1 : -1);

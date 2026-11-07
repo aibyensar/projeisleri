@@ -130,6 +130,9 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
   * DÜZELTME (kullanıcı: "iniyor ama boş AutoCAD dosyası geliyor"): yeni boş DXF'te açılış görünümü 0,0'daydı; şablonda
     msp.dxf.extmin/extmax, limits ve set_modelspace_vport ile paftalara ayarlandı (ezdxf $EXTMIN'i layout'tan yazar).
   * Vaziyet işaretinde "ENERJİ" yerine GDZ'deki direk/box adı yazar (web ve pafta etiketi).
+  * AutoCAD ekran görüntülerinden sonra düzeltilenler: kanal detayındaki ölçüler (DIMENSION) kayboluyordu → içe almadan
+    önce explode(); Türkçe harfler (İKAZ ŞERİDİ, TUĞLA, BİTMİŞ ZEMİN KOTU); "NYY KABLO" → seçilen kablo; detay yazıları ×1,25;
+    vaziyet etiketleri çakışmasın diye boş yer arama; uzun direk/box adı tek hatta taşmasın; pano ilk cihaz yazısı.
   * Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png (aynı klasörde olmalı).
   * Kullanıcının bahsettiği "örnek" henüz gelmedi; gelirse düzen ona göre ayarlanır.
 - Sıradaki: kullanıcı yeni sürümü dener (indirme, resimden okuma, AutoCAD'de açılış). Havai hat hâlâ yok. (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
