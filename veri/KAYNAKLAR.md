@@ -27,6 +27,9 @@ Veri dosyaları:
 **Hes Kablo** NYY kataloğu (hes.com.tr, ürün PDF 216) ile karşılaştırıldı. Değerler aynı mertebede,
 fark çoğunlukla %2–5 arası. Örnek, 4x16 NYY: Öznur 102 A toprak / 79 A hava, Hes 98 A / 80 A.
 
+NAYY 3x../.. değerleri Besav ve Hanif Kablo'nun NAYY tablolarıyla aynı (örnek 3x50/25: 142 A toprak / 124 A hava).
+N2XY 4 damarlı toprak değerleri Koç Kablo kataloğuyla aynı; havada 4x16 için Koç 96 A, Öznur 98 A.
+
 ## Bilinen eksikler
 - N2XY 2 damarlı kablolarda 70 mm² ve üstü için katalogda değer yok.
 - NYA boruda değeri 150 mm² ve üstü için katalogda yok.

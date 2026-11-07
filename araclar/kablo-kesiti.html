@@ -175,7 +175,8 @@ function dosemeGuncelle() {
 }
 
 const sayiMi = v => /^[\d.,]+$/.test(v) ? +v.replace(',', '.') : null;
-const satirEtiketi = r => r[0].replace(/^\*/, '').split(' ')[0];
+// Satır adından kesit etiketi: '4x16 rm' → '4x16', '3x16rm/10 re' → '3x16/10', '*0.75 re' → '0.75'
+const satirEtiketi = r => r[0].replace(/^\*/, '').replace(/r[em](?=\/)/, '').split(' ')[0];
 
 // Hesapta denenecek kablolar, doğrudan firma tablosundan.
 // Trifaze: 16 mm²'ye kadar 4 damarlı, üstünde piyasadaki gibi nötrü küçültülmüş 3 damarlı (3x25/16 …).

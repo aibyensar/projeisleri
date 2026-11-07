@@ -1267,6 +1267,305 @@ const KATALOG = [
   "dipnot": "rm : Bükülü iletken, *500 metre kablo için, **250 metre kablo için"
  },
  {
+  "kablo": "N2XY",
+  "firma": "Öznur Kablo",
+  "urun": "0.6/1 kV XLPE İzoleli PVC Kılıflı Çok Damarlı Bakır İletkenli Enerji Kabloları",
+  "tip": "YXV-U, YXV-R (TSE), N2XY (VDE)",
+  "standart": "TS IEC 60502-1, VDE 0276",
+  "yapi": "Bakır iletken, XLPE izole, PVC Dolgu kılıf, PVC dış kılıf",
+  "kullanim": "Dielektrik kaybı çok düşük olan bu kablolar, yerleşim ve endüstri bölgelerinde, hariçte, toprak altında ve kablo kanallarında ani yük değişimlerinin olduğu enerji tesislerinde kullanılır.",
+  "teknik": "Maks. çalışma sıcaklığı 90 °C · Maks. kısa devre sıcaklığı 250 °C · Min. bükülme yarı çapı 12*D D:Kablo dış çapı (mm)",
+  "url": "https://www.oznurkablo.com.tr/urunler/0.6-1-kV-XLPE-izoleli-Alcak-Gerilim-Guc-Kablolari/50-0-6-1-kV-XLPE-izOLELi-PVc-KILIFLI-ÇOK-DAMARLI-BAKIR-İLETKENLİ-ENERJ-i KABLOLARI-YXV -N2XY",
+  "akimBasligi": "Akım Taşıma Kapasitesi",
+  "akimSutun": 5,
+  "akim": [
+   "Toprakta",
+   "Havada"
+  ],
+  "basliklar": [
+   "Nominal Kesit (mm²)",
+   "Dış Çap Yaklaşık (mm)",
+   "Net Ağırlık Yaklaşık (kg/km)",
+   "1000 m Kablo İçin Sevk Makara Ölçüleri (cm)",
+   "20 °C’de İletken DC Direnci (Maks.) (ohm/km)",
+   "Toprakta (A)",
+   "Havada (A)"
+  ],
+  "satirlar": [
+   [
+    "4x1.5 re",
+    "11,5",
+    "190",
+    "90",
+    "12,1",
+    "30",
+    "23"
+   ],
+   [
+    "4x2.5 re",
+    "12,5",
+    "240",
+    "90",
+    "7,41",
+    "40",
+    "32"
+   ],
+   [
+    "4x4 re",
+    "13,5",
+    "310",
+    "90",
+    "4,61",
+    "52",
+    "42"
+   ],
+   [
+    "4x6 re",
+    "15,0",
+    "410",
+    "100",
+    "3,08",
+    "64",
+    "53"
+   ],
+   [
+    "4x10 rm",
+    "18,0",
+    "640",
+    "110",
+    "1,83",
+    "86",
+    "73"
+   ],
+   [
+    "4x16 rm",
+    "20,5",
+    "890",
+    "120",
+    "1,15",
+    "111",
+    "98"
+   ],
+   [
+    "4x25 rm",
+    "24,0",
+    "1300",
+    "140",
+    "0,727",
+    "143",
+    "126"
+   ],
+   [
+    "4x35 rm",
+    "26,5",
+    "1750",
+    "150",
+    "0,524",
+    "173",
+    "156"
+   ],
+   [
+    "4x50 rm",
+    "30,0",
+    "2300",
+    "160",
+    "0,387",
+    "205",
+    "190"
+   ],
+   [
+    "4x70 rm",
+    "35,0",
+    "3250",
+    "200",
+    "0,268",
+    "252",
+    "245"
+   ],
+   [
+    "4x95 rm",
+    "39,0",
+    "4350",
+    "230",
+    "0,193",
+    "303",
+    "297"
+   ],
+   [
+    "4x120 rm",
+    "43,0",
+    "5500",
+    "240",
+    "0,153",
+    "346",
+    "346"
+   ],
+   [
+    "4x150 rm",
+    "49,0",
+    "6700",
+    "210*",
+    "0,124",
+    "390",
+    "398"
+   ],
+   [
+    "4x185 rm",
+    "54,0",
+    "8400",
+    "220*",
+    "0,0991",
+    "441",
+    "455"
+   ],
+   [
+    "4x240 rm",
+    "60,5",
+    "10750",
+    "240*",
+    "0,0754",
+    "511",
+    "535"
+   ],
+   [
+    "4x300 rm",
+    "66,0",
+    "13600",
+    "280*",
+    "0,0601",
+    "580",
+    "630"
+   ],
+   [
+    "4x400 rm",
+    "74,0",
+    "17250",
+    "230**",
+    "0,0470",
+    "663",
+    "740"
+   ],
+   [
+    "5x4 re",
+    "15,0",
+    "350",
+    "90",
+    "4,61",
+    "52",
+    "42"
+   ],
+   [
+    "5x6 re",
+    "16,0",
+    "475",
+    "100",
+    "3,08",
+    "64",
+    "53"
+   ],
+   [
+    "5x10 rm",
+    "20,0",
+    "750",
+    "110",
+    "1,83",
+    "86",
+    "73"
+   ],
+   [
+    "5x16 rm",
+    "22,0",
+    "1070",
+    "120",
+    "1,15",
+    "111",
+    "98"
+   ],
+   [
+    "5x25 rm",
+    "26,0",
+    "1600",
+    "140",
+    "0,727",
+    "143",
+    "126"
+   ],
+   [
+    "5x35 rm",
+    "30,0",
+    "2150",
+    "150",
+    "0,524",
+    "173",
+    "156"
+   ],
+   [
+    "5x50 rm",
+    "33,0",
+    "2800",
+    "160",
+    "0,387",
+    "205",
+    "190"
+   ],
+   [
+    "5x70 rm",
+    "39,0",
+    "4000",
+    "200",
+    "0,268",
+    "252",
+    "245"
+   ],
+   [
+    "5x95 rm",
+    "44,0",
+    "5300",
+    "230",
+    "0,193",
+    "303",
+    "297"
+   ],
+   [
+    "5x120 rm",
+    "49,0",
+    "6700",
+    "240",
+    "0,153",
+    "346",
+    "346"
+   ],
+   [
+    "5x150 rm",
+    "55,0",
+    "6900",
+    "210*",
+    "0,124",
+    "390",
+    "398"
+   ],
+   [
+    "5x185 rm",
+    "61,0",
+    "8800",
+    "220*",
+    "0,0991",
+    "441",
+    "455"
+   ],
+   [
+    "5x240 rm",
+    "67,0",
+    "11100",
+    "240*",
+    "0,0754",
+    "511",
+    "535"
+   ]
+  ],
+  "dipnot": "re: Tek telli iletken YXV-U, rm : Bükülü iletken YXV-R, *500 metre kablo için, **250 metre kablo için"
+ },
+ {
   "kablo": "N2XH",
   "firma": "Öznur Kablo",
   "urun": "0.6/1 kV XLPE İzoleli Halojensiz Alev İletmeyen Çok Damarlı Bakır İletkenli Kablolar",
@@ -2722,6 +3021,143 @@ const KATALOG = [
    ]
   ],
   "dipnot": "rm : Bükülü iletken, * 500 metre kablo için re: Tek telli iletken"
+ },
+ {
+  "kablo": "NAYY",
+  "firma": "Öznur Kablo",
+  "urun": "0,6/1 kV PVC İzoleli Alüminyum İletkenli Güç Kabloları",
+  "tip": "YAVV-R (TSE), NAYY (VDE), AL/PVC/PVC (BS)",
+  "standart": "TS IEC 60502-1, VDE 0276",
+  "yapi": "Alüminyum iletken, PVC izole, PVC Dolgu, PVC dış kılıf",
+  "kullanim": "Şebeke aydınlatma ve güç kablosu olarak kullanılan bu kablo fazla mekanik zorlamaların dahili, harici toprak altında, ve kablo kanalında kullanılır.",
+  "teknik": "Maks. çalışma sıcaklığı 70 °C · Maks. kısa devre sıcaklığı 160°C · Minimum bükülme yarı çapı 12*D D:Kablo dış çapı (mm)",
+  "url": "https://www.oznurkablo.com.tr/urunler/0-6-1-kv-pvc-izoleli-aluminyum-iletkenli-guc-kablolari-yavv-r-tse-nayy-vde-al-pvc-pvc-bs-3",
+  "akimBasligi": "Akım taşıma kapasitesi (yaklaşık)",
+  "akimSutun": 5,
+  "akim": [
+   "Toprakta",
+   "Havada"
+  ],
+  "basliklar": [
+   "Nominal Kesit (mm²)",
+   "Dış Çap Yaklaşık (mm)",
+   "Net Ağırlık (kg/km)",
+   "1000 m Kablo İçin Sevk Makara Ölçüleri (cm)",
+   "20 °C’de maks. iletken direnci (ohm/km)",
+   "Toprakta (A) 20 °C’de",
+   "Havada (A) 30 °C’de"
+  ],
+  "satirlar": [
+   [
+    "3x16rm/10 re",
+    "21,0",
+    "580",
+    "120",
+    "1,910",
+    "78",
+    "64"
+   ],
+   [
+    "3x25/16 rm",
+    "25,0",
+    "800",
+    "140",
+    "1,200",
+    "99",
+    "83"
+   ],
+   [
+    "3x35/16 rm",
+    "27,0",
+    "950",
+    "150",
+    "0,868",
+    "118",
+    "102"
+   ],
+   [
+    "3x50/25 rm",
+    "32,0",
+    "1350",
+    "160",
+    "0,641",
+    "142",
+    "124"
+   ],
+   [
+    "3x70/35 rm",
+    "35,0",
+    "1700",
+    "200",
+    "0,443",
+    "176",
+    "158"
+   ],
+   [
+    "3x95/50 rm",
+    "40,0",
+    "2150",
+    "220",
+    "0,320",
+    "211",
+    "190"
+   ],
+   [
+    "3x120/70 rm",
+    "44,0",
+    "2750",
+    "230",
+    "0,253",
+    "242",
+    "221"
+   ],
+   [
+    "3x150/70 rm",
+    "48,0",
+    "3250",
+    "240",
+    "0,206",
+    "270",
+    "252"
+   ],
+   [
+    "3x185/95 rm",
+    "54,0",
+    "4100",
+    "210*",
+    "0,164",
+    "308",
+    "289"
+   ],
+   [
+    "3x240/120 rm",
+    "60,0",
+    "5150",
+    "230*",
+    "0,125",
+    "363",
+    "339"
+   ],
+   [
+    "3x300/150 rm",
+    "66,0",
+    "6250",
+    "250*",
+    "0,100",
+    "412",
+    "377"
+   ],
+   [
+    "3x400/185 rm",
+    "74,0",
+    "8250",
+    "260*",
+    "0,0778",
+    "475",
+    "444"
+   ]
+  ],
+  "dipnot": "rm : Bükülü iletken, * 500 metre kablo için re : Tek telli iletken"
  },
  {
   "kablo": "NAYY",
