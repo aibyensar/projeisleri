@@ -1,14 +1,14 @@
 ;;; ===========================================================================
-;;; ICTESISAT - İç tesisat akım kontrolü ve gerilim düşümü hesabı
+;;; GERILIMDUSUMU - İç tesisat akım kontrolü ve gerilim düşümü hesabı
 ;;; Proje İşleri - AutoCAD 2021 ve sonrası (AutoLISP, UTF-8)
 ;;;
 ;;; Komutlar:
-;;;   ICTESISAT  Hesabı sorar, yazıları ve tek hat şemasını çizer
-;;;   ICTAYAR    Gerilim, k, cos fi, düşüm sınırı ayarları
+;;;   GERILIMDUSUMU  Hesabı sorar, yazıları ve tek hat şemasını çizer
+;;;   GDAYAR         Gerilim, k, cos fi, düşüm sınırı ayarları
 ;;;
 ;;; Bu dosya autocad/olustur.js ile üretilir. Kablo değerleri veri/katalog.js
 ;;; içindeki Öznur Kablo tablolarından gelir. Elle değiştirmeyin; kaynak
-;;; dosyayı (autocad/kaynak/ictesisat-kaynak.lsp) değiştirip yeniden üretin.
+;;; dosyayı (autocad/kaynak/gerilimdusumu-kaynak.lsp) değiştirip yeniden üretin.
 ;;; ===========================================================================
 
 (vl-load-com)
@@ -522,6 +522,14 @@
   (if (not (vl-string-search "X" et)) (setq et (strcat (if (= faz "3") "5X" "3X") et)))
   (strcat et " mm² " tip))
 
+;;; Kablodan faz tahmini: 2x, 3x (nötrü küçültülmemiş) ve tek damar → monofaze;
+;;; 4x, 5x, 3x25/16 gibi → trifaze. Kullanıcı Enter ile kabul eder veya değiştirir.
+(defun ict:faz-tahmin (etiket)
+  (cond ((wcmatch etiket "2x*") "Monofaze")
+        ((and (wcmatch etiket "3x*") (not (vl-string-search "/" etiket))) "Monofaze")
+        ((not (vl-string-search "x" etiket)) "Monofaze")
+        (T "Trifaze")))
+
 ;;; ---------------------------------------------------------------- çizim
 (setq *ict-stil* "ICT_ARIAL")
 (defun ict:stil ()
@@ -562,7 +570,7 @@
   (ict:yazi (list (+ x (/ g 2.0)) (- y (* 1.3 h))) str (* 1.1 h) 6 5))
 
 ;;; ---------------------------------------------------------------- komut
-(defun c:ICTESISAT (/ *error* eski-dz eski-ce mevcut kurulu-s kurulu talep-s nt
+(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u kurulu-s kurulu talep-s nt
                       btip bk bsatir bdos bdos-kw bL n i hat hatlar faz tip satir L P ad
                       h pt x0 y u3 cosfi limit bolen In Iz akim-ok liste no c e eY toplam
                       adlar degerler px seg ilk-pano son hat-ad)
@@ -605,7 +613,11 @@
             *ict-bdos* bdos
             bdos (vl-position (strcase bdos T) (caddr bk))
             bL (ict:sor-real "Branşman uzunluğu (m)" (if *ict-bL* *ict-bL* 15.0))
-            *ict-bL* bL)))
+            *ict-bL* bL
+            bfaz (ict:sor-kw (strcat "Branşman " (strcase (ict:rep (car bsatir) "." ",")) " " btip " faz") "Trifaze Monofaze" (ict:faz-tahmin (car bsatir)))))
+    (setq bfaz (ict:sor-kw "Bağlantı faz" "Trifaze Monofaze" (if *ict-sfaz* *ict-sfaz* "Trifaze"))
+          *ict-sfaz* bfaz))
+  (setq bfk (if (= bfaz "Trifaze") "3" "1"))
 
   (setq n (ict:sor-int "İç hat sayısı" (if *ict-n* *ict-n* 2)) *ict-n* n
         hatlar '() i 0)
@@ -628,9 +640,11 @@
   (setq pt (trans pt 1 0))
 
   ;; --- hesap
-  (setq u3 (ict:ayar "U3" 380.0) cosfi (ict:ayar "COSFI" 0.8) limit (ict:ayar "LIMIT" 1.5)
-        bolen (atof (rtos (* (sqrt 3.0) u3 cosfi) 2 3))
-        In (/ nt (* (sqrt 3.0) u3 cosfi)))
+  (setq u (if (= bfk "3") (ict:ayar "U3" 380.0) (ict:ayar "U1" 220.0))
+        cosfi (ict:ayar "COSFI" 0.8) limit (ict:ayar "LIMIT" 1.5)
+        bolen (* (if (= bfk "3") (sqrt 3.0) 1.0) u cosfi)
+        In (/ nt bolen)
+        bolen (atof (rtos bolen 2 3)))
 
   ;; --- çizim
   (command "_.UNDO" "_BE")
@@ -652,14 +666,14 @@
             akim-ok (and Iz (<= In Iz)))
       (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YÖNÜNDEN KONTROL" h)
       (setq y (- y (* 4.0 h)))
-      (ict:satir (strcat "In = Nt / (√3 x U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen) " = "
+      (ict:satir (strcat "In = Nt / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen) " = "
                          (ict:n2 In) " A " (if akim-ok "<" ">") " " (if Iz (ict:ns Iz) "-") " A") 7)
-      (ict:satir (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) "3")
+      (ict:satir (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) bfk)
                          (if akim-ok " UYGUNDUR." " UYGUN DEĞİLDİR.")) (if akim-ok 7 1))
       ;; branşman şeması
-      (setq y (- y (* 3.5 h)) seg (max (* 26.0 h) (+ (* (strlen (ict:kablo-adi btip (car bsatir) "3")) h 0.75) (* 18.0 h))))
+      (setq y (- y (* 3.5 h)) seg (max (* 26.0 h) (+ (* (strlen (ict:kablo-adi btip (car bsatir) bfk)) h 0.75) (* 18.0 h))))
       (ict:cizgi (list x0 y) (list (+ x0 seg) y) 7)
-      (ict:yazi (list (+ x0 (/ seg 2.0)) (+ y (* 0.6 h))) (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) "3")) h 3 8)
+      (ict:yazi (list (+ x0 (/ seg 2.0)) (+ y (* 0.6 h))) (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) bfk)) h 3 8)
       (ict:yazi (list (+ x0 (/ seg 2.0)) (- y (* 0.6 h))) (strcat (ict:ns bL) " m") h 3 2)
       (ict:pano (+ x0 seg (* 1.2 h)) y h)
       (ict:yazi (list (+ x0 seg (* 3.5 h)) y) (strcat "NT= " (ict:n0 nt) " W") h 7 4)
@@ -667,7 +681,7 @@
     (progn
       (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YOĞUNLUĞU HESABI" h)
       (setq y (- y (* 4.0 h)))
-      (ict:satir (strcat "In = Nk / (√3 x U x CosQ) = "
+      (ict:satir (strcat "In = Nk / (" (if (= bfk "3") "√3 x " "") "U x CosQ) = "
                          (if (ict:sadece-sayi-mi talep-s) (ict:n0 nt) (ict:parantezli (ict:islem-yaz talep-s)))
                          " / " (ict:ns bolen) " = " (ict:n2 In) " A") 7)
       (ict:satir "BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR." 1)
@@ -679,7 +693,7 @@
   ;; hat listesi: (no faz-kodu iletken S L P nt? açıklama ad)
   (setq liste '() no (if mevcut 1 2))
   (if mevcut
-    (setq liste (list (list no "3" (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) "3")))
+    (setq liste (list (list no bfk (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) bfk)))
           no (1+ no)))
   (foreach x hatlar
     (setq liste (append liste (list (list no (if (= (nth 0 x) "Trifaze") "3" "1") (cadr (ict:kablo (nth 1 x)))
@@ -741,7 +755,7 @@
   (princ))
 
 ;;; ---------------------------------------------------------------- ayar komutu
-(defun c:ICTAYAR (/ v)
+(defun c:GDAYAR (/ v)
   (setq v (ict:sor-real "Trifaze gerilim (V)" (ict:ayar "U3" 380.0))) (ict:ayar-yaz "U3" v)
   (setq v (ict:sor-real "Monofaze gerilim (V)" (ict:ayar "U1" 220.0))) (ict:ayar-yaz "U1" v)
   (setq v (ict:sor-real "Bakır k" (ict:ayar "KCU" 56.0))) (ict:ayar-yaz "KCU" v)
@@ -754,5 +768,5 @@
                  ", monofaze alüminyum " (ict:ns (ict:katsayi "1" "al"))))
   (princ))
 
-(princ "\nProje İşleri yüklendi. Komutlar: ICTESISAT (hesap), ICTAYAR (ayarlar).")
+(princ "\nProje İşleri yüklendi. Komutlar: GERILIMDUSUMU (hesap), GDAYAR (ayarlar).")
 (princ)

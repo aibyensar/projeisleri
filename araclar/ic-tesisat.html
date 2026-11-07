@@ -49,6 +49,10 @@
       <button type="button" data-v="mevcut" aria-pressed="true">Branşman mevcut</button>
       <button type="button" data-v="yok" aria-pressed="false">Branşman yok</button>
     </div>
+    <div class="secim" id="sfaz">
+      <button type="button" data-v="3" aria-pressed="true">Trifaze</button>
+      <button type="button" data-v="1" aria-pressed="false">Monofaze</button>
+    </div>
     <div class="izgara2">
       <label>Kurulu güç (W)
         <input id="kurulu" type="text" inputmode="decimal" value="32200">
@@ -68,7 +72,7 @@
       <label>Döşeme<select id="b-doseme"></select></label>
       <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
     </div>
-    <p class="not">Gerilim düşümünde talep güç (Nt) kullanılır.</p>
+    <p class="not">Gerilim düşümünde talep güç (Nt) kullanılır. Faz, seçilen kabloya göre kendiliğinden ayarlanır: 2x ve 3x → monofaze, 4x, 5x ve 3x25/16 gibi → trifaze. Gerekirse üstten değiştirin.</p>
   </div>
 
   <div class="kart">
@@ -211,7 +215,12 @@ function bransmanSecenekleri() {
 }
 tipSecenekleri($('b-tip'), 'NYY');
 bransmanSecenekleri();
-$('b-tip').addEventListener('change', () => { bransmanSecenekleri(); hesapla(); });
+// Kablodan faz tahmini: 2x, 3x (nötrü küçültülmemiş), tek damar → monofaze; 4x, 5x, 3x25/16 → trifaze
+const fazTahmin = et => (/^2x/.test(et) || (/^3x/.test(et) && !et.includes('/')) || !et.includes('x')) ? '1' : '3';
+const fazSec = f => $('sfaz').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === f));
+$('sfaz').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) { fazSec(b.dataset.v); hesapla(); } });
+$('b-tip').addEventListener('change', () => { bransmanSecenekleri(); fazSec(fazTahmin($('b-satir').value)); hesapla(); });
+$('b-satir').addEventListener('input', () => fazSec(fazTahmin($('b-satir').value)));
 ['b-satir', 'b-doseme', 'b-L', 'kurulu', 'talep'].forEach(id => $(id).addEventListener('input', hesapla));
 
 // ---- Mod
@@ -237,7 +246,9 @@ $('sifirla').addEventListener('click', () => { for (const [id, v] of Object.entr
 function hesapla() {
   const mevcut = $('mod').querySelector('[aria-pressed="true"]').dataset.v === 'mevcut';
   $('bransmanKart').hidden = !mevcut;
-  const U3 = ayar('u-3'), cosfi = ayar('cosfi'), limit = ayar('limit');
+  const faz = $('sfaz').querySelector('[aria-pressed="true"]').dataset.v;
+  const U = ayar('u-' + faz), cosfi = ayar('cosfi'), limit = ayar('limit');
+  const kok = faz === '3' ? '√3 x ' : '';
   const kurulu = islem($('kurulu').value);
   const Nt = islem($('talep').value);
   const talepIslemMi = isFinite(Nt) && !/^\s*[\d.,]+\s*$/.test($('talep').value);
@@ -248,21 +259,21 @@ function hesapla() {
   if (isFinite(Nt)) satirlarCikti.push(`TALEP GÜÇ = ${talepIslemMi ? yazilanIslem($('talep').value) + ' = ' : ''}${tr(Nt, 0)} W`);
   satirlarCikti.push('');
 
-  const bolen = Math.sqrt(3) * U3 * cosfi;
+  const bolen = (faz === '3' ? Math.sqrt(3) : 1) * U * cosfi;
   const In = Nt / bolen;
   let akimUygun = true;
   if (mevcut) {
     const tip = $('b-tip').value, sutun = +$('b-doseme').value;
     const b = satirlar(tip).find(x => x.etiket === $('b-satir').value);
     const Iz = b.akim[sutun];
-    const ad = kabloAdi(tip, b.etiket, '3');
+    const ad = kabloAdi(tip, b.etiket, faz);
     akimUygun = Iz != null && In <= Iz;
     satirlarCikti.push('AKIM YÖNÜNDEN KONTROL');
-    satirlarCikti.push(`In = Nt / (√3 x U x CosQ) = ${tr(Nt, 0)} W / ${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A ${akimUygun ? '<' : '>'} ${Iz ?? '-'} A`);
+    satirlarCikti.push(`In = Nt / (${kok}U x CosQ) = ${tr(Nt, 0)} W / ${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A ${akimUygun ? '<' : '>'} ${Iz ?? '-'} A`);
     satirlarCikti.push(`MEVCUT BRANŞMAN ${ad} ${akimUygun ? 'UYGUNDUR.' : 'UYGUN DEĞİLDİR.'}`);
   } else {
     satirlarCikti.push('AKIM YOĞUNLUĞU HESABI');
-    satirlarCikti.push(`In = Nk / (√3 x U x CosQ) = ${talepIslemMi ? (/[+\-]/.test($('talep').value) && !/^\s*\(.*\)\s*$/.test($('talep').value) ? '(' + yazilanIslem($('talep').value) + ')' : yazilanIslem($('talep').value)) + ' / ' : tr(Nt, 0) + ' / '}${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A`);
+    satirlarCikti.push(`In = Nk / (${kok}U x CosQ) = ${talepIslemMi ? (/[+\-]/.test($('talep').value) && !/^\s*\(.*\)\s*$/.test($('talep').value) ? '(' + yazilanIslem($('talep').value) + ')' : yazilanIslem($('talep').value)) + ' / ' : tr(Nt, 0) + ' / '}${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A`);
     satirlarCikti.push('BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR.');
   }
   satirlarCikti.push('', 'GERİLİM DÜŞÜMÜ HESABI', '');
@@ -272,7 +283,7 @@ function hesapla() {
   if (mevcut) {
     const tip = $('b-tip').value;
     const b = satirlar(tip).find(x => x.etiket === $('b-satir').value);
-    liste.push({ ad: `Branşman ${kabloAdi(tip, b.etiket, '3')}`, faz: '3', il: KABLOLAR[tip].iletken, S: b.S, L: ayar('b-L'), P: Nt, nt: true });
+    liste.push({ ad: `Branşman ${kabloAdi(tip, b.etiket, faz)}`, faz, il: KABLOLAR[tip].iletken, S: b.S, L: ayar('b-L'), P: Nt, nt: true });
   }
   hatlar.forEach((h, i) => {
     const x = satirlar(h.tip).find(r => r.etiket === h.satir);
@@ -303,7 +314,7 @@ function hesapla() {
   $('durum').textContent = !isFinite(Nt) ? 'Talep gücünü girin' : hepsi ? `Uygun · toplam %${tr(toplam)}` : `Uygun değil · toplam %${tr(toplam)}${akimUygun ? '' : ' · branşman akımı yetmiyor'}`;
   $('durum').className = 'durum ' + (hepsi ? 'iyi' : 'kotu');
   $('cikti').textContent = satirlarCikti.join('\n');
-  $('katsayilar').textContent = `Katsayılar: trifaze bakır ${trSerbest(katsayi('3', 'cu'))}, trifaze alüminyum ${trSerbest(katsayi('3', 'al'))}, monofaze bakır ${trSerbest(katsayi('1', 'cu'))}, monofaze alüminyum ${trSerbest(katsayi('1', 'al'))}. In bölen: √3 × ${U3} × ${trSerbest(cosfi)} = ${trSerbest(+bolen.toFixed(3))}`;
+  $('katsayilar').textContent = `Katsayılar: trifaze bakır ${trSerbest(katsayi('3', 'cu'))}, trifaze alüminyum ${trSerbest(katsayi('3', 'al'))}, monofaze bakır ${trSerbest(katsayi('1', 'cu'))}, monofaze alüminyum ${trSerbest(katsayi('1', 'al'))}. In bölen: ${faz === '3' ? '√3 × ' : ''}${U} × ${trSerbest(cosfi)} = ${trSerbest(+bolen.toFixed(3))}`;
 }
 
 $('kopyala').addEventListener('click', async () => {

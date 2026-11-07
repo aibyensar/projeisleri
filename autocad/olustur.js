@@ -1,4 +1,4 @@
-// autocad/ICTESISAT.lsp dosyasını üretir: kaynak LISP + veri/katalog.js içindeki kablo değerleri.
+// autocad/GERILIMDUSUMU.lsp dosyasını üretir: kaynak LISP + veri/katalog.js içindeki kablo değerleri.
 // Çalıştırma: node autocad/olustur.js
 const fs = require('fs');
 const path = require('path');
@@ -24,9 +24,9 @@ const veri = `;;; Kablo verisi: (tip iletken (döşemeler) ((etiket kesit (akım
 ;;; Kaynak: Öznur Kablo ürün katalogları (oznurkablo.com.tr), Kasım 2026
 (setq *ict-kablolar* '(\n${kayitlar.join('\n')}\n))`;
 
-const kaynak = fs.readFileSync(path.join(__dirname, 'kaynak', 'ictesisat-kaynak.lsp'), 'utf8');
+const kaynak = fs.readFileSync(path.join(__dirname, 'kaynak', 'gerilimdusumu-kaynak.lsp'), 'utf8');
 const cikti = kaynak.replace(';;@@VERI@@', veri).replace(/\r?\n/g, '\r\n');
-fs.writeFileSync(path.join(__dirname, 'ICTESISAT.lsp'), cikti, 'utf8');
+fs.writeFileSync(path.join(__dirname, 'GERILIMDUSUMU.lsp'), cikti, 'utf8');
 
 // Parantez dengesi kontrolü (yazıların ve yorumların dışında)
 let derinlik = 0, yazida = false, yorumda = false, enDusuk = 0;
@@ -40,4 +40,4 @@ for (let i = 0; i < cikti.length; i++) {
   else if (c === ')') { derinlik--; enDusuk = Math.min(enDusuk, derinlik); }
 }
 if (derinlik !== 0 || enDusuk < 0) { console.error('Parantez hatası: derinlik', derinlik, 'en düşük', enDusuk); process.exit(1); }
-console.log('ICTESISAT.lsp üretildi:', cikti.length, 'karakter,', tipler.length, 'kablo tipi. Parantezler dengeli.');
+console.log('GERILIMDUSUMU.lsp üretildi:', cikti.length, 'karakter,', tipler.length, 'kablo tipi. Parantezler dengeli.');
