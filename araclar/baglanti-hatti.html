@@ -338,7 +338,7 @@ const ALANLAR = [
     ['Ldis', 'Parsel dışı (m)', '', 'number'], ['Lic', 'Parsel içi (m)', '', 'number'], ['projeTarihi', 'Proje tarihi']]],
   ['Sayaç panosu korumaları (sırayla)', [['k1tur', '1. koruma', '', KORUMA], ['k1deger', '1. değer (4x40A 10kA gibi)'],
     ['k2tur', '2. koruma', '', KORUMA], ['k2deger', '2. değer (4x40A 300mA gibi)'],
-    ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif']]],
+    ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif'], ['onuHepsi', 'Sayaç önü sigorta (bütün sayaçlara; farklıysa 4. bölümde tek tek)', 'genis']]],
 ];
 (function alanlariKur() {
   let h = '';
@@ -354,6 +354,12 @@ const ALANLAR = [
   $('alanlar').innerHTML = h;
   const panoTemizle = e => { const id = (e.target.id || '').slice(2); if (D.panoSupheli && D.panoSupheli[id]) { delete D.panoSupheli[id]; panoSupheliGoster(); } };
   $('alanlar').addEventListener('change', panoTemizle);
+  $('alanlar').addEventListener('input', e => {             // sayaç önü (hepsi): bütün satırlara yazılır
+    if (e.target.id !== 'a-onuHepsi') return;
+    const v = kesiciYaz(e.target.value);
+    D.satirlar.forEach((r, j) => { r.onu = v; if (D.supheli) delete D.supheli[j + ':onu']; });
+    D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; satirlariCiz();
+  });
   $('alanlar').addEventListener('input', e => { panoTemizle(e); guncelle(); satirOzet(); if (typeof isaretCiz === 'function') isaretCiz(); });
 })();
 function alanlariDoldur() {
@@ -424,7 +430,7 @@ function satirOzet() {
     (kay === 'yazı' || kay === 'resim' ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : kay === 'elle' ? ' · elle giriliyor' : '') +
     (hata.length ? ' — HATA: ' + hata.join(' · ') : k.uyari.length ? ' — dikkat: ' + k.uyari.join(' · ') : ' — kontrol: antetle uyumlu'), hata.length ? 'kotu' : 'iyi');
 }
-$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; if (D.supheli) delete D.supheli[el.dataset.j + ':' + el.dataset.k]; el.style.border = ''; D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; satirOzet(); guncelle(); } });
+$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; if (D.supheli) delete D.supheli[el.dataset.j + ':' + el.dataset.k]; el.style.border = ''; D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; if (el.dataset.k === 'onu') onuHepsiGoster(); satirOzet(); guncelle(); } });
 $('gucOnay').addEventListener('change', () => { satirOzet(); guncelle(); });
 $('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
 $('satirEkle').addEventListener('click', () => {
@@ -727,12 +733,16 @@ function gucResmiGoster(im) {
 const PANO_ISTEM = `Ekteki resim bir elektrik iç tesisat projesinin SAYAÇ PANOSU / ANA GİRİŞ / KOLON ŞEMASI bölümü.
 Enerji yolu: ŞEBEKE → BRANŞMAN KABLOSU → (1) ANA KESİCİ → bara → her bağımsız bölüm için (2) SAYAÇ ÖNÜ KESİCİ → SAYAÇ → o bölümün kolon hattı / tablosu.
 (1) ANA KESİCİ: branşman kablosunun panoya girdiği İLK koruma. Cinsi projeden projeye değişir: sigorta (buşonlu / NH, ör. "3x63A"), TMŞ (kompakt şalter, ör. "3x100A"), kaçak akımlı TMŞ / TMŞ+YKŞ tek cihaz (ör. "4x125A 300mA"); arkasında ayrı bir kaçak akım rölesi (K.A.R, ör. "4x63A 300mA") olabilir. Enerji yönünde sırayla en çok 2 cihaz yaz.
-(2) SAYAÇ ÖNÜ KESİCİ: bara ile her sayaç ARASINDAKİ otomat / sigorta. Sayacın ARKASINDAKİ kesiciler, dairelerin kendi tablolarındaki (TN, D1 tablosu vb.) sigortalar ve linye sigortaları SAYAÇ ÖNÜ DEĞİLDİR.
+(2) SAYAÇ ÖNÜ KESİCİ: bara ile her sayaç ARASINDAKİ otomat / sigorta (şemada sayaç sembolünün hemen önünde/üstünde; genelde "W" otomat ya da sigorta, ör. "3x25A", "3x32A 6kA", monofazede "1x40A"). HER sayaç için ayrı yaz; bu değerler ANA KESİCİDEN FARKLIDIR ve genellikle daha küçüktür. Değer bir kez ortak yazılmışsa (ör. "tüm sayaç önleri 3x32A") "onuOrtak" alanına yaz. Sayacın ARKASINDAKİ kesiciler, dairelerin kendi tablolarındaki (TN, D1 tablosu vb.) sigortalar ve linye sigortaları SAYAÇ ÖNÜ DEĞİLDİR.
 Değerleri resimde YAZDIĞI gibi aynen yaz (kutup x akım, kA, mA); tahmin etme, okuyamadığına null.
 Yalnız şu JSON'u döndür:
 {"ana": [ {"tur": "sigorta"|"tms"|"tmsyks"|"kar", "deger": str} ],
  "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh / reaktif varsa true),
+ "sayacSayisi": sayı (şemadaki sayaç adedi), "onuOrtak": str|null,
  "sayaclar": [ {"no": soldan/yukarıdan sıra 1.., "tablo": sayacın beslediği tablo / bağımsız bölüm adı (yazıyorsa, yoksa null), "onu": str} ]}`;
+// İlk okumalarda sayaç önü hiç bulunamazsa yalnız ona bakan ikinci soru
+const ONU_ISTEM = `Ekteki resim bir elektrik iç tesisat projesinin KOLON ŞEMASI / SAYAÇ PANOSU. Yalnız SAYAÇLARA bak: her sayaç sembolünün (kWh yazan kutu / daire) hemen önündeki (bara tarafındaki) otomat ya da sigortanın değerini oku (ör. "3x25A", "3x32A 6kA", "1x40A"). Panonun girişindeki ANA kesiciyi YAZMA. Resimde yazanı aynen yaz, tahmin etme.
+Yalnız şu JSON'u döndür: {"sayacSayisi": sayı, "onuOrtak": str|null (hepsine ortak tek değer yazılmışsa), "sayaclar": [ {"no": 1.., "tablo": sayacın beslediği tablo / bağımsız bölüm adı ya da null, "onu": str} ]}`;
 const kesiciYaz = s => String(s == null ? '' : s).replace(/\s*[xX*×]\s*/g, 'x').replace(/\s+/g, ' ').trim();
 const kesiciAnahtar = s => kesiciYaz(s).toUpperCase().replace(/\s/g, '');
 function cogunluk(liste) {                                   // [değer] → { v, adet } (boşlar sayılmaz)
@@ -746,21 +756,27 @@ async function panoOku(sample, ham, satirlar, yaz) {
   let sonHata = null;
   const oku = async () => { try { return await sample.json(PANO_ISTEM, { images: [ham], modelTier: 'default' }) || {}; } catch (x) { sonHata = x; return {}; } };
   const ana = o => (Array.isArray(o.ana) ? o.ana : []).filter(k => k && ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2);
-  const onuListe = o => {                                    // okumayı satırlara eşle: tablo adıyla, yoksa sırayla, tek değer varsa hepsine
-    const s = (Array.isArray(o.sayaclar) ? o.sayaclar : []).filter(x => x && x.onu);
+  const adNorm = x => String(x == null ? '' : x).toLocaleUpperCase('tr-TR').replace(/[\s._-]/g, '');
+  const onuListe = o => {                                    // okumayı satırlara eşle → [{ v, tahmin }]
+    const s = (Array.isArray(o.sayaclar) ? o.sayaclar : []).filter(x => x && x.onu && String(x.onu).trim());
+    const ortak = o.onuOrtak && String(o.onuOrtak).trim();
+    const farkli = [...new Set(s.map(x => kesiciAnahtar(x.onu)))];
+    const sayim = {}; s.forEach(x => { const k = kesiciAnahtar(x.onu); sayim[k] = (sayim[k] || 0) + 1; });
+    const enCok = s.length ? s.find(x => kesiciAnahtar(x.onu) === Object.keys(sayim).sort((p, q) => sayim[q] - sayim[p])[0]).onu : '';
     return satirlar.map((r, j) => {
-      const ad = x => String(x.tablo || '').trim().toUpperCase();
-      const t = s.find(x => ad(x) && [String(r.tablo || '').toUpperCase(), String(r.bb || '').toUpperCase()].includes(ad(x)));
-      if (t) return t.onu;
-      if (s.length === satirlar.length) return s[j].onu;
-      const farkli = [...new Set(s.map(x => kesiciAnahtar(x.onu)))];
-      return farkli.length === 1 ? s[0].onu : '';
+      const t = s.find(x => adNorm(x.tablo) && [adNorm(r.tablo), adNorm(r.bb)].includes(adNorm(x.tablo)));
+      if (t) return { v: t.onu, tahmin: false };
+      if (s.length === satirlar.length) return { v: s[j].onu, tahmin: false };
+      if (ortak) return { v: ortak, tahmin: false };
+      if (farkli.length === 1) return { v: s[0].onu, tahmin: false };
+      if (s.length) return { v: (s[j] || {}).onu || enCok, tahmin: true };   // sayılar tutmadı: sırayla / en çok geçen, kırmızı işaretlenir
+      return { v: '', tahmin: false };
     });
   };
   yaz('Sayaç panosu okunuyor…');
   const okumalar = [await oku()];
   yaz('Sayaç panosu ikinci kez okunuyor (karşılaştırma)…'); okumalar.push(await oku());
-  const imza = o => JSON.stringify([ana(o).map(k => k.tur + kesiciAnahtar(k.deger)), onuListe(o).map(kesiciAnahtar), kesiciAnahtar(o.sayac)]);
+  const imza = o => JSON.stringify([ana(o).map(k => k.tur + kesiciAnahtar(k.deger)), onuListe(o).map(x => kesiciAnahtar(x.v)), kesiciAnahtar(o.sayac)]);
   if (imza(okumalar[0]) !== imza(okumalar[1])) { yaz('İki okuma farklı; üçüncü kez okunuyor…'); okumalar.push(await oku()); }
   if (okumalar.every(o => !ana(o).length && !(o.sayaclar || []).length) && sonHata) throw sonHata;
   const n = okumalar.length, supheli = {}, tutmaz = c => c.adet < 2;
@@ -776,8 +792,18 @@ async function panoOku(sample, ham, satirlar, yaz) {
   const sayac = cogunluk(okumalar.map(o => String(o.sayac || '').replace(/A$/i, '')));
   if (sayac.v && tutmaz(sayac)) supheli.sayac = 1;
   const rk = cogunluk(okumalar.map(o => typeof o.reaktif === 'boolean' ? String(o.reaktif) : ''));
-  const onuL = okumalar.map(onuListe);
-  const onu = satirlar.map((_, j) => { const c = cogunluk(onuL.map(l => l[j])); if (c.v && tutmaz(c)) supheli['onu:' + j] = 1; return c.v; });
+  let onuL = okumalar.map(onuListe);
+  if (onuL.every(l => l.every(x => !x.v))) {                // sayaç önü hiç okunamadı: yalnız sayaçlara bakan iki okuma daha
+    yaz('Sayaç önü sigortalar ayrıca okunuyor…');
+    const ek = [];
+    for (let i = 0; i < 2; i++) { try { ek.push(await sample.json(ONU_ISTEM, { images: [ham], modelTier: 'default' }) || {}); } catch (x) { sonHata = x; } }
+    onuL = ek.map(onuListe);
+  }
+  const onu = satirlar.map((_, j) => {
+    const c = cogunluk(onuL.map(l => (l[j] || {}).v));
+    if (c.v && (tutmaz(c) || onuL.some(l => l[j] && l[j].tahmin))) supheli['onu:' + j] = 1;
+    return c.v;
+  });
   return { ana: anaS, sayac: sayac.v.replace(/\s+/g, ''), reaktif: rk.v ? rk.v === 'true' : null, onu, supheli, n };
 }
 function panoResmiGoster(im) {
@@ -803,13 +829,19 @@ function panoUygula(v) {
   D.panoSupheli = Object.fromEntries(Object.keys(v.supheli).filter(x => !x.startsWith('onu:')).map(x => [x, 1]));
   D.panoKaynak = 'resim';
   if (D.ic) { D.ic.korumalar = v.ana.length ? v.ana : D.ic.korumalar; if (v.sayac) D.ic.sayac = v.sayac; }
-  panoSupheliGoster(); satirlariCiz(); guncelle();
+  onuHepsiGoster(); panoSupheliGoster(); satirlariCiz(); guncelle();
+}
+function onuHepsiGoster() {
+  const f = [...new Set(D.satirlar.map(r => kesiciYaz(r.onu)))];
+  $('a-onuHepsi').value = f.length === 1 ? f[0] : ''; $('a-onuHepsi').placeholder = f.length > 1 ? 'satırlarda farklı değerler var (4. bölüm)' : 'ör. 3x32A 6kA';
 }
 function panoOzet(v) {
   const ad = { sigorta: 'sigorta', tms: 'TMŞ', tmsyks: 'TMŞ+YKŞ', kar: 'K.A.R' };
   const sup = Object.keys(v.supheli).length;
-  return `Ana kesici: ${v.ana.length ? v.ana.map(k => `${ad[k.tur] || k.tur} ${k.deger}`).join(' + ') : 'okunamadı'} · sayaç önü: ${[...new Set(v.onu.filter(Boolean))].join(', ') || 'okunamadı'}` +
-    (sup ? ` — ${sup} değerde okumalar tutmadı (kırmızı)` : ' — okumalar birbirini tuttu') + '. Resimle karşılaştırıp kutuyu işaretleyin.';
+  const eksik = v.onu.filter(x => !x).length;
+  return `Ana kesici: ${v.ana.length ? v.ana.map(k => `${ad[k.tur] || k.tur} ${k.deger}`).join(' + ') : 'okunamadı'} · sayaç önü: ${[...new Set(v.onu.filter(Boolean))].join(', ') || 'OKUNAMADI'}` +
+    (eksik ? ` — ${eksik} sayacın önü okunamadı: 3. bölümde "Sayaç önü sigorta" kutusuna ya da 4. bölümdeki tabloya elle girin` : '') +
+    (sup ? ` — ${sup} değer kontrol edilmeli (kırmızı kenarlı; okumalar ya da sayaç sayısı tutmadı)` : ' — okumalar birbirini tuttu') + '. Resimle karşılaştırıp kutuyu işaretleyin.';
 }
 $('panoOnay').addEventListener('change', () => guncelle());
 // ---- İç tesisat projesinde işaretleme: proje ekranda açılır, yaklaşıp uzaklaşılır; antet, güç dağıtım tablosu ve
@@ -1002,7 +1034,7 @@ $('gOku').addEventListener('click', async () => {
     else if (adim.ad === 'guc') [msg, kotu] = await gucOkuUygula(sample, ham, yaz);
     else {
       const v = await panoOku(sample, ham, D.satirlar, yaz);
-      panoResmiGoster(ham); panoUygula(v); msg = panoOzet(v) + ' (3. bölüm)'; kotu = Object.keys(v.supheli).length > 0 || !v.ana.length;
+      panoResmiGoster(ham); panoUygula(v); msg = panoOzet(v) + ' (3. bölüm)'; kotu = Object.keys(v.supheli).length > 0 || !v.ana.length || v.onu.some(x => !x);
       durum('d-pano', panoOzet(v), kotu ? 'kotu' : 'iyi');
     }
     G.durum[adim.ad] = 'okundu';

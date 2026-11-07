@@ -10,19 +10,22 @@ const { chromium } = require('playwright');
     const yol = u.includes('pdf.worker') ? NM + 'pdfjs-dist/build/pdf.worker.min.mjs' : u.includes('pdf.min') ? NM + 'pdfjs-dist/build/pdf.min.mjs' : NM + 'jszip/dist/jszip.min.js';
     r.fulfill({ path: yol, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
   p.on('pageerror', e => console.log('HATA', e.message));
-  await p.addInitScript(() => {
-    window.__istek = [];
+  await p.addInitScript(sen => {
+    window.__istek = []; window.__senaryo = sen;
     const cevap = (istem, o) => {
       window.__istek.push(istem.slice(0, 40).replace(/\n/g, ' '));
       if (/ANTETİ/.test(istem)) return { malSahibi: 'ÖRNEK MAL SAHİBİ', kuruluW: 122640, talepW: 32962, bagimsiz: '6', alan: '450', yapiSinifi: 'III-B' };
       if (/kırmızı numaralar/.test(istem)) { const m = istem.match(/\(1\.\.(\d+)\)/); window.__bant = m && +m[1];
         return { kuruluBirim: 'W', bantlar: [{ no: 1, tur: 'baslik' }].concat(['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 2, tur: 'veri', bb: String(i + 1), tablo: t, kurulu: '20440', baglanti: '12776', sayac: '3x10 A', kullanim: 'MESKEN', tesis: '' }))) }; }
+      const sen = window.__senaryo;
+      if (/Yalnız SAYAÇLARA bak/.test(istem)) return { sayacSayisi: 6, onuOrtak: '3x25A', sayaclar: [] };
       if (/SAYAÇ PANOSU \/ ANA GİRİŞ \/ KOLON/.test(istem)) return { ana: [{ tur: 'tmsyks', deger: '4x100A 300mA' }], sayac: '3x10', reaktif: false,
-        sayaclar: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 1, tablo: t, onu: '3x32A 6kA' })) };
+        sayaclar: sen === 'B' ? [] : sen === 'A' ? ['TN-1', 'TN-2', 'TN-3', 'TN-4', 'TN-5', 'TN-6', 'UMUMİ'].map((t, i) => ({ no: i + 1, tablo: t, onu: i === 6 ? '3x40A' : '3x32A 6kA' }))
+          : ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 1, tablo: t, onu: '3x32A 6kA' })) };
       return {};
     };
     window.claude = { use: async n => n === 'sample' ? { limits: async () => ({ images: { maxCount: 5 } }), json: async (i, o) => cevap(i, o) } : null };
-  });
+  }, process.env.SENARYO || '');
   await p.goto('http://localhost:8765/araclar/baglanti-hatti.html');
   await p.waitForTimeout(1500);
   await p.setInputFiles('#f-ic', process.argv[3]);
@@ -66,6 +69,9 @@ const { chromium } = require('playwright');
   await p.waitForFunction(() => /Ana kesici|okunamadı|Okunamadı/.test(document.getElementById('d-g').textContent), null, { timeout: 30000 });
   console.log('3)', await p.textContent('#d-g'));
   console.log('   adımlar:', await p.textContent('#gAdimlar'), '| k1:', await p.inputValue('#a-k1tur'), await p.inputValue('#a-k1deger'), '| onu:', await p.$eval('#satirlar input[data-k=onu]', e => e.value));
+  console.log('   onu sütunu:', JSON.stringify(await p.$$eval('#satirlar input[data-k=onu]', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'));
+  if (process.env.SENARYO === 'C') { await p.fill('#a-onuHepsi', '3 x 20A 6kA');
+    console.log('   elle hepsine:', JSON.stringify(await p.$$eval('#satirlar input[data-k=onu]', l => l.map(e => e.value + (e.style.border ? '(K)' : ''))))); }
   await p.check('#panoOnay'); await p.check('#gucOnay');
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle

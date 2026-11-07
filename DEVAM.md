@@ -151,6 +151,12 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    "Bu projede güç dağıtım tablosu yok, elle gireceğim": satırlar antetteki bağımsız bölüm sayısından boş açılır (sayaç önü korunur),
    resim onayı istenmez. PDF yazısından okunanlar önceliklidir (D.icYazi). Otomatik bölüm arama (bolumBul) KALDIRILDI.
    Deneme: test/sahte-ic.py (sahte PDF) + test/isaretle-dene.js (sahte cevaplar). Gerçek claude.ai'de kullanıcı henüz denemedi.
+1e. SAYAÇ ÖNÜ — DÜZELTİLDİ (7 Kasım 2026): kullanıcı "sayaç önlerini okuyamadı, elle girecek yer de yok; ana kesiciyi okuyor" dedi.
+   Sebep: okunan sayaçlar güç tablosu satırlarına ad/sayı tutmayınca boş bırakılıyordu. Şimdi eşleme: ad (boşluk/nokta/tire yok sayılır) →
+   sıra (sayılar eşitse) → onuOrtak → tek değer → sırayla/en çok geçen (kırmızı işaretli). İstemde sayaç önü ayrıntılı tarif edildi
+   (ana kesiciden farklı, sayaç sembolünün önünde, HER sayaç ayrı, onuOrtak, sayacSayisi). Hiç bulunamazsa ONU_ISTEM ile yalnız sayaçlara
+   bakan 2 ek okuma. Elle giriş: 3. bölüm korumalar grubunda "Sayaç önü sigorta (bütün sayaçlara…)" kutusu (a-onuHepsi) bütün satırlara
+   yazar, kırmızıları kaldırır; farklıysa 4. bölüm tablosunda tek tek. Deneme: SENARYO=A|B|C node test/isaretle-dene.js.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
