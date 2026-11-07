@@ -162,6 +162,13 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    r.onu olarak durur, tek hat şeması kullanır). Sayaç önü yalnız 3. bölümde: "Sayaç önü sigorta (bütün sayaçlara)" + açılır "sayaç sayaç"
    listesi (onuListe; farklıysa / kırmızı varsa kendiliğinden açılır). Kırmızılar ayrı sayılır (D.gucFark güç, D.onuFark sayaç önü).
    Paftadaki güç dağıtım tablosunda zaten sayaç önü sütunu yoktu.
+1g. BİLGİSAYAR DÜZENİ + ONAY (7 Kasım 2026): kullanıcı "3. bölümde kontrol için resme yaklaşabilmeliyim; doğru dediğim halde indir
+   açılmıyor; tasarım karmaşık; bu iş HİÇ telefondan yapılmayacak, hep PC" dedi. → Telefon düzeni gerekmez. main 1400 px; 1. bölümde 3
+   yükleme yan yana; işaretleme paneli solda adımlar + okut düğmesi, sağda büyük görüntü (74vh; tekerlek yaklaş, sürükle çerçeve, sağ tuş
+   kaydır). 3. ve 4. bölüm iki sütun (.iki): solda alanlar / tablo, sağda .kontrol kutusu; kontrol resimleri yakinKur() ile yakınlaştırılır
+   (tekerlek, sürükle, çift tık / Sığdır). İndir: "doğru" kutusu işaretlenince gucKontrol hataları ve kırmızılar kilitlemez, "Dikkat" olur
+   (gucOnay artık 4. bölümde tablonun altında, hata/kırmızı/resim varsa görünür). Eksikler 7. bölümde madde madde. Bölümler: 1-5, 6 Vaziyet,
+   7 İndir (malzeme/notlar gizli). Test görüntüsü 1440 px.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

@@ -51,14 +51,43 @@
   .uret { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; align-items: end; margin: 10px 0; }
   .uret label { font-size: .8rem; }
   .onizleme { background: #fff; color: #000; border: 1px solid var(--cizgi); border-radius: 8px; padding: 8px; margin-bottom: 10px; --kablo: #c0392b; }
-  #gKutu { position: relative; height: min(62vh, 560px); overflow: hidden; background: #dde1e6; border: 1px solid var(--cizgi); border-radius: 6px;
+  main { max-width: 1400px; }
+  .yukle { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .yukle > label { order: 1; }
+  #ro-gdz { order: 2; grid-column: 1 / -1; }
+  #gPanel { order: 3; grid-column: 1 / -1; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px;
+    border: 1px solid var(--cizgi); border-radius: 8px; padding: 12px; }
+  #gPanel[hidden] { display: none; }
+  .gSol { display: flex; flex-direction: column; gap: 10px; }
+  .gSol .not { margin: 0; }
+  .ipucu { font-size: .8rem; }
+  #gAdimlar { display: grid; gap: 6px; }
+  #gAdimlar button { font: inherit; text-align: left; padding: 10px 12px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  #gAdimlar button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); font-weight: 600; }
+  .gArac { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .gArac .kucuk-dugme { min-width: 40px; }
+  #gSayfa { width: auto; }
+  #gMod { margin: 0 0 0 auto; }
+  #gMod button { padding: 7px 14px; flex: none; }
+  .iki { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .iki:has(> .kontrol[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  .kontrol { border: 1px solid var(--cizgi); border-radius: 8px; padding: 12px; background: var(--kart); }
+  [hidden] { display: none !important; }
+  .onay { display: flex; flex-direction: row; gap: 10px; align-items: center; color: var(--yazi); font-size: .9rem; margin-top: 8px; font-weight: 600; padding: 8px 10px; border-radius: 6px; background: var(--zemin); cursor: pointer; }
+  .yakin { position: relative; overflow: hidden; border: 1px solid var(--cizgi); border-radius: 6px; background: #fff; cursor: grab; height: 60vh; margin-top: 8px; }
+  .yakin.surukle { cursor: grabbing; }
+  .yakin img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none !important; user-select: none; -webkit-user-drag: none; }
+  .yakin-arac { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; z-index: 2; }
+  .yakin-arac button { font: inherit; font-size: .85rem; min-width: 34px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--cizgi); background: rgba(255,255,255,.92); color: #222; cursor: pointer; }
+  .indir-durum { margin-top: 10px; font-size: .9rem; }
+  .indir-durum ul { margin: 4px 0 0; padding-left: 20px; }
+  .indir-durum.kotu { color: var(--kotu); } .indir-durum.iyi { color: var(--iyi); }
+  #gKutu { position: relative; height: 74vh; overflow: hidden; background: #dde1e6; border: 1px solid var(--cizgi); border-radius: 6px;
     touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
   #gKutu[data-mod=kaydir] { cursor: grab; }
   #gTaban, #gDetay { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #fff; pointer-events: none; }
   #gCerceve { position: absolute; border: 3px solid #d00; background: rgba(221,0,0,.08); pointer-events: none; }
-  .arac { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px; }
-  .arac .kucuk-dugme { min-width: 44px; }
-  .arac .secim button { padding: 8px 6px; }
   .onizleme h4 { margin: 0 0 4px; font-size: .8rem; color: #555; }
 </style>
 </head>
@@ -80,28 +109,31 @@
       <label><b>Onaylı iç tesisat projesi (PDF)</b>
         <input type="file" id="f-ic" accept="application/pdf,.pdf">
         <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
-      <div id="gPanel" hidden style="padding:10px;border:1px solid var(--cizgi);border-radius:8px">
-        <b>İç tesisat projesinde bölümleri sırayla işaretleyin</b>
-        <div class="secim" id="gAdimlar" style="margin:8px 0;flex-wrap:wrap"></div>
-        <p class="not" id="gTarif" style="margin:0 0 6px"></p>
-        <div class="arac">
-          <span class="durum" id="gSayfaKutu" style="margin:0">Sayfa <select id="gSayfa" style="width:auto"></select></span>
-          <button type="button" class="kucuk-dugme" id="gEksi" aria-label="Uzaklaş">−</button>
-          <button type="button" class="kucuk-dugme" id="gArti" aria-label="Yaklaş">+</button>
-          <button type="button" class="kucuk-dugme" id="gSigdir">Sayfayı sığdır</button>
-          <span class="secim" id="gMod" style="margin:0;flex:1;min-width:190px">
-            <button type="button" data-v="sec" aria-pressed="true">▭ Çerçevele</button>
-            <button type="button" data-v="kaydir" aria-pressed="false">✋ Kaydır</button>
-          </span>
-        </div>
-        <div id="gKutu" data-mod="sec">
-          <canvas id="gTaban"></canvas><canvas id="gDetay" hidden></canvas><div id="gCerceve" hidden></div>
-        </div>
-        <div style="display:grid;gap:8px;margin-top:8px">
+      <div id="gPanel" hidden>
+        <div class="gSol">
+          <b>İç tesisat projesinde bölümleri sırayla işaretleyin</b>
+          <div id="gAdimlar"></div>
+          <p class="not" id="gTarif"></p>
           <button type="button" class="ana-dugme" id="gOku" disabled>Çerçevelediğim yeri okut ve devam et</button>
           <button type="button" class="kucuk-dugme" id="gYok">Bu projede güç dağıtım tablosu yok, elle gireceğim</button>
+          <span class="durum" id="d-g"></span>
+          <p class="not ipucu">Fare ile: <b>sürükle</b> = çerçeve çiz · <b>tekerlek</b> = yaklaş / uzaklaş · <b>sağ tuşla sürükle</b> = kaydır.</p>
         </div>
-        <span class="durum" id="d-g"></span>
+        <div class="gSag">
+          <div class="gArac">
+            <span id="gSayfaKutu">Sayfa <select id="gSayfa"></select></span>
+            <button type="button" class="kucuk-dugme" id="gEksi" title="Uzaklaş">−</button>
+            <button type="button" class="kucuk-dugme" id="gArti" title="Yaklaş">+</button>
+            <button type="button" class="kucuk-dugme" id="gSigdir">Sayfayı sığdır</button>
+            <span class="secim" id="gMod">
+              <button type="button" data-v="sec" aria-pressed="true">▭ Çerçevele</button>
+              <button type="button" data-v="kaydir" aria-pressed="false">✋ Kaydır</button>
+            </span>
+          </div>
+          <div id="gKutu" data-mod="sec">
+            <canvas id="gTaban"></canvas><canvas id="gDetay" hidden></canvas><div id="gCerceve" hidden></div>
+          </div>
+        </div>
       </div>
       <label><b>TKGM parsel görüntüsü (resim), vaziyet planı için</b>
         <input type="file" id="f-tkgm" accept="image/*">
@@ -126,24 +158,30 @@
     <h2 style="margin-top:0">3. Bilgiler</h2>
     <p class="not">Yeşil kenarlı kutular belgelerin yazısından, turuncu kenarlılar resimden okundu. Hepsini kontrol edin, gerekirse düzeltin.</p>
     <div id="hatNotu"></div>
+    <div class="iki">
+    <div>
     <div class="alanlar" id="alanlar"></div>
     <details id="onuDetay" hidden style="margin:0 0 12px">
       <summary style="cursor:pointer;font-size:.9rem">Sayaç önü sigortaları sayaç sayaç (değerler farklıysa)</summary>
       <p class="not" style="margin:6px 0">Yalnız tek hat şemasında kullanılır; güç dağıtım tablosuna yazılmaz.</p>
       <div class="alanlar" id="onuListe" style="margin-bottom:0"></div>
     </details>
-    <div id="panoKutu" hidden style="margin:8px 0;padding:10px;border:1px solid var(--cizgi);border-radius:8px">
-      <b style="font-size:.9rem">Sayaç panosu: ana kesici ve sayaç önü sigortalar</b>
-      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (yalnız tek hat şemasında kullanılır). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır. Yanlışsa 1. bölümde "3. Kolon şeması" adımında çerçeveyi düzeltip yeniden okutun.</p>
-      <img id="panoResim" hidden alt="İç tesisat sayaç panosu / kolon şeması" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
-      <label id="panoOnayKutu" hidden style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="panoOnay"> Ana kesiciyi ve sayaç önü sigortalarını resimle karşılaştırdım, doğru.</label>
+    </div>
+    <div id="panoKutu" hidden class="kontrol">
+      <b>Kontrol: sayaç panosu / kolon şeması</b>
+      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (yalnız tek hat şemasında kullanılır). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır. Resme tekerlekle yaklaşıp sürükleyerek gezebilirsiniz. Yanlışsa 1. bölümde "3. Kolon şeması" adımında çerçeveyi düzeltip yeniden okutun.</p>
+      <img id="panoResim" alt="İç tesisat sayaç panosu / kolon şeması">
+      <label id="panoOnayKutu" hidden class="onay"><input type="checkbox" id="panoOnay"> Ana kesiciyi ve sayaç önü sigortalarını resimle karşılaştırdım, doğru.</label>
       <span class="durum" id="d-pano"></span>
+    </div>
     </div>
   </div>
 
   <div class="kart">
     <h2 style="margin-top:0">4. Güç dağılım tablosu</h2>
     <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin.</p>
+    <div class="iki">
+    <div>
     <div class="uret">
       <label>Daire sayısı<input type="number" id="u-adet" min="0" step="1" inputmode="numeric"></label>
       <label>Tablo adı öneki<input type="text" id="u-onek" value="D"></label>
@@ -153,14 +191,17 @@
       <label>Ortak bağlantı (W)<input type="number" id="u-obaglanti" min="0" inputmode="decimal"></label>
       <button type="button" class="kucuk-dugme" id="u-yap">Satırları üret</button>
     </div>
-    <div id="gucResimKutu" hidden style="margin:8px 0">
-      <p class="not" style="margin:0 0 4px"><b>İç tesisattaki tablonun kendisi</b> (resimden okundu). Aşağıdaki satırları bu resimle karşılaştırın; kırmızı kenarlı hücrelerde okumalar birbirini tutmadı.</p>
-      <img id="gucResim" alt="İç tesisat güç dağıtım tablosu" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
-      <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="gucOnay"> Tabloyu iç tesisatla karşılaştırdım, satırlar doğru.</label>
-    </div>
     <div class="tablo-kutu"><table class="duz" id="satirlar"></table></div>
     <button type="button" class="kucuk-dugme" id="satirEkle" style="margin-top:8px">+ Satır ekle</button>
     <p class="durum" id="d-satir"></p>
+    <label id="gucOnayKutu" hidden class="onay"><input type="checkbox" id="gucOnay"> Güç dağıtım tablosunu iç tesisatla karşılaştırdım, satırlar doğru.</label>
+    </div>
+    <div id="gucResimKutu" hidden class="kontrol">
+      <b>Kontrol: iç tesisattaki güç dağıtım tablosu</b>
+      <p class="not" style="margin:4px 0">Resimden okundu. Soldaki satırları bu resimle karşılaştırın; kırmızı kenarlı hücrelerde okumalar birbirini tutmadı. Resme tekerlekle yaklaşıp sürükleyerek gezebilirsiniz.</p>
+      <img id="gucResim" alt="İç tesisat güç dağıtım tablosu">
+    </div>
+    </div>
   </div>
 
   <div class="kart">
@@ -185,7 +226,7 @@
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">8. Vaziyet planı ve resimler</h2>
+    <h2 style="margin-top:0">6. Vaziyet planı ve resimler</h2>
     <p class="not">TKGM resminin üzerinde önce <b>enerji alınacak direği / box'ı</b>, sonra <b>sayaç panosunun yerini</b>, sonra panonun dayandığı <b>parsel sınırı üzerinde iki nokta</b> tıklayın (pano bu çizgiye paralel çizilir). Kablo güzergâhı kıvrılıyorsa aradaki dönüş noktalarını da ekleyin. Paftada bu noktalara sembol, güzergâh ve yazılar çizilir.</p>
     <div class="secim" id="isaretMod">
       <button type="button" data-v="nokta" aria-pressed="true" id="b-nokta">1. Direk / box</button>
@@ -207,9 +248,9 @@
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">9. Projeyi indirin</h2>
+    <h2 style="margin-top:0">7. Projeyi indirin</h2>
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
-    <p class="durum" id="d-indir"></p>
+    <div id="d-indir" class="indir-durum"></div>
     <ol class="adimlar">
       <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>4 dosya aynı yerde</b> kalsın: çizim, 2 resim ve kapaktaki logo şeridi.</li>
       <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
@@ -308,7 +349,7 @@ $('f-ic').addEventListener('change', async e => {
     for (const sayfa of s) { const g = BHP.gucTablosuOku(sayfa); if (g) { D.ic.satirlar = g; D.ic.gucKaynak = 'yazı'; break; } }
     D.gucFark = false; D.onuFark = false; D.supheli = {}; D.gucResimUrl = null; $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
     if (await ornekVar()) {
-      $('panoKutu').hidden = false; D.panoKaynak = null; D.panoSupheli = {}; $('panoResim').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
+      $('panoKutu').hidden = false; D.panoKaynak = null; D.panoSupheli = {}; $('panoResimYakin').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
       durum('d-pano', 'Kolon şemasını 1. bölümde işaretleyip okutun.');
     }
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
@@ -322,13 +363,49 @@ $('f-tkgm').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   D.vaziyet = await kirpVeSigdir(await createImageBitmap(f), BHP.RESIM.vaziyet);
   $('r-vaziyet').src = URL.createObjectURL(D.vaziyet); $('vazKutu').style.display = 'block'; isaretCiz();
-  durum('d-tkgm', 'Yüklendi. Aşağıda (8. bölüm) resim üzerinde yerleri işaretleyin.', 'iyi'); guncelle();
+  durum('d-tkgm', 'Yüklendi. Aşağıda (6. bölüm) resim üzerinde yerleri işaretleyin.', 'iyi'); guncelle();
 });
 $('f-uydu').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   D.uydu = await kirpVeSigdir(await createImageBitmap(f), BHP.RESIM.uydu);
   resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = 'Sizin seçtiğiniz resim'; guncelle();
 });
+
+// ---- Yakınlaştırılabilir kontrol resmi: tekerlek = yaklaş/uzaklaş, sürükle = kaydır, çift tık = sığdır ----
+const YK = {};
+function yakinKur(id) {
+  const img = $(id), kutu = document.createElement('div');
+  kutu.className = 'yakin'; kutu.id = id + 'Yakin'; img.parentNode.insertBefore(kutu, img); kutu.appendChild(img);
+  if (id === 'panoResim') kutu.hidden = true;
+  img.draggable = false; img.removeAttribute('style');
+  const ar = document.createElement('div'); ar.className = 'yakin-arac';
+  ar.innerHTML = '<button type="button" data-z="-1" title="Uzaklaş">−</button><button type="button" data-z="1" title="Yaklaş">+</button><button type="button" data-z="0">Sığdır</button>';
+  kutu.appendChild(ar);
+  const Z = YK[id] = { s: 1, tx: 0, ty: 0, fit: 1 };
+  const ciz = () => { img.style.transform = `translate(${Z.tx}px,${Z.ty}px) scale(${Z.s})`; };
+  Z.sigdir = () => {
+    const iw = img.naturalWidth, ih = img.naturalHeight; if (!iw) return;
+    img.style.width = iw + 'px'; img.style.height = ih + 'px';
+    const w = kutu.clientWidth, h = kutu.clientHeight; if (!w) return;
+    Z.fit = Z.s = Math.min(w / iw, h / ih); Z.tx = (w - iw * Z.s) / 2; Z.ty = (h - ih * Z.s) / 2; ciz();
+  };
+  const yakin = (k, mx, my) => {
+    const s = Math.min(Math.max(Z.s * k, Z.fit), Math.max(Z.fit, 4));
+    const px = (mx - Z.tx) / Z.s, py = (my - Z.ty) / Z.s; Z.s = s; Z.tx = mx - px * s; Z.ty = my - py * s; ciz();
+  };
+  img.addEventListener('load', () => requestAnimationFrame(Z.sigdir));
+  kutu.addEventListener('wheel', e => { e.preventDefault(); const r = kutu.getBoundingClientRect(); yakin(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+  let bas = null;
+  kutu.addEventListener('pointerdown', e => { if (e.target.closest('.yakin-arac')) return; kutu.setPointerCapture(e.pointerId); bas = { x: e.clientX, y: e.clientY, tx: Z.tx, ty: Z.ty }; kutu.classList.add('surukle'); });
+  kutu.addEventListener('pointermove', e => { if (!bas) return; Z.tx = bas.tx + e.clientX - bas.x; Z.ty = bas.ty + e.clientY - bas.y; ciz(); });
+  const birak = () => { bas = null; kutu.classList.remove('surukle'); };
+  kutu.addEventListener('pointerup', birak); kutu.addEventListener('pointercancel', birak);
+  kutu.addEventListener('dblclick', Z.sigdir);
+  ar.addEventListener('click', e => { const z = e.target.dataset.z; if (z == null) return; if (z === '0') Z.sigdir(); else yakin(z === '1' ? 1.6 : 1 / 1.6, kutu.clientWidth / 2, kutu.clientHeight / 2); });
+  window.addEventListener('resize', Z.sigdir);
+}
+function yakinSigdir(id) { requestAnimationFrame(() => YK[id] && YK[id].sigdir()); }
+yakinKur('panoResim'); yakinKur('gucResim');
 
 // ---- Düzenlenebilir alanlar ----
 const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=Kaçak akım rölesi (K.A.R)|tmsyks=TMŞ + YKŞ (kaçak akımlı)';
@@ -388,7 +465,7 @@ function alanlariDoldur() {
   }
   D.satirlar = b.satirlar; D.malzeme = null; D.notlarElle = false;
   const rk = D.ic && D.ic.gucKaynak === 'resim' && D.gucResimUrl;
-  $('gucResimKutu').hidden = !rk; if (rk) $('gucResim').src = D.gucResimUrl; $('gucOnay').checked = false;
+  $('gucResimKutu').hidden = !rk; if (rk) { $('gucResim').src = D.gucResimUrl; yakinSigdir('gucResim'); } $('gucOnay').checked = false;
   if (b.sayacAdet > 1) { $('u-adet').value = b.sayacAdet - 1; }
   satirlariCiz();
   const not = [];
@@ -443,8 +520,11 @@ $('onuListe').addEventListener('input', e => {
 function satirOzet() {
   const t = D.satirlar.reduce((a, r) => a + (parseFloat(r.kurulu) || 0), 0), tb = D.satirlar.reduce((a, r) => a + (parseFloat(r.baglanti) || 0), 0);
   const k = BHP.gucKontrol(bilgiler()), kay = D.ic && D.ic.gucKaynak;
-  const hata = k.hata.concat(D.gucFark ? ['okumalar bazı hücrelerde birbirini tutmadı (kırmızı hücreler): iç tesisatla karşılaştırıp düzeltin'] : [],
-    kay === 'resim' && !$('gucOnay').checked ? ['resimle karşılaştırıp "doğru" kutusunu işaretleyin'] : []);
+  const onay = $('gucOnay').checked;
+  $('gucOnayKutu').hidden = !(D.satirlar.length && (k.hata.length || D.gucFark || kay === 'resim'));
+  const sorun = k.hata.concat(D.gucFark ? ['okumalar bazı hücrelerde birbirini tutmadı (kırmızı hücreler)'] : []);
+  const hata = onay ? [] : sorun.concat(kay === 'resim' ? ['resimle karşılaştırıp "doğru" kutusunu işaretleyin'] : []);
+  if (onay && sorun.length) k.uyari.unshift(...sorun);
   durum('d-satir', `${D.satirlar.length} satır · toplam kurulu ${t} W · bağlantı gücü toplamı ${tb} W` +
     (kay === 'yazı' || kay === 'resim' ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : kay === 'elle' ? ' · elle giriliyor' : '') +
     (hata.length ? ' — HATA: ' + hata.join(' · ') : k.uyari.length ? ' — dikkat: ' + k.uyari.join(' · ') : ' — kontrol: antetle uyumlu'), hata.length ? 'kotu' : 'iyi');
@@ -562,20 +642,25 @@ function guncelle() {
   else if (!kablo) eksik.push('kablo: talep gücü ve uzunluk girilmeli (3. bölüm)');
   if (!D.satirlar.length) eksik.push('güç dağılım tablosu (4. bölüm)');
   else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (3. bölüm, "Sayaç önü sigorta"; tek hat şeması için)');
-  if (D.onuFark) eksik.push('sayaç önü sigortalar: kırmızı kenarlı değerleri kontrol edin (3. bölüm)');
+  const gOnay = $('gucOnay').checked, pOnay = $('panoOnay').checked;
   if (D.satirlar.length) {
-    const k = BHP.gucKontrol(b); k.hata.forEach(h => eksik.push('güç dağıtım tablosu: ' + h));
-    if (D.gucFark) eksik.push('güç dağıtım tablosu: kırmızı hücreleri iç tesisatla karşılaştırıp düzeltin');
-    if (D.ic && D.ic.gucKaynak === 'resim' && !$('gucOnay').checked) eksik.push('güç dağıtım tablosu: resimle karşılaştırıp "doğru" kutusunu işaretleyin (4. bölüm)');
+    const k = BHP.gucKontrol(b), neden = k.hata.slice();
+    if (D.gucFark) neden.push('kırmızı hücrelerde okumalar tutmadı');
+    if (D.ic && D.ic.gucKaynak === 'resim') neden.push('resimden okundu');
+    if (neden.length && !gOnay) eksik.push('güç dağıtım tablosu (' + neden.join('; ') + '): 4. bölümde kontrol edip "doğru" kutusunu işaretleyin');
+    else if (k.hata.length) uyari.push('güç dağıtım tablosu (onayladınız): ' + k.hata.join('; '));
   }
-  if (D.panoKaynak === 'resim' && !$('panoOnay').checked) eksik.push('sayaç panosu: ana kesici ve sayaç önü sigortaları resimle karşılaştırıp "doğru" kutusunu işaretleyin (3. bölüm)');
+  if (D.panoKaynak === 'resim' && !pOnay) eksik.push('sayaç panosu' + (D.onuFark ? ' (kırmızı kenarlı değerler var)' : '') + ': 3. bölümde resimle karşılaştırıp "doğru" kutusunu işaretleyin');
+  else if (D.onuFark && !pOnay) eksik.push('sayaç önü sigortalar: kırmızı kenarlı değerleri kontrol edin (3. bölüm)');
   if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
   if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
-  else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (8. bölüm)');
-  else if ((D.isaret.sinir || []).length < 2) uyari.push('vaziyet planında parsel sınırı işaretlenmedi, sayaç panosu yatay çizilecek (8. bölüm)');
+  else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (6. bölüm)');
+  else if ((D.isaret.sinir || []).length < 2) uyari.push('vaziyet planında parsel sınırı işaretlenmedi, sayaç panosu yatay çizilecek (6. bölüm)');
   $('indir').disabled = eksik.length > 0;
-  if (eksik.length) durum('d-indir', 'İndirmek için eksik: ' + eksik.join(' · '), 'kotu');
-  else durum('d-indir', uyari.length ? 'Hazır. Dikkat: ' + uyari.join(' · ') : 'Hazır.', uyari.length ? '' : 'iyi');
+  const liste = l => '<ul>' + l.map(t => `<li>${kac(t)}</li>`).join('') + '</ul>';
+  $('d-indir').className = 'indir-durum ' + (eksik.length ? 'kotu' : uyari.length ? '' : 'iyi');
+  $('d-indir').innerHTML = eksik.length ? '<b>İndirmek için şunlar gerekli:</b>' + liste(eksik) + (uyari.length ? '<b>Dikkat:</b>' + liste(uyari) : '')
+    : uyari.length ? '<b>Hazır.</b> Dikkat:' + liste(uyari) : '<b>Hazır.</b>';
 }
 function cizim() {
   const b = bilgiler();
@@ -746,7 +831,7 @@ Yalnız şu JSON'u döndür: {"kuruluBirim": "W" | "kW" (kurulu güç sütun ba�
 }
 function gucResmiGoster(im) {
   D.gucResimUrl && URL.revokeObjectURL(D.gucResimUrl); D.gucResimUrl = URL.createObjectURL(im);
-  $('gucResim').src = D.gucResimUrl; $('gucResimKutu').hidden = false; $('gucOnay').checked = false;
+  $('gucResim').src = D.gucResimUrl; $('gucResimKutu').hidden = false; $('gucOnay').checked = false; yakinSigdir('gucResim');
 }
 // ---- Sayaç panosu korumaları: ana kesici (branşman kablosunun girdiği) ve her sayacın önündeki kesici ----
 // 2 okuma (farklıysa 3), değer değer çoğunluk; tutmayan değer kırmızı işaretlenir, resim gösterilir, onay kutusu istenir.
@@ -828,7 +913,7 @@ async function panoOku(sample, ham, satirlar, yaz) {
 }
 function panoResmiGoster(im) {
   D.panoResimUrl && URL.revokeObjectURL(D.panoResimUrl); D.panoResimUrl = URL.createObjectURL(im);
-  $('panoResim').src = D.panoResimUrl; $('panoResim').hidden = false; $('panoOnayKutu').hidden = false; $('panoOnay').checked = false;
+  $('panoResim').src = D.panoResimUrl; $('panoResimYakin').hidden = false; yakinSigdir('panoResim'); $('panoOnayKutu').hidden = false; $('panoOnay').checked = false;
 }
 function panoSupheliGoster() {
   const s = D.panoSupheli || {};
@@ -1084,7 +1169,7 @@ async function gPanelAc() {
   $('gSayfa').innerHTML = Array.from({ length: D.icDoc.numPages }, (_, i) => `<option value="${i + 1}">${i + 1}. sayfa</option>`).join('');
   $('gSayfaKutu').style.display = D.icDoc.numPages < 2 ? 'none' : '';
   gAdimCiz();
-  durum('d-g', 'Çerçeve çizmek için tutup sürükleyin. İki parmakla (fareyle tekerlekle) yaklaşıp uzaklaşın; kaydırmak için iki parmakla sürükleyin ya da "Kaydır"ı seçin.');
+  durum('d-g', 'Projenin ilgili yerine tekerlekle yaklaşın, sonra fareyle sürükleyerek çerçeve çizin.');
   await gSayfaAc(1);
 }
 

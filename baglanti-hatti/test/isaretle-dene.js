@@ -5,7 +5,7 @@ const { chromium } = require('playwright');
 (async () => {
   const S = process.argv[2], NM = S + '/nd/node_modules/';
   const b = await chromium.launch();
-  const p = await b.newPage({ viewport: { width: 420, height: 900 } });
+  const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
   await p.route('https://cdnjs.cloudflare.com/**', r => { const u = r.request().url();
     const yol = u.includes('pdf.worker') ? NM + 'pdfjs-dist/build/pdf.worker.min.mjs' : u.includes('pdf.min') ? NM + 'pdfjs-dist/build/pdf.min.mjs' : NM + 'jszip/dist/jszip.min.js';
     r.fulfill({ path: yol, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
@@ -16,7 +16,7 @@ const { chromium } = require('playwright');
       window.__istek.push(istem.slice(0, 40).replace(/\n/g, ' '));
       if (/ANTETİ/.test(istem)) return { malSahibi: 'ÖRNEK MAL SAHİBİ', kuruluW: 122640, talepW: 32962, bagimsiz: '6', alan: '450', yapiSinifi: 'III-B' };
       if (/kırmızı numaralar/.test(istem)) { const m = istem.match(/\(1\.\.(\d+)\)/); window.__bant = m && +m[1];
-        return { kuruluBirim: 'W', bantlar: [{ no: 1, tur: 'baslik' }].concat(['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 2, tur: 'veri', bb: String(i + 1), tablo: t, kurulu: '20440', baglanti: '12776', sayac: '3x10 A', kullanim: 'MESKEN', tesis: '' }))) }; }
+        return { kuruluBirim: 'W', bantlar: [{ no: 1, tur: 'baslik' }].concat(['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 2, tur: 'veri', bb: String(i + 1), tablo: t, kurulu: window.__senaryo === 'D' ? '20000' : '20440', baglanti: '12776', sayac: '3x10 A', kullanim: 'MESKEN', tesis: '' }))) }; }
       const sen = window.__senaryo;
       if (/Yalnız SAYAÇLARA bak/.test(istem)) return { sayacSayisi: 6, onuOrtak: '3x25A', sayaclar: [] };
       if (/SAYAÇ PANOSU \/ ANA GİRİŞ \/ KOLON/.test(istem)) return { ana: [{ tur: 'tmsyks', deger: '4x100A 300mA' }], sayac: '3x10', reaktif: false,
@@ -75,7 +75,9 @@ const { chromium } = require('playwright');
   console.log('   güç tablosu sütunları:', await p.$$eval('#satirlar th', l => l.map(e => e.textContent).filter(Boolean).join(' | ')), '| liste açık:', await p.$eval('#onuDetay', d => !d.hidden && d.open));
   if (process.env.SENARYO === 'A') { await p.fill('#onuListe input[data-j="2"]', '3x25A'); for (const j of [0, 1, 3, 4, 5]) await p.fill(`#onuListe input[data-j="${j}"]`, '3x32A 6kA');
     console.log('   tek tek düzeltildi:', JSON.stringify(await p.$$eval('#onuListe input', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'), '|', await p.getAttribute('#a-onuHepsi', 'placeholder')); }
+  console.log('   onaydan önce indir:', (await p.textContent('#d-indir')).slice(0, 260));
   await p.check('#panoOnay'); await p.check('#gucOnay');
+  await p.screenshot({ path: S + '/genel.png', fullPage: true });
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle
   await p.click('#gAdimlar button[data-i="1"]');
