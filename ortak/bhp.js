@@ -240,6 +240,15 @@
     }
     return liste.sort((a, b) => a.kesit - b.kesit);
   }
+  // Kesici yazısı (kurumun kuralı): trifazede her zaman 4 kutup, monofazede 2 kutup (iç tesisatta 3x25A yazsa bile 4x25A);
+  // sigorta / TMŞ her zaman 10kA, YKŞ ve K.A.R her zaman 300mA; x her zaman küçük. "3X25A 6kA" → "4x25A 10kA"
+  function kesiciDuzelt(deger, tur, faz = 3) {
+    const d = String(deger || '').trim(); if (!d) return '';
+    const m = d.replace(',', '.').match(/(?:(\d+)\s*[xX×*]\s*)?(\d+(?:\.\d+)?)\s*A(?![a-zA-Z])/);
+    if (!m) return d.replace(/\s*[X×*]\s*/g, 'x');
+    const kutup = +faz === 1 ? 2 : 4, a = m[2].replace('.', ',');
+    return `${kutup}x${a}A ${tur === 'kar' || tur === 'tmsyks' ? '300mA' : '10kA'}`;
+  }
   // Ana kesici akımı (In): aşırı akıma karşı koruyan cihazlardan (sigorta, TMŞ, TMŞ+YKŞ); kaçak akım rölesi sayılmaz.
   // "4x125A 300mA" → 125. Birden çoksa en küçüğü.
   function anaKesiciA(korumalar) {
@@ -393,6 +402,6 @@
   }
 
   const BHP = { gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
-    virgul, baslikHarf, LOGO_DOSYA, anaKesiciA, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
+    virgul, baslikHarf, LOGO_DOSYA, anaKesiciA, kesiciDuzelt, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);

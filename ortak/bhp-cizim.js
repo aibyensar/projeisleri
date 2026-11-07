@@ -94,10 +94,11 @@
   }
   const CIHAZ_AD = { sigorta: '', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'YKŞ' };
   // Kesici etiketi (kullanıcının kuralı): akım "4x63A" biçiminde (x her zaman küçük); YKŞ ve K.A.R altında her zaman 300 mA, kesicilerde her zaman 10kA
-  function kesiciEtiket(k) {
-    const d = String(k.deger || ''), m = d.match(/(\d+)\s*[xX×*]\s*(\d+(?:[.,]\d+)?)\s*A(?![a-zA-Z])/), a = d.match(/(\d+(?:[.,]\d+)?)\s*A(?![a-zA-Z])/);
-    const akim = m ? `${m[1]}x${m[2]}A` : a ? `${a[1]}A` : d.trim();
-    const kutup = m ? +m[1] : 4, kacak = k.tur === 'kar' || k.tur === 'tmsyks';
+  // kurumun kuralı: trifazede her zaman 4 kutuplu, monofazede 2 kutuplu kesici (iç tesisatta 3x25A yazsa bile 4x25A)
+  function kesiciEtiket(k, faz = 3) {
+    const d = String(k.deger || ''), a = d.match(/(\d+(?:[.,]\d+)?)\s*A(?![a-zA-Z])/);
+    const kutup = +faz === 1 ? 2 : 4, akim = a ? `${kutup}x${a[1].replace('.', ',')}A` : d.trim();
+    const kacak = k.tur === 'kar' || k.tur === 'tmsyks';
     return { akim, ek: kacak ? '300 mA' : '10kA', kutup, kacak };
   }
   // Pano topraklama iletkeni: faz kesiti 35 mm²'ye kadar 16 mm²; üstünde faz kesitinin en az yarısı (standart kesit)
@@ -137,7 +138,7 @@
     c.cizgi(x, yh, x + 4, yh, S); x += 4;
     for (const k of v.korumalar) {
       const cx = x + 8;
-      const et = kesiciEtiket(k);
+      const et = kesiciEtiket(k, v.faz);
       if (et.kacak) sembol.ykş(c, cx, yh); else if (k.tur === 'sigorta') sembol.sigorta(c, cx, yh, et.kutup); else sembol.salter(c, cx, yh, k.tur);
       // etiket: YKŞ / K.A.R → ad, akım, 300 mA; kesici → (ad), 10kA, akım (kullanıcının örnekleri)
       const sat = et.kacak ? [CIHAZ_AD[k.tur], et.akim, et.ek] : [CIHAZ_AD[k.tur], et.ek, et.akim].filter(Boolean);
@@ -157,7 +158,7 @@
       if (g.onu) {
         sembol.otomat3(c, gx, yh + 14, true);
         c.cizgi(gx, yh, gx, yh + 6, S);
-        const et = kesiciEtiket({ tur: 'sigorta', deger: g.onu });          // kesicilerde her zaman 10kA
+        const et = kesiciEtiket({ tur: 'sigorta', deger: g.onu }, v.faz);    // sigortalarda her zaman 10kA, kutup faza göre
         c.yazi(et.ek, gx + 4, yh + 15, 2.3, { stil: KALIN }); c.yazi(et.akim, gx + 4, yh + 11.3, 2.3, { stil: KALIN });
         y = yh + 22;
       }

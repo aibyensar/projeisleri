@@ -197,6 +197,11 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    kablo kanalı / tek hat / hesap / semboller (0,824 ölçek); sağ: TEDAŞ metni. Her bölüm aynı çerçeve (kalın) + 7 birim başlık şeridi
    (blok() hem python'da hem bhp-cizim.js'te). Montaj detayı eski çizimi donustur ile çerçeveye büyütülür.
    AÇIK: 1) web aracının tasarımı (kullanıcı: "kalabalık, renkler cansız, daha modern, proje sayfası gibi, beni etkile").
+1m. KESİCİ KURALLARI (kurum): TRİFAZEDE KESİCİ HER ZAMAN 4 KUTUP (iç tesisatta 3x25A yazsa bile projede 4x25A), MONOFAZEDE 2 KUTUP;
+   sigortalar (ana kesici de sayaç önü de) HER ZAMAN 10kA; YKŞ / K.A.R HER ZAMAN 300 mA. bhp.js kesiciDuzelt(deger, tur, faz) → "4x25A 10kA";
+   web: okunan değerler ve elle girilen kutular (change) düzeltilir, faz değişince hepsi yeniden yazılır; bhp-cizim kesiciEtiket(k, faz).
+   GDZ kontrolü: bütün sayfalar değil, yalnız gerekli kısımlar (gdzKirpBul: bilgi tablosu etiketleri, enerji noktası + alt satırı,
+   AG bağlantı hattı satırı + başlığı; 70 pt'den uzak kümeler ayrı parça) alt alta tek resim; yazı yoksa 1. sayfa.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

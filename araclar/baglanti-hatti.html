@@ -346,6 +346,7 @@ $('f-gdz').addEventListener('change', async e => {
     const doc = await pdfAc(f), sayfalar = await sayfaYazilari(doc);
     D.gdzDoc = doc;
     D.gdz = BHP.gdzOku(sayfalar);
+    D.gdzKirp = await gdzKirpBul(doc, sayfalar);
     $('ro-gdz').hidden = true;
     if (!D.gdz.basvuruNo) {
       if (await ornekVar()) { $('ro-gdz').hidden = false; durum('d-gdz', 'Yazısı okunamadı. Aşağıdaki "resimden oku" düğmesine basın.', 'kotu'); return; }
@@ -439,6 +440,41 @@ function hatSec(tur) {
   $('sayfaYeralti').hidden = tur !== 'yeralti'; $('sayfaHavai').hidden = tur !== 'havai';
 }
 $('hatTur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) hatSec(b.dataset.v); });
+// GDZ yazısında kontrol için gereken yerler: bilgi tablosu, enerji alınacak şebeke noktası, bağlantı hattı satırı (sayfa yazılarından)
+const GDZ_ETIKET = [/^Başvuru Numarası/, /^Başvuru Sahibi/, /^Güç İstenen Yer/, /^Kullanım Amacı/, /^Kurulu Güç/, /^Talep Edilen Güç/,
+  /^Bağımsız Bölüm Sayısı/, /^Kazı İz/, /^Bağlantı Şekli/, /^Enerji Alınacak Şebeke Noktası/, /^Bağlantı Hattı/];
+async function gdzKirpBul(doc, sayfalar) {
+  const l = [];
+  for (let i = 0; i < sayfalar.length; i++) {
+    const s = sayfalar[i], ys = [];
+    for (const o of s) {
+      const t = o.s.trim();
+      if (GDZ_ETIKET.some(r => r.test(t))) { ys.push(o.y); if (/^Enerji Alınacak/.test(t)) ys.push(o.y + 22); }
+      if (t === 'AG' && s.some(q => Math.abs(q.y - o.y) <= 4 && /^(Yer\s*altı|Yeraltı|Havai)/i.test(q.s.trim()))) ys.push(o.y - 30, o.y);   // tablo başlığıyla
+    }
+    if (!ys.length) continue;
+    const vp = (await doc.getPage(i + 1)).getViewport({ scale: 1 });
+    ys.sort((a, b) => a - b);
+    let k = [ys[0], ys[0]];
+    const ekle = () => l.push({ p: i + 1, k: [0.02, Math.max(0, (k[0] - 16) / vp.height), 0.98, Math.min(1, (k[1] + 8) / vp.height)] });
+    for (const y of ys.slice(1)) { if (y - k[1] > 70) { ekle(); k = [y, y]; } else k[1] = y; }
+    ekle();
+  }
+  return l;
+}
+async function gdzKirpGoster() {
+  const l = D.gdzKirp || [];
+  if (!l.length) return gdzSayfaGoster(1);
+  $('gdzSayfa').innerHTML = '';
+  const res = []; for (const q of l) res.push(await createImageBitmap(await bolgeResmi(D.gdzDoc, q.p, q.k, 1800)));
+  const W = Math.max(...res.map(r => r.width)), ara = 14, H = res.reduce((t, r) => t + r.height, 0) + ara * (res.length - 1);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, W, H);
+  let y = 0; res.forEach((r, i) => { if (i) { cx.fillStyle = '#c8ced8'; cx.fillRect(0, y - ara / 2 - 1, W, 2); } cx.drawImage(r, 0, y); y += r.height + ara; });
+  const bl = await new Promise(r => cv.toBlob(r, 'image/png'));
+  D.gdzResimUrl && URL.revokeObjectURL(D.gdzResimUrl); D.gdzResimUrl = URL.createObjectURL(bl);
+  $('gdzResim').src = D.gdzResimUrl; yakinSigdir('gdzResim');
+}
 async function gdzSayfaGoster(p) {
   if (!D.gdzDoc) return;
   const n = D.gdzDoc.numPages;
@@ -450,7 +486,7 @@ async function gdzSayfaGoster(p) {
 $('gdzSayfa').addEventListener('click', e => { const b = e.target.closest('button'); if (b) gdzSayfaGoster(+b.dataset.p); });
 $('gdzOnay').addEventListener('change', () => guncelle());
 function hatGoster() {
-  const h = D.gdz && D.gdz.hatTipi; $('gdzKontrol').hidden = false; $('gdzOnay').checked = false; gdzSayfaGoster(1);
+  const h = D.gdz && D.gdz.hatTipi; $('gdzKontrol').hidden = false; $('gdzOnay').checked = false; gdzKirpGoster();
   if (h) { hatSec(h === 'HAVAI' ? 'havai' : 'yeralti'); durum('d-hat', `GDZ yazısına göre ${h === 'HAVAI' ? 'havai' : 'yeraltı'} hat. Yanlışsa diğerini seçin.`, 'iyi'); }
   else durum('d-hat', 'GDZ yazısında hat türü bulunamadı; seçin.', 'kotu');
 }
@@ -483,6 +519,16 @@ const ALANLAR = [
   const alanlar = { addEventListener: (t, f) => ['alan-antet', 'alan-gdz', 'alan-pano'].forEach(k => $(k).addEventListener(t, f)) };
   const panoTemizle = e => { const id = (e.target.id || '').slice(2); if (D.panoSupheli && D.panoSupheli[id]) { delete D.panoSupheli[id]; panoSupheliGoster(); } };
   alanlar.addEventListener('change', panoTemizle);
+  alanlar.addEventListener('change', e => {                // kesici değerleri: 4x (monofaze 2x), 10kA / 300mA
+    const id = e.target.id, fz = +$('a-faz').value || 3;
+    if (id === 'a-k1deger' || id === 'a-k2deger') e.target.value = BHP.kesiciDuzelt(e.target.value, $(id === 'a-k1deger' ? 'a-k1tur' : 'a-k2tur').value, fz);
+    if (id === 'a-onuHepsi') { e.target.value = BHP.kesiciDuzelt(e.target.value, 'sigorta', fz); D.satirlar.forEach(r => { r.onu = e.target.value; }); onuListeCiz(); }
+    if (id === 'a-faz') {                                    // faz değişince bütün kesiciler yeniden yazılır
+      for (const n of [1, 2]) $('a-k' + n + 'deger').value = BHP.kesiciDuzelt($('a-k' + n + 'deger').value, $('a-k' + n + 'tur').value, fz);
+      D.satirlar.forEach(r => { r.onu = BHP.kesiciDuzelt(r.onu, 'sigorta', fz); }); onuListeCiz(); onuHepsiGoster();
+    }
+    guncelle();
+  });
   alanlar.addEventListener('input', e => {             // sayaç önü (hepsi): bütün satırlara yazılır
     if (e.target.id !== 'a-onuHepsi') return;
     const v = kesiciYaz(e.target.value);
@@ -559,6 +605,10 @@ function onuListeCiz() {
   if (farkli || D.onuFark) $('onuDetay').open = true;
   $('onuListe').innerHTML = D.satirlar.map((r, j) => `<label>${kac(r.tablo || r.bb || (j + 1) + '. sayaç')}<input type="text" data-j="${j}" value="${kac(r.onu || '')}"${(D.supheli || {})[j + ':onu'] ? ' style="border:2px solid var(--kotu)" title="Kontrol edin"' : ''}></label>`).join('');
 }
+$('onuListe').addEventListener('change', e => {
+  const el = e.target; if (el.dataset.j == null) return;
+  el.value = BHP.kesiciDuzelt(el.value, 'sigorta', +$('a-faz').value || 3); D.satirlar[+el.dataset.j].onu = el.value; onuHepsiGoster(); guncelle();
+});
 $('onuListe').addEventListener('input', e => {
   const el = e.target; if (el.dataset.j == null) return;
   D.satirlar[+el.dataset.j].onu = kesiciYaz(el.value); if (D.supheli) delete D.supheli[el.dataset.j + ':onu'];
@@ -978,11 +1028,12 @@ function panoSupheliGoster() {
 // Okunan pano bilgisini sayfaya yazar (diğer alanlara dokunmaz)
 function panoUygula(v) {
   const k = v.ana.concat([{ tur: '', deger: '' }, { tur: '', deger: '' }]);
-  if (v.ana.length) { $('a-k1tur').value = k[0].tur; $('a-k1deger').value = k[0].deger; $('a-k2tur').value = k[1].tur; $('a-k2deger').value = k[1].deger; }
+  const fz = +$('a-faz').value || 3, kd = x => BHP.kesiciDuzelt(x.deger, x.tur, fz);
+  if (v.ana.length) { $('a-k1tur').value = k[0].tur; $('a-k1deger').value = kd(k[0]); $('a-k2tur').value = k[1].tur; $('a-k2deger').value = kd(k[1]); }
   if (v.sayac) $('a-sayac').value = v.sayac;
   if (v.reaktif !== null) $('a-sayacTur').value = v.reaktif ? 'Aktif-Reaktif' : 'Aktif';
   for (const id of ['k1tur', 'k1deger', 'k2tur', 'k2deger', 'sayac', 'sayacTur']) $('a-' + id).classList.add('resimden');
-  D.satirlar.forEach((r, j) => { if (v.onu[j]) r.onu = v.onu[j]; });
+  D.satirlar.forEach((r, j) => { if (v.onu[j]) r.onu = BHP.kesiciDuzelt(v.onu[j], 'sigorta', fz); });
   D.supheli = D.supheli || {};
   Object.keys(D.supheli).filter(x => x.endsWith(':onu')).forEach(x => delete D.supheli[x]);
   Object.keys(v.supheli).filter(x => x.startsWith('onu:')).forEach(x => { D.supheli[x.slice(4) + ':onu'] = 1; });
