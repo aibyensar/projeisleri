@@ -106,9 +106,28 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
   sayaç panosu bölgelerini bul, (2) o bölgeleri yüksek çözünürlükte kesip değerleri JSON olarak oku. Resimden okunan kutular
   turuncu kenarlı. GDZ yazısı için de aynı düğme var. Yayın: `python3 baglanti-hatti/yayin-hazirla.py <klasör>`;
   capabilities {downloads: true, sample: {images: true}}. Gerçek claude.ai'de henüz denenmedi (burada sahte yardımcıyla denendi).
-- LOGO: kullanıcının yeni logosu `baglanti-hatti/logo/` (lacivert zeminli asıl + beyaz zeminli baskı hali). Henüz paftaya konmadı.
-- PAFTA DÜZENİ: kullanıcı "proje düzensiz/karışık" dedi. Taslak önerildi (numaralı çerçeveli bölümler). Kullanıcı:
-  kâğıt boyutu ve antetin (kapak) yeri kendi örneklerindeki gibi kalsın (antet sol altta), gerisini ben düzenleyeyim;
-  ayrıca bir örnek yapıp gönderecek → örnek gelince paftayı yeniden düzenle.
-- Sıradaki: kullanıcının örneğini bekle; kullanıcı Faruk Erdoğan ve Ayşe Çelenk işleriyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
+- 3. SÜRÜM (7 Kasım 2026, kullanıcı "4/4'lük, düzenli, eksiksiz" istedi; kâğıt ve kapak yeri kendi örneğindeki gibi):
+  * Şablon YENİ BOŞ bir DXF'ten kurulur (ezdxf R2018): `python3 baglanti-hatti/sablon-olustur.py <harmandalı_BHP.dxf>
+    <boxlu BHP.dxf> baglanti-hatti/kapak.json baglanti-hatti/logo/agy-logo.png baglanti-hatti/BHP-SABLON.dxf`
+    (kaynak DXF'ler depoda yok, kişisel bilgi içerir; kapak.json kullanıcının KAPAK.dwg'si:
+    `node baglanti-hatti/araclar/dwg-oku.mjs KAPAK.dwg kapak.json`, @mlightcad/libredwg-web gerekir; dwg_write_dxf çöküyor,
+    convert() ile JSON alınıyor).
+  * Pafta 1/2 (954 x 900 mm, kullanıcının kâğıdı): 1 vaziyet planı (TKGM), 2 GDZ bağlantı krokisi, 3 bağlantı detayı
+    (direk/box blokları), 4 kablo kanalı detayı, 5 tek hat, 6 hesap, 7 güç dağılım, 8 malzeme, 9 sembol listesi (16),
+    10 genel notlar; antet = kullanıcının kapağı (sol alt), üst bölümde logo + iletişim; şerit: tarih/başvuru/ölçek/pafta.
+    Pafta 2/2: kullanıcının TEDAŞ "Enerji Kabloları Uygulama Usul ve Esasları" metni aynen, okuma sırasıyla 4 sütuna dağıtılmış.
+  * Kapakta düzeltmeler: ikinci "YAPININ" → "ARSA BİLGİLERİ", "ODA SICIL" → "ODA SİCİL", "BURO" → "BÜRO".
+    Kapaktaki küçük GDZ logosu (OLE) okunamadı, konmadı. Yeni alan: YAPI SINIFI.
+  * Tek yazı tipi (Arial: BHP / BHP-K), siyah baskı; içe alınan detaylar BYBLOCK renkte, taramalar gri (8).
+  * Notlar (10): kullanıcının kanal detayı + şartname metni + GDZ bağlantı görüşü EK maddelerinden derlendi; web'de düzenlenir.
+    İnternette GDZ'ye özel kaynak bulunamadı; değer uydurulmadı.
+  * Vaziyet: web'de TKGM resmine tıklayarak enerji noktası, sayaç panosu ve dönüş noktaları işaretlenir → paftaya sembol,
+    güzergâh ve etiketler çizilir. İşaretlenmezse resmin köşesine bilgi kutusu konur.
+  * Monofaze: c Cu 0,000074 / Al 0,000118, I = N/176, 3 damarlı kablolar. Trifaze: 16'ya kadar 4x, üstü 3x../..
+  * HATA DÜZELTİLDİ: katalogdaki "1.5", "2.5" kesitleri 15/25 okunuyordu (sayi() noktayı binlik sayıyor) → parseFloat.
+  * Yazı genişliği tahmini: AutoCAD'de yazı yüksekliği büyük harf yüksekliğidir; genislik() katsayıları buna göre (+%7 pay).
+  * Önizleme için ~/.fonts/arial.ttf = Liberation Sans (Arial ile aynı ölçü), `python3 -m ezdxf --fonts`.
+  * Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png (aynı klasörde olmalı).
+  * Kullanıcının bahsettiği "örnek" henüz gelmedi; gelirse düzen ona göre ayarlanır.
+- Sıradaki: kullanıcı yeni sürümü dener (indirme, resimden okuma, AutoCAD'de açılış). Havai hat hâlâ yok. (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
   Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).

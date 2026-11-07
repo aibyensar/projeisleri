@@ -73,6 +73,8 @@
       if (t) { v.hatTipi = /havai/i.test(t) ? 'HAVAI' : 'YERALTI'; v.uzunluk = sayi(t.split(':')[1]); }
     }
     v.geciciTesis = tum.some(o => /Geçici Tesis/i.test(o.s));
+    const ust = (sayfalar[0] || []).map(o => temiz(o.s)).find(t => /^\d{2}\.\d{2}\.\d{4}\s*\//.test(t));
+    if (ust) { v.tarih = ust.slice(0, 10); v.sayi = temiz(ust.split('/').slice(1).join('/')); }
     return v;
   }
 
@@ -107,6 +109,7 @@
     v.kat = altindaki(ogeler, /^KAT$/, 45);
     v.alan = altindaki(ogeler, /^TOPLAM$/, 45);
     v.bagimsiz = altindaki(ogeler, /^BAĞIMSIZ$/, 45);
+    v.yapiSinifi = altindaki(ogeler, /^SINIFI$/, 30);
     // Sayaç bölmesi: önce 100 mA ve üstü kaçak akım rölesi, ona en yakın "4x40A" röle akımı,
     // röleye en yakın diğer "4x..A" ana sigorta, sigortaya en yakın "..kA" kesme gücü.
     const uz = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -135,34 +138,36 @@
   }
 
   // ---------- Kablo seçimi ve hesap (kullanıcının yöntemi) ----------
-  const C = { cu: 0.0000124, al: 0.0000198 };       // 3 fazlı, 380 V; κ Cu 56, Al 35
-  const BOLEN = 527;                                 // √3 · 380 · 0,8 (kullanıcının projesindeki değer)
-  function kablolar(iletken) {
+  // Katsayılar kullanıcının yöntemi: c = 100/(κ·U²) trifaze 380 V, 200/(κ·U²) monofaze 220 V; κ Cu 56, Al 35
+  const C = { 3: { cu: 0.0000124, al: 0.0000198 }, 1: { cu: 0.000074, al: 0.000118 } };
+  const BOLEN = { 3: 527, 1: 176 };                  // √3·380·0,8 ve 220·0,8 (cos φ 0,8)
+  function kablolar(iletken, faz = 3) {
     const tur = iletken === 'al' ? 'NAYY' : 'NYY';
     const liste = [];
     for (const t of KATALOG.filter(t => t.kablo === tur)) {
       for (const r of t.satirlar) {
-        const ad = r[0].replace(/\s*(rm|re|sm|se)\b/gi, '').replace(/\s+/g, '');
+        const ad = r[0].replace(/\s*(rm|re|sm|se)\b/gi, '').replace(/\s+/g, '').replace(/(\d)(rm|re)\//i, '$1/');
         const m = ad.match(/^(\d)x(\d+(?:[.,]\d+)?)(?:\/(\d+(?:[.,]\d+)?))?$/);
         if (!m) continue;
-        const damar = +m[1], kesit = sayi(m[2]), notr = m[3];
+        const damar = +m[1], kesit = parseFloat(m[2].replace(',', '.')), notr = m[3];   // 1.5 → 1,5 mm² (sayi() noktayı binlik sayar)
         const iz = sayi(r[t.akimSutun]);
         if (isNaN(iz)) continue;
-        // kullanıcının kuralı: 16 mm²'ye kadar 4 damarlı, üstünde nötrü küçültülmüş 3x../..
-        if ((damar === 4 && !notr && kesit <= 16) || (damar === 3 && notr && kesit > 16)) {
-          liste.push({ ad, kesit, iz, tur, iletken, yazi: `${ad} mm² ${tur}` });
-        }
+        // kullanıcının kuralı: trifazede 16 mm²'ye kadar 4 damarlı, üstünde nötrü küçültülmüş 3x../..;
+        // monofazede 3 damarlı (faz + nötr + koruma)
+        const uygunTip = faz === 1 ? (damar === 3 && !notr) : ((damar === 4 && !notr && kesit <= 16) || (damar === 3 && notr && kesit > 16));
+        const adV = ad.replace(/\./g, ',');
+        if (uygunTip) liste.push({ ad: adV, kesit, iz, tur, iletken, faz, yazi: `${adV} mm² ${tur}` });
       }
     }
     return liste.sort((a, b) => a.kesit - b.kesit);
   }
   function hesap(k, N, L) {
-    const c = C[k.iletken];
-    const e = c * N * L / k.kesit, I = N / BOLEN;
+    const faz = k.faz || 3, c = C[faz][k.iletken];
+    const e = c * N * L / k.kesit, I = N / BOLEN[faz];
     return { c, e, I, uygun: e <= 1.5 && I <= k.iz, eUygun: e <= 1.5, iUygun: I <= k.iz };
   }
-  function kabloOner(iletken, N, L, enKucuk) {
-    const l = kablolar(iletken);
+  function kabloOner(iletken, N, L, enKucuk, faz = 3) {
+    const l = kablolar(iletken, faz);
     return l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L).uygun) || l[l.length - 1];
   }
 
@@ -191,7 +196,8 @@
       pafta: ilk(i.pafta) || '-',
       ada: ilk(i.ada, g.ada) || '',
       parsel: ilk(i.parsel, g.parsel) || '',
-      kuruluW, talepW,
+      kuruluW, talepW, faz: 3, tarih: g.tarih || '', sayi: g.sayi || '',
+      yapiSinifi: (i.yapiSinifi && i.yapiSinifi !== '-') ? i.yapiSinifi : '-',
       bagimsiz: String(bbSayi),
       kat: i.kat || '-',
       alan: /\d/.test(alanS) ? alanS.replace(/\s*m²?$/, '') : '-',
@@ -230,15 +236,38 @@
     return r;
   }
 
+  // ---------- Genel notlar (kaynaklar: kullanıcının kablo kanalı detayı ve şartname metni, GDZ bağlantı görüşü eki) ----------
+  function notlarOner(b) {
+    const box = b.baglanti === 'box';
+    const n = [
+      `Bu proje GDZ Elektrik Dağıtım A.Ş.'nin ${b.tarih ? b.tarih + ' tarih ve ' : ''}${b.basvuruNo || '...'} sayılı bağlantı görüşüne göre hazırlanmıştır. Enerji, ${b.direk || '...'} ${box ? 'AG box çıkışından' : 'AG direğinden'} alınacaktır.`,
+      'Bağlantı hattı yeraltı kablosu ile tesis edilecektir. Kablo kanalı, kablo kanalı detayına uygun açılacak; kablonun altına ve üstüne 10\'ar cm elenmiş kum serilecek, kum üzerine koruma tuğlası dizilecek, tuğlanın 20 cm üzerine plastik ikaz şeridi serilecektir.',
+      'Kabloların demiryolu, su kanalı ve karayolu altından geçişinde kullanılacak muhafaza borusunun üst kısmı en az 1,5 m derinlikte; üzerinden taşıt geçen diğer yollarda kanal derinliği 1 m olacak, enine geçişlerde kablolar borulu tipte döşenecektir.',
+      box ? 'Kablo, AG box ile sayaç panosu arasında yeraltından çekilecek; box girişinde ve yapı girişlerinde kablo koruma borusu içine alınacaktır. Yeraltı kablolu dağıtım şebekelerinde "Cam Elyaf Takviyeli Polyester - Tip B" saha dağıtım kutusu kullanılacaktır.'
+        : 'Direkten iniş ve yeraltı geçişlerinde galvanizli çelik boru kullanılacak, kablolar tek boru içerisinden geçirilecektir. Direk tarafında kablo başlığı yapılacaktır.',
+      'Kazı çalışması esnasında farklı altyapı unsurları ile karşılaşılması durumunda mevzuatta belirtilen mesafeler boyunca belirlenen altyapı unsurundan uzaklaşılacaktır.',
+      'GEREKLİ GEÇİŞ İZİNLERİ (belediye, karayolları vb.) ALINMADAN KABLO ÇEKİLMEYECEKTİR. İzin belgeleri geçici kabul aşamasında sunulacaktır.',
+      'Sayaç panosu TEDAŞ teknik şartnamesine uygun, mühürlenebilir olacak; sayaç ve koruma elemanları mühürlenebilir bölümde bulunacaktır.',
+      'Pano ve bağlantı hattı topraklaması Elektrik Tesislerinde Topraklamalar Yönetmeliğine göre yapılacak; topraklama değerleri yetkili elektrik mühendisince ölçülerek kabul öncesinde Kabul Heyeti Başkanlığına imzalı iki nüsha olarak verilecektir.',
+      'Tesis bitiminde bağlantı hattının ve iç tesisatın muayene ve kontrolü GDZ Bölge Müdürlüğü yetkilileri tarafından yapılacaktır.',
+      'Tesislerin yapımı aşamasında tüm iş güvenliği mevzuatına uygun çalışılacak olup iş güvenliği sorumluluğu talepliye aittir.',
+      'Kullanılacak tüm malzemeler TSE belgeli ve TEDAŞ teknik şartnamelerine uygun olacaktır.',
+      'Proje ve tesis; Elektrik Piyasası Kanunu, Elektrik İç Tesisleri Yönetmeliği, Elektrik Kuvvetli Akım Tesisleri Yönetmeliği, Elektrik Proje Hazırlama Yönetmeliği, Elektrik Tesislerinde Topraklamalar Yönetmeliği, Bağlantı ve Sistem Kullanım Yönetmeliği ve TEDAŞ "Elektrik Dağıtım Şebekeleri Enerji Kabloları Uygulama Usul ve Esasları"na (projenin 2. paftası) uygun yapılacaktır.',
+    ];
+    if (b.kaziIzni === 'Yok') n.splice(6, 0, 'GDZ bağlantı görüşüne göre kazı izni bulunmamaktadır; kazıya başlanmadan önce kazı izni alınacaktır.');
+    return n;
+  }
+
   // ---------- Çizim verisi (ortak/bhp-cizim.js için) ----------
-  function cizimVerisi(b, kablo, malzeme) {
-    const N = b.talepW, L = b.uzunluk;
+  function cizimVerisi(b, kablo, malzeme, notlar) {
+    const N = b.talepW, L = b.uzunluk, faz = kablo.faz || 3;
     return {
-      baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L),
+      baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L), faz, bolen: BOLEN[faz],
       korumalar: (b.korumalar || []).filter(k => k.tur),
       sayacAdet: b.sayacAdet || 1, sayacTip: b.sayac, sayacTur: b.reaktif ? 'Aktif-Reaktif (kombi)' : 'Aktif',
       satirlar: b.satirlar, kuruluToplam: b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0) || b.kuruluW,
-      malzeme: malzeme || malzemeOner(b, kablo),
+      malzeme: malzeme || malzemeOner(b, kablo), notlar: notlar || notlarOner(b),
+      ada: b.ada, parsel: b.parsel, vaziyet: b.vaziyet || null,
     };
   }
 
@@ -250,7 +279,8 @@
       MAHALLE: b.mahalle, PAFTA: b.pafta, ADA: b.ada, PARSEL: b.parsel,
       KURULU: `${b.kuruluW} W`, TALEP: `${b.talepW} W`, BB: b.bagimsiz, KAT: b.kat, ALAN: b.alan === '-' ? '-' : `${b.alan} m²`,
       KABLO: kablo.yazi, UZUNLUK: `${String(L).replace('.', ',')} m`, HATTIPI: 'YERALTI', DIREK: b.direk,
-      ADAPARSEL: `${b.ada}/${b.parsel}`,
+      ADAPARSEL: `${b.ada}/${b.parsel}`, YAPISINIFI: b.yapiSinifi || '-',
+      TARIH: b.projeTarihi || new Date().toLocaleDateString('tr-TR'), BASVURU: b.basvuruNo || '',
       UYDU: '.\\' + uyduDosya, VAZIYET: '.\\' + vaziyetDosya,
     };
   }
@@ -258,7 +288,7 @@
     return sablon.replace(/\{\{([A-Z_0-9]+)\}\}/g, (a, k) => temiz(d[k] === undefined ? '' : d[k]));
   }
 
-  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, cizimVerisi, degerler, doldur,
+  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, cizimVerisi, degerler, doldur,
     virgul, baslikHarf, RESIM: { uydu: [2000, 1087], vaziyet: [2000, 1056] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);
