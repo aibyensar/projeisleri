@@ -377,14 +377,14 @@ $('satirlar').addEventListener('input', e => { const el = e.target; if (el.datas
 $('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
 $('satirEkle').addEventListener('click', () => {
   const son = D.satirlar[D.satirlar.length - 1] || {};
-  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || '3FAZ', kullanim: son.kullanim || '', tesis: '', onu: son.onu || '' });
+  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || (($('a-sayac').value || '3x10') + ' A'), kullanim: son.kullanim || '', tesis: '', onu: son.onu || '' });
   satirlariCiz(); guncelle();
 });
 $('u-yap').addEventListener('click', () => {
   const n = parseInt($('u-adet').value, 10) || 0, on = $('u-onek').value || 'D';
   const kul = (D.satirlar[0] && D.satirlar[0].kullanim) || 'KONUT';
-  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '', onu: $('u-onu').value.trim() }));
-  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '', onu: $('u-oonu').value.trim() });
+  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: $('u-onu').value.trim() }));
+  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: $('u-oonu').value.trim() });
   $('a-sayacAdet').value = D.satirlar.length;
   satirlariCiz(); guncelle();
 });
@@ -618,7 +618,7 @@ Döndürülecek JSON:
       Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: ic.korumalar.length > 1, k2deger: ic.korumalar.length > 1 });
     }
     const satirYap = l => (Array.isArray(l) ? l : []).map(r => ({ bb: String(r.bb ?? ''), tablo: String(r.tablo ?? ''), kurulu: String(r.kurulu ?? '').replace(/\D/g, ''), baglanti: String(r.baglanti ?? '').replace(/\D/g, ''),
-        sayac: String(r.sayac ?? '3FAZ'), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? ''), onu: r.onu ? String(r.onu) : '' }));
+        sayac: String(r.sayac ?? ''), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? ''), onu: r.onu ? String(r.onu) : '' }));
     if (ic.gucKaynak === 'yazı') { /* tablo PDF yazısından kesin okundu; resimden okunan kullanılmaz */ }
     else if (Array.isArray(v.satirlar) && v.satirlar.length) {
       let a = satirYap(v.satirlar);

@@ -178,7 +178,7 @@
           if (kW && n < 1000) n = Math.round(n * 1000);
           if (!isNaN(n)) r[k] = String(Math.round(n));
         }
-        r.sayac = (r.sayac || '3FAZ').replace(/\s+/g, '');
+        r.sayac = temiz(r.sayac || '');
         satirlar.push(r);
       }
       if (satirlar.length) return satirlar;
@@ -249,8 +249,8 @@
     const gucKullanim = /MESKEN|KONUT/.test(kullanim) ? 'KONUT' : kullanim;
     const sayac = i.sayac || '3x10';
     const satirlar = bbSayi === 1
-      ? [{ bb: '1', tablo: 'AT', kurulu: String(kuruluW), baglanti: String(talepW), sayac: '3FAZ', kullanim: gucKullanim, tesis: '', onu: '' }]
-      : Array.from({ length: bbSayi }, (_, k) => ({ bb: String(k + 1), tablo: `D${k + 1}`, kurulu: '', baglanti: '', sayac: '3FAZ', kullanim: gucKullanim, tesis: '', onu: '' }));
+      ? [{ bb: '1', tablo: 'AT', kurulu: String(kuruluW), baglanti: String(talepW), sayac: `${sayac} A`, kullanim: gucKullanim, tesis: '', onu: '' }]
+      : Array.from({ length: bbSayi }, (_, k) => ({ bb: String(k + 1), tablo: `D${k + 1}`, kurulu: '', baglanti: '', sayac: `${sayac} A`, kullanim: gucKullanim, tesis: '', onu: '' }));
     return {
       basvuruNo: g.basvuruNo || '',
       malSahibi: buyuk(ilk(i.malSahibi, g.sahibi) || ''),

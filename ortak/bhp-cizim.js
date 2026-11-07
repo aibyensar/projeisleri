@@ -92,7 +92,7 @@
     c.dolgu([[ox + 5, yh], [ox - 5, yh + 3.4], [ox - 5, yh - 3.4]], S);
     c.yazi(v.kablo.yazi, ox, yh + 10.5, 3.2, { stil: KALIN, hiza: 'orta' });
     c.yazi(`L = ${sayiYaz(v.L)} m · YERALTI`, ox, yh + 5.5, 2.6, { hiza: 'orta' });
-    c.yazi(`${mono ? 'Monofaze 220 V' : 'Trifaze 380 V'} · N = ${v.N} W`, ox, yh - 5.5, 2.4, { hiza: 'orta' });
+    c.yazi(`N = ${v.N} W`, ox, yh - 5.5, 2.4, { hiza: 'orta' });
     // pano
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', lt: 'BHP-KESIK', kalin: true });
     c.yazi('mühürlenebilir alan', (px1 + px2) / 2, py2 + 3, 3.0, { hiza: 'orta' });
@@ -136,10 +136,10 @@
     });
     if (artan > 0) c.yazi(`+ ${artan} grup (güç dağıtım tablosuna bakınız)`, px2 - 2, yh - 7, 2.0, { hiza: 'sag' });
     c.yazi(`Toplam ${v.sayacAdet} adet elektronik sayaç`, px2 - 2, py1 + 3, 2.2, { hiza: 'sag' });
-    // pano topraklaması
-    const tk = topraklamaKesit(v.kablo.kesit), gxT = Math.max(xgSon, xg0) + 14;
-    c.cizgi(Math.max(xgSon, xg0), yh, gxT, yh, S); c.cizgi(gxT, yh, gxT, Y0 + 7, S); sembol.toprak(c, gxT, Y0 + 7);
-    c.yazi(`1x${tk} mm² NYY`, gxT + 4, Y0 + 7, 2.2, { stil: KALIN }); c.yazi('pano topraklaması', gxT + 4, Y0 + 3.5, 2.1);
+    // pano topraklaması: pano gövdesinin sağ alt köşesinden topraklama barasına / kazığa (baradan değil)
+    const tk = topraklamaKesit(v.kablo.kesit), gxT = px2;
+    c.cizgi(gxT, py1, gxT, Y0 + 7, S); c.daire(gxT, py1, 0.8, S); sembol.toprak(c, gxT, Y0 + 7);
+    c.yazi(`1x${tk} mm² NYY`, gxT - 6, Y0 + 7.5, 2.2, { stil: KALIN, hiza: 'sag' }); c.yazi('pano topraklaması', gxT - 6, Y0 + 4, 2.1, { hiza: 'sag' });
   }
 
   // ---------- Bağlantı hattı tesis / montaj detayı (ölçeksiz; box ve direk için ayrı) ----------
@@ -264,7 +264,7 @@
       ['Kablo', '', v.kablo.yazi],
       ['Faz iletkeni kesiti', 'S', `${sayiYaz(v.kablo.kesit)} mm²`],
       ['İletkenlik', 'κ', `${k} m/Ω·mm² (${v.kablo.iletken === 'al' ? 'alüminyum' : 'bakır'})`],
-      ['İşletme gerilimi', 'U', `${U} V (${mono ? 'monofaze' : 'trifaze'})`],
+      ['İşletme gerilimi', 'U', `${U} V`],
       ['Güç katsayısı', 'cos φ', '0,8'],
       ['Gerilim düşümü katsayısı', 'c', vg(h.c, 7)],
       ['Akım taşıma kapasitesi (toprak)', 'Iz', `${v.kablo.iz} A`],
@@ -294,7 +294,7 @@
     c.yazi(`L = ${sayiYaz(v.L)} m`, (sx0 + sx1) / 2, ys - 3.5, 2.5, { hiza: 'orta' });
     c.kutu(sx1, ys - 6, sx1 + 5, ys + 6, S); c.cizgi(sx1, ys + 6, sx1 + 5, ys - 6, S);
     c.yazi('SAYAÇ PANOSU', sx1 + 8, ys + 3, 2.4, { stil: KALIN });
-    c.yazi(`N = ${v.N} W · ${mono ? 'monofaze 220 V' : 'trifaze 380 V'}`, sx1 + 8, ys - 2, 2.3);
+    c.yazi(`N = ${v.N} W`, sx1 + 8, ys - 2, 2.3);
     c.cizgi(xc, ys - 10, x1, ys - 10, T);
     // sağ: hesap adımları
     let y = ys - 17;
@@ -324,7 +324,7 @@
   function gucTablosu(c, v, [x0, ya, x1, yu]) {
     const T = { katman: 'BHP-TABLO' }, W = x1 - x0;
     const K = [0, 0.12, 0.25, 0.38, 0.505, 0.63, 0.72, 0.84, 1].map(o => x0 + o * W);
-    const n = v.satirlar.length, basY = 6.5, sutunY = 11, alt = 3 * 6;
+    const n = v.satirlar.length, basY = 6.5, sutunY = 11, alt = 2 * 6;
     const sh = Math.min(6.5, Math.max(3.4, (yu - ya - basY - sutunY - alt) / Math.max(1, n)));
     const yH = yu, yS = yH - basY, yV = yS - sutunY, yT = yV - n * sh, yA = yT - alt;
     const yz = Math.min(2.6, sh * 0.48);
@@ -340,20 +340,18 @@
     v.satirlar.forEach((s, j) => {
       const yy = yV - sh * (j + 0.5);
       if (j) c.cizgi(K[1], yV - sh * j, x1, yV - sh * j, T);
-      [s.bb, s.tablo, s.kurulu, s.baglanti, s.sayac, s.kullanim, s.tesis || 'YENİ'].forEach((t, i) =>
+      [s.bb, s.tablo, s.kurulu, s.baglanti, /^3\s*FAZ$/i.test(s.sayac || '') || !s.sayac ? `${v.sayacTip} A` : s.sayac, s.kullanim, s.tesis || ''].forEach((t, i) =>
         c.yazi(t == null ? '' : t, (K[i + 1] + K[i + 2]) / 2, yy, yz, { hiza: 'orta' }));
     });
     if (yV - yT >= 8) {
       c.yazi('BAĞLANTI', (K[0] + K[1]) / 2, (yV + yT) / 2 + 1.8, 2.3, { stil: KALIN, hiza: 'orta' });
       c.yazi('HATTI', (K[0] + K[1]) / 2, (yV + yT) / 2 - 1.8, 2.3, { stil: KALIN, hiza: 'orta' });
     } else c.yazi('B. HATTI', (K[0] + K[1]) / 2, (yV + yT) / 2, 2.0, { stil: KALIN, hiza: 'orta' });
-    const bgT = v.satirlar.reduce((t, s) => t + (parseFloat(s.baglanti) || 0), 0);
-    const alts = [['TOPLAM KURULU GÜÇ (W)', v.kuruluToplam], ['TOPLAM BAĞLANTI GÜCÜ (BG\'LER TOPLAMI, W)', bgT || v.N],
-      ['BAĞLANTI HATTI BAĞLANTI GÜCÜ (EŞ ZAMANLI, W)', v.N]];
+    const alts = [['TOPLAM KURULU GÜÇ (W)', v.kuruluToplam], ['BAĞLANTI GÜCÜ (EŞ ZAMANLI, W)', v.N]];
     alts.forEach(([t, d], i) => {
       const y = yT - 6 * (i + 0.5);
       if (i) c.cizgi(x0, yT - 6 * i, x1, yT - 6 * i, T);
-      c.yazi(t, K[4] - 2, y, 2.3, { stil: i === 2 ? KALIN : INCE, hiza: 'sag' });
+      c.yazi(t, K[4] - 2, y, 2.3, { stil: i === 1 ? KALIN : INCE, hiza: 'sag' });
       c.yazi(String(d), (K[4] + K[5]) / 2, y, 2.5, { stil: KALIN, hiza: 'orta' });
     });
     c.cizgi(K[4], yT, K[4], yA, T); c.cizgi(K[5], yT, K[5], yA, T);

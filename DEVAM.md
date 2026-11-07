@@ -163,6 +163,11 @@ gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullan�
 10. Gri başlık dolguları kaldırıldı. 12. Usul ve esaslar: metin sırası (sağ sütun → sol alt [Madde 4..6] → k) MTEXT → sol üst [Madde 7..])
    birleştirilip paragraflara ayrıldı, gerçek Arial ölçüsüyle (ezdxf.fonts) iki eşit sütuna dizildi, alıntı altta çerçeveli.
 
+**v8.2:** "Trifaze 380 V" yazıları kaldırıldı; güç tablosunda "YENİ" kendiliğinden yazılmıyor, sayaç tipi "3x10 A" (3FAZ yok),
+alt satırlar yalnız toplam kurulu + eş zamanlı bağlantı gücü; pano topraklaması baradan değil pano gövdesinin sağ alt köşesinden.
+Kullanıcı: "en büyük problem iç tesisattan bilgiler yanlış geliyor" — örnek iç tesisat PDF'leri ISTENDI (gelmeden düzeltilemez); "sembollerde
+hâlâ hata var" dedi, hangileri olduğu soruldu.
+
 **AÇIK KONULAR (sıradaki)**
 0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
