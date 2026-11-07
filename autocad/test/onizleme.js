@@ -79,10 +79,10 @@ async function main() {
   const klasor = process.argv[2] || '.';
   L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8'));
   const senaryolar = {
-    mevcut: ['Evet', '32200', '(16220*0,45)+5000', 'NYY', '4x6', 'Havai', '15', '', '2',
-      'Trifaze', 'NYM', '5x6', '9', '5000', 'Monofaze', 'NYA', '2.5', '4', '2500', '2.5', '0,0'],
+    mevcut: ['Evet', '32200', '(16220*0,45)+5000', '4x6', 'NYY', 'Havai', '15', '', '2',
+      '5000', '5x6', 'NYM', '9', 'Trifaze', '2500', '2.5', 'NYA', '4', 'Monofaze', '2.5', '0,0'],
     yok: ['Hayir', '36140', '13136+4380', '', '2',
-      'Trifaze', 'NYM', '4x10', '4', '13136', 'Monofaze', 'NYA', '2.5', '6', '2500', '2.5', '0,0'],
+      '13136', '4x10', 'NYM', '4', 'Trifaze', '2500', '2.5', 'NYA', '6', 'Monofaze', '2.5', '0,0'],
   };
   const { chromium } = require('playwright');
   const b = await chromium.launch();

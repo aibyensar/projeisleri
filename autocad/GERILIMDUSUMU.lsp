@@ -520,6 +520,22 @@
         (princ (strcat "\n" tip " tablosunda \"" e "\" yok. Olanlar: "))
         (foreach x satirlar (princ (strcat (car x) " "))))))
   r)
+;;; Önce kesit, sonra kablo türü sorulur. Kesit o türün tablosunda yoksa kesit yeniden sorulur.
+;;; Dönüş: (tür satır)
+(defun ict:sor-kesit-tur (kim kesit-def tur-def / e tip r S)
+  (setq e (ict:normal (ict:sor-str (strcat kim " kablo kesiti (örnek 4x6, 3x25/16, 2.5)") kesit-def))
+        tip (ict:sor-kw (strcat kim " kablo türü") (ict:tip-kw) tur-def)
+        r (assoc e (cadddr (ict:kablo tip))))
+  (if (not r)
+    (progn
+      (princ (strcat "\n" tip " tablosunda \"" e "\" yok. Olanlar: "))
+      (foreach x (cadddr (ict:kablo tip)) (princ (strcat (car x) " ")))
+      ;; aynı kesit değerindeki satırı öner (örnek 5x6 → NYA için 6)
+      (setq S (atof (if (vl-string-search "x" e) (substr e (+ 2 (vl-string-search "x" e))) e))
+            r (car (vl-remove-if-not '(lambda (x) (equal (cadr x) S 0.001)) (cadddr (ict:kablo tip))))
+            r (ict:sor-satir kim tip (if r (car r) "")))))
+  (list tip r))
+
 (defun ict:kablo-adi (tip etiket faz / et)
   (setq et (ict:rep etiket "." ","))
   (if (not (vl-string-search "x" et)) (setq et (strcat (if (= faz "3") "5x" "3x") et)))
@@ -665,7 +681,7 @@
 (defun ict:parca-genislik (ad h) (max (* 17.0 h) (+ (* (+ (strlen ad) 6) h 0.5) (* 5.0 h))))
 
 ;;; ---------------------------------------------------------------- komut
-(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u y0 m g kim bdos-ad kol ys satirh tx tx0 kurulu-s kurulu talep-s nt
+(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u y0 m g kt kim bdos-ad kol ys satirh tx tx0 kurulu-s kurulu talep-s nt
                       btip bk bsatir bdos bdos-kw bL n i hat hatlar faz tip satir L P ad
                       h pt x0 y u3 cosfi limit bolen In Iz akim-ok liste no c e eY toplam
                       adlar degerler px seg ilk-pano son hat-ad)
@@ -703,11 +719,10 @@
     (progn
       (setq *ict-adim* "branşman soruları")
       (ict:grup "BRANŞMAN HATTI (%e1)")
-      (setq btip (ict:sor-kw "Branşman kablo tipi" (ict:tip-kw) (if *ict-btip* *ict-btip* "NYY"))
-            *ict-btip* btip
+      (setq kt (ict:sor-kesit-tur "Branşman" (if *ict-bsatir* *ict-bsatir* "4x6") (if *ict-btip* *ict-btip* "NYY"))
+            btip (car kt) *ict-btip* btip
             bk (ict:kablo btip)
-            bsatir (ict:sor-satir "Branşman" btip (if *ict-bsatir* *ict-bsatir* "4x6"))
-            *ict-bsatir* (car bsatir)
+            bsatir (cadr kt) *ict-bsatir* (car bsatir)
             bdos-kw (vl-string-trim " " (apply 'strcat (mapcar '(lambda (d) (strcat (ict:doseme-kw d) " ")) (caddr bk))))
             bdos (ict:sor-kw "Branşman döşemesi" bdos-kw
                              (if (and *ict-bdos* (vl-string-search *ict-bdos* bdos-kw)) *ict-bdos*
@@ -734,11 +749,13 @@
           kim (ict:hat-adi i n))
     (if (not (eq (type hat) 'LIST)) (setq hat nil))
     (ict:grup (strcat (ict:hat-ismi i n) " (%e" (itoa (+ i 2)) ")"))
-    (setq faz (ict:sor-kw (strcat kim " fazı") "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
-          tip (ict:sor-kw (strcat kim " kablo tipi") (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
-          satir (ict:sor-satir kim tip (if hat (nth 2 hat) (if (= tip "NYA") "2.5" "5x6")))
+    ;; sıra: güç, kesit, kablo türü, uzunluk, faz (faz kesitten tahmin edilir)
+    (setq P (ict:sor-real (strcat kim " gücü N (W)") (if hat (nth 4 hat) 2500.0))
+          kt (ict:sor-kesit-tur kim (if hat (nth 2 hat) (if (= i (1- n)) "2.5" "5x6")) (if hat (nth 1 hat) (if (= i (1- n)) "NYA" "NYM")))
+          tip (car kt) satir (cadr kt)
           L (ict:sor-real (strcat kim " uzunluğu (m)") (if hat (nth 3 hat) 5.0))
-          P (ict:sor-real (strcat kim " gücü N (W)") (if hat (nth 4 hat) 2500.0)))
+          faz (ict:sor-kw (strcat kim " fazı") "Trifaze Monofaze"
+                          (if (wcmatch (car satir) "#x*") (ict:faz-tahmin (car satir)) (if (= i (1- n)) "Monofaze" "Trifaze"))))
     (setq hatlar (append hatlar (list (list faz tip satir L P ""))))
     (setq i (1+ i)))
   (setq *ict-hatlar* (mapcar '(lambda (x) (list (nth 0 x) (nth 1 x) (car (nth 2 x)) (nth 3 x) (nth 4 x) (nth 5 x))) hatlar))

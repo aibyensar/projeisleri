@@ -196,9 +196,11 @@ B('MEMBER', (k, l) => { const a = lst(l); const i = a.findIndex(x => esit(x, k))
 B('VL-POSITION', (k, l) => { const i = lst(l).findIndex(x => esit(x, k)); return i < 0 ? NIL : i; });
 const fn = f => typeof f === 'function' ? f : f instanceof Sym ? get(f) : Array.isArray(f) && f[0] === S('LAMBDA') ? ev(f) : (() => { throw new LispError('bad function: ' + yaz(f)); })();
 B('MAPCAR', (f, ...ls) => { f = fn(f); const a = ls.map(lst); const n = Math.min(...a.map(x => x.length)); const r = []; for (let i = 0; i < n; i++) r.push(f(...a.map(x => x[i]))); return r.length ? r : NIL; });
+B('VL-REMOVE-IF-NOT', (f, l) => { f = fn(f); const r = lst(l).filter(x => f(x) !== NIL); return r.length ? r : NIL; });
+B('VL-REMOVE-IF', (f, l) => { f = fn(f); const r = lst(l).filter(x => f(x) === NIL); return r.length ? r : NIL; });
 B('APPLY', (f, l) => fn(f)(...lst(l)));
 B('NULL', v => bool(v === NIL)); B('NOT', v => bool(v === NIL));
-B('EQ', (a, b) => bool(a === b || esit(a, b) && !(Array.isArray(a)))); B('EQUAL', (a, b) => bool(esit(a, b)));
+B('EQ', (a, b) => bool(a === b || esit(a, b) && !(Array.isArray(a)))); B('EQUAL', (a, b, tol) => bool(tol != null && (typeof a === 'number' || isReal(a)) ? Math.abs(num(a) - num(b)) <= num(tol) : esit(a, b)));
 B('LISTP', v => bool(v === NIL || Array.isArray(v) || (v && v.dot)));
 B('TYPE', v => v === NIL ? NIL : typeof v === 'number' ? S('INT') : isReal(v) ? S('REAL') : isStr(v) ? S('STR') : Array.isArray(v) ? S('LIST') : S('SYM'));
 B('VL-LOAD-COM', () => NIL);
