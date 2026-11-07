@@ -531,24 +531,44 @@
         (T "Trifaze")))
 
 ;;; ---------------------------------------------------------------- çizim
+;; Çizilen her şeyin sınırı (en sonda o alana yakınlaştırmak için) ve sayısı
 (setq *ict-stil* "ICT_ARIAL")
+(defun ict:sinir-sifirla () (setq *ict-sinir* nil *ict-adet* 0 *ict-hata* 0))
+(defun ict:sinir (x y)
+  (setq *ict-sinir*
+    (if *ict-sinir*
+      (list (min x (nth 0 *ict-sinir*)) (min y (nth 1 *ict-sinir*))
+            (max x (nth 2 *ict-sinir*)) (max y (nth 3 *ict-sinir*)))
+      (list x y x y))))
+(defun ict:p3 (p) (ict:sinir (car p) (cadr p)) (list (float (car p)) (float (cadr p)) 0.0))
+(defun ict:say (e) (if e (setq *ict-adet* (1+ *ict-adet*)) (setq *ict-hata* (1+ *ict-hata*))) e)
 (defun ict:stil ()
   (if (not (tblsearch "STYLE" *ict-stil*))
     (entmake (list '(0 . "STYLE") '(100 . "AcDbSymbolTableRecord") '(100 . "AcDbTextStyleTableRecord")
                    (cons 2 *ict-stil*) '(70 . 0) '(40 . 0.0) '(41 . 1.0) '(50 . 0.0) '(71 . 0)
-                   '(42 . 2.5) '(3 . "arial.ttf") '(4 . "")))))
-(defun ict:yazi (p str h renk hiza)
+                   '(42 . 2.5) '(3 . "arial.ttf") '(4 . ""))))
+  ;; Stil oluşturulamadıysa çizimdeki Standard stille yaz
+  (if (not (tblsearch "STYLE" *ict-stil*)) (setq *ict-stil* "Standard")))
+(defun ict:yazi (p str h renk hiza / e v)
   ;; hiza: 1 sol üst, 2 orta üst, 4 sol orta, 5 orta, 8 orta alt
-  (entmakex (list '(0 . "MTEXT") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbMText")
-                  (cons 10 p) (cons 40 h) '(41 . 0.0) (cons 71 hiza) (cons 7 *ict-stil*) (cons 1 str))))
+  (setq p (ict:p3 p))
+  (ict:sinir (+ (car p) (* (strlen str) h 0.8)) (- (cadr p) (* 2.0 h)))
+  (setq v (list '(0 . "MTEXT") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbMText")
+                (cons 10 p) (cons 40 h) '(41 . 0.0) (cons 71 hiza) (cons 1 str)))
+  (setq e (entmakex (append v (list (cons 7 *ict-stil*)))))
+  (if (not e) (setq e (entmakex v)))     ; stil sorunu varsa stilsiz dene
+  (ict:say e))
 (defun ict:cizgi (p1 p2 renk)
-  (entmakex (list '(0 . "LINE") (cons 62 renk) (cons 10 p1) (cons 11 p2))))
+  (ict:say (entmakex (list '(0 . "LINE") (cons 62 renk) (cons 10 (ict:p3 p1)) (cons 11 (ict:p3 p2))))))
 (defun ict:dortgen (x1 y1 x2 y2 renk)
-  (entmakex (list '(0 . "LWPOLYLINE") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbPolyline")
+  (ict:sinir x1 y1) (ict:sinir x2 y2)
+  (ict:say (entmakex (list '(0 . "LWPOLYLINE") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbPolyline")
                   '(90 . 4) '(70 . 1)
-                  (list 10 x1 y1) (list 10 x2 y1) (list 10 x2 y2) (list 10 x1 y2))))
+                  (list 10 (float x1) (float y1)) (list 10 (float x2) (float y1))
+                  (list 10 (float x2) (float y2)) (list 10 (float x1) (float y2))))))
 (defun ict:ucgen (p1 p2 p3 renk)
-  (entmakex (list '(0 . "SOLID") (cons 62 renk) (cons 10 p1) (cons 11 p2) (cons 12 p3) (cons 13 p3))))
+  (ict:say (entmakex (list '(0 . "SOLID") (cons 62 renk) (cons 10 (ict:p3 p1)) (cons 11 (ict:p3 p2))
+                           (cons 12 (ict:p3 p3)) (cons 13 (ict:p3 p3))))))
 ;; Pano sembolü: kırmızı dikdörtgen, köşegenler, mavi dolu iki üçgen
 (defun ict:pano (x y h / w v)
   (setq w (* 1.2 h) v (* 1.8 h))
@@ -634,7 +654,7 @@
     (setq i (1+ i)))
   (setq *ict-hatlar* (mapcar '(lambda (x) (list (nth 0 x) (nth 1 x) (car (nth 2 x)) (nth 3 x) (nth 4 x) (nth 5 x))) hatlar))
 
-  (setq h (ict:sor-real "Yazı yüksekliği" (if *ict-h* *ict-h* 2.5)) *ict-h* h)
+  (setq h (ict:sor-real "Yazı yüksekliği (çizim birimi)" (if *ict-h* *ict-h* (getvar "TEXTSIZE"))) *ict-h* h)
   (setq pt (getpoint "\nHesabın yerleşeceği nokta (sol üst köşe): "))
   (if (not pt) (exit))
   (setq pt (trans pt 1 0))
@@ -648,6 +668,7 @@
 
   ;; --- çizim
   (command "_.UNDO" "_BE")
+  (ict:sinir-sifirla)
   (ict:stil)
   (setq x0 (car pt) y (cadr pt))
   (defun ict:satir (str renk) (ict:yazi (list x0 y) str h renk 1) (setq y (- y (* 1.8 h))))
@@ -748,6 +769,13 @@
     (ict:satir (strcat "%et: " (ict:n2 toplam) " < " (ict:ns limit) " olduğundan kullanılan tüm kesitler uygundur.") 7))
 
   (command "_.UNDO" "_E")
+  ;; çizilen alana yakınlaştır
+  (if *ict-sinir*
+    (command "_.ZOOM" "_W"
+             (trans (list (- (nth 0 *ict-sinir*) (* 3 h)) (- (nth 1 *ict-sinir*) (* 3 h)) 0.0) 0 1)
+             (trans (list (+ (nth 2 *ict-sinir*) (* 3 h)) (+ (nth 3 *ict-sinir*) (* 3 h)) 0.0) 0 1)))
+  (princ (strcat "\n" (itoa *ict-adet*) " nesne çizildi."
+                 (if (> *ict-hata* 0) (strcat " " (itoa *ict-hata*) " nesne çizilemedi!") "")))
   (setvar "DIMZIN" eski-dz)
   (setvar "CMDECHO" eski-ce)
   (princ (strcat "\nToplam gerilim düşümü %" (ict:n2 toplam)
