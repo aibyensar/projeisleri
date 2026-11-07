@@ -174,12 +174,33 @@ function dosemeGuncelle() {
   $('doseme').innerHTML = k.sutunlar.map((s, i) => `<option value="${i}">${DOSEME_ADI[s]}</option>`).join('');
 }
 
-function firmaTablosu(kablo, tip, damar, secilenKesit) {
+const sayiMi = v => /^[\d.,]+$/.test(v) ? +v.replace(',', '.') : null;
+const satirEtiketi = r => r[0].replace(/^\*/, '').split(' ')[0];
+
+// Hesapta denenecek kablolar, doğrudan firma tablosundan.
+// Trifaze: 16 mm²'ye kadar 4 damarlı, üstünde piyasadaki gibi nötrü küçültülmüş 3 damarlı (3x25/16 …).
+// Monofaze: 3 damarlı, yoksa 2 damarlı.
+function adaylar(tip, faz) {
+  const hepsi = KATALOG.filter(t => t.kablo === tip).flatMap(t => t.satirlar.map(r => {
+    const m = satirEtiketi(r).match(/^(?:(\d+)x)?([\d.]+)(?:\/([\d.]+))?$/);
+    return { etiket: satirEtiketi(r), ad: m[1] ? satirEtiketi(r) : '1x' + satirEtiketi(r), damar: m[1] || '1', S: +m[2], notr: m[3] || null, akim: r.slice(t.akimSutun).map(sayiMi) };
+  })).filter(x => x.akim.some(v => v != null));
+  const grup = (d, notrlu) => hepsi.filter(x => x.damar === d && !!x.notr === notrlu);
+  const ilkDolu = (...g) => g.find(x => x.length) || [];
+  let liste;
+  if (hepsi.every(x => x.damar === '1')) liste = hepsi;
+  else if (faz === '3') {
+    const dort = ilkDolu(grup('4', false), grup('5', false), grup('3', false));
+    const notrlu = grup('3', true);
+    liste = dort.filter(x => x.S <= 16).concat(notrlu.length ? notrlu.filter(x => x.S > 16) : dort.filter(x => x.S > 16));
+  } else liste = ilkDolu(grup('3', false), grup('2', false));
+  return liste.sort((a, b) => a.S - b.S);
+}
+
+function firmaTablosu(tip, etiket) {
   // Kablonun katalogdaki bütün tabloları tek tabloda, katalog sırasıyla.
   const tablolar = KATALOG.filter(t => t.kablo === tip);
   const ilk = tablolar[0];
-  const etiket = secilenKesit == null ? null : (kablo.tekDamar ? secilenKesit : `${damar}x${secilenKesit}`);
-  const satirEtiketi = r => r[0].replace(/^\*/, '').split(' ')[0];
   const satirlar = tablolar.flatMap(t => t.satirlar);
   const dipnotlar = [...new Set(tablolar.map(t => t.dipnot).filter(Boolean))];
 
@@ -210,38 +231,37 @@ function hesapla() {
   const tip = $('tip').value;
   const kablo = KABLOLAR[tip];
   const sutun = +$('doseme').value;
-  const damar = kablo.tekDamar ? null : (faz === '3' ? ['4', '5', '3'] : ['3', '2']).find(n => kablo.damar[n]);
-  const tablo = kablo.tekDamar || kablo.damar[damar];
 
   if (!(P > 0 && L > 0 && c > 0 && e > 0 && cosfi > 0)) {
     $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki değerler sıfırdan büyük olmalı.</span>';
-    firmaTablosu(kablo, tip, damar, null);
+    firmaTablosu(tip, null);
     return;
   }
 
   const Sgerek = c * P * L / e;
   const I = faz === '3' ? P / (Math.sqrt(3) * U * cosfi) : P / (U * cosfi);
-  const kesitler = Object.keys(tablo).sort((a, b) => a - b).filter(s => tablo[s][sutun] != null);
-  const dusumIcin = kesitler.find(s => +s >= Sgerek);
-  const secilen = kesitler.find(s => +s >= Sgerek && tablo[s][sutun] >= I);
-  const ad = s => kablo.tekDamar ? `${tip} 1x${kesitYaz(s)}` : `${tip} ${damar}x${kesitYaz(s)}`;
+  const liste = adaylar(tip, faz).filter(x => x.akim[sutun] != null);
+  const dusumIcin = liste.find(x => x.S >= Sgerek);
+  const secilen = liste.find(x => x.S >= Sgerek && x.akim[sutun] >= I);
   const doseme = DOSEME_ADI[kablo.sutunlar[sutun]].toLowerCase();
-  firmaTablosu(kablo, tip, damar, secilen);
+  firmaTablosu(tip, secilen && secilen.etiket);
 
   if (!secilen) {
     $('sonuc').innerHTML = `<span class="uyari">${tip} tablosunda yeterli kesit yok. Gerekli kesit ${sayi(Sgerek)} mm², hat akımı ${sayi(I, 1)} A. Paralel kablo veya başka kablo tipi düşünün.</span>`;
     return;
   }
 
+  const notrNotu = secilen.notr ? `<div class="not">16 mm² üstünde piyasada kullanılan nötrü küçültülmüş kablo seçildi (${secilen.ad}).</div>` : '';
   const akimNotu = secilen !== dusumIcin
-    ? `<div class="not">${kesitYaz(dusumIcin)} mm² ${doseme} ${tablo[dusumIcin][sutun]} A taşır, akım için yetmiyor. Bir üst kesite çıkıldı.</div>`
+    ? `<div class="not">${dusumIcin.ad} ${doseme} ${dusumIcin.akim[sutun]} A taşır, akım için yetmiyor. Bir üst kesite çıkıldı.</div>`
     : '';
 
   $('sonuc').innerHTML = `
     <div class="adim">
       <b>Gerekli kablo</b>
-      <div class="buyuk">${ad(secilen)} mm²</div>
-      <div class="not">Gerilim düşümü %${sayi(c * P * L / +secilen)} · ${doseme} ${tablo[secilen][sutun]} A taşır</div>
+      <div class="buyuk">${tip} ${secilen.ad} mm²</div>
+      ${notrNotu}
+      <div class="not">Gerilim düşümü %${sayi(c * P * L / secilen.S)} · ${doseme} ${secilen.akim[sutun]} A taşır</div>
     </div>
     <div class="adim">
       <b>1. Formül</b>
@@ -251,13 +271,13 @@ function hesapla() {
     </div>
     <div class="adim">
       <b>2. Tablodan</b>
-      <div>${sayi(Sgerek)} mm²'nin bir üstü: <span class="deger">${kesitYaz(dusumIcin)} mm²</span></div>
+      <div>${sayi(Sgerek)} mm²'nin bir üstü: <span class="deger">${dusumIcin.ad}</span></div>
     </div>
     <div class="adim">
       <b>3. Akım kontrolü</b>
       ${akimNotu}
       <div class="formul">I = ${faz === '3' ? `P / (√3 × ${U} × ${sayi(cosfi)})` : `P / (${U} × ${sayi(cosfi)})`} = ${sayi(I, 1)} A</div>
-      <div>Hat akımı ${sayi(I, 1)} A ≤ ${kesitYaz(secilen)} mm² taşıma ${tablo[secilen][sutun]} A ✓</div>
+      <div>Hat akımı ${sayi(I, 1)} A ≤ ${secilen.ad} taşıma ${secilen.akim[sutun]} A ✓</div>
     </div>`;
 }
 
