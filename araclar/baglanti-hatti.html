@@ -262,7 +262,12 @@ $('f-ic').addEventListener('change', async e => {
     // güç dağıtım tablosu: PDF'teki gerçek yazılardan sütun sütun (kesin okuma; resimden okumaya gerek kalmaz)
     for (const sayfa of s) { const g = BHP.gucTablosuOku(sayfa); if (g) { D.ic.satirlar = g; D.ic.gucKaynak = 'yazı'; break; } }
     D.gucFark = false;
-    if (await ornekVar()) $('ro-ic').hidden = false;
+    if (await ornekVar()) {
+      $('ro-ic').hidden = false;
+      // yazıdan okunamayan bilgi varsa resimden okuma kendiliğinden başlar (claude.ai izin ister)
+      const eksikYazi = ['malSahibi', 'ada', 'parsel', 'kuruluW', 'talepW'].some(k => !D.ic[k] || (typeof D.ic[k] === 'number' && isNaN(D.ic[k])));
+      if (eksikYazi || (!D.ic.satirlar && BHP.bbSayisi(D.ic.bagimsiz || (D.gdz && D.gdz.bagimsiz)) !== 1)) setTimeout(() => $('b-ro-ic').click(), 300);
+    }
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
     if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
     else durum('d-ic', (await ornekVar()) ? 'Bu PDF\'teki yazılar çizgi olarak kaydedilmiş. Aşağıdaki "resimden oku" düğmesine basın.' : 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
@@ -568,82 +573,128 @@ const HATA_METNI = { not_granted: 'İzin verilmedi.', rate_limited: 'Çok sık i
   invalid_json: 'Cevap anlaşılamadı; tekrar deneyin.', image_rejected: 'Resim kabul edilmedi.', refused: 'Okuma reddedildi.', sampling_disabled: 'Bu hesapta kullanılamıyor.' };
 const hataYaz = x => HATA_METNI[x && x.code] || ('Okunamadı (' + ((x && x.code) || 'bilinmeyen') + ').');
 
+// İç tesisatı resimden okuma — yakınlaştırarak, 3 adımda:
+// 1) sayfa parçalara bölünür (çok geniş paftalarda tablo küçük kalmasın), bölümlerin yeri bulunur;
+// 2) her bölüme yakınlaşılıp kesin sınırı alınır; 3) her bölüm yüksek çözünürlükte AYRI AYRI okunur.
+// Güç dağıtım tablosu iki kez okunur ve karşılaştırılır; PDF'te gerçek yazı varsa yazıdan okunan değer önceliklidir.
+function parcalaraBol(v1, enCok) {
+  const asp = v1.width / v1.height;
+  let nx = asp > 1.6 ? Math.ceil(asp / 1.4) : 1, ny = asp < 0.62 ? Math.ceil(1 / asp / 1.4) : 1;
+  while (nx * ny > enCok && nx > 1) nx--;
+  const ust = 0.05, l = [];
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++)
+    l.push([Math.max(0, i / nx - ust), Math.max(0, j / ny - ust), Math.min(1, (i + 1) / nx + ust), Math.min(1, (j + 1) / ny + ust)]);
+  return { l, nx, ny };
+}
+const icineAl = (k, [a, b, c, d]) => [k[0] + a * (k[2] - k[0]), k[1] + b * (k[3] - k[1]), k[0] + c * (k[2] - k[0]), k[1] + d * (k[3] - k[1])];
+const kutuMu = k => Array.isArray(k) && k.length === 4 && k.every(x => typeof x === 'number' && x >= -0.05 && x <= 1.05) && k[2] > k[0] && k[3] > k[1];
+const BOLUM_AD = { antet: 'ANTET (proje künyesi: mal sahibi, adres, il/ilçe/belediye/mahalle, pafta/ada/parsel, kurulu güç, talep gücü, bağımsız bölüm adedi, kat adedi, toplam alan)',
+  guc: 'GÜÇ DAĞILIM / DAĞITIM TABLOSU (her satırı bir BAĞIMSIZ BÖLÜM: bağımsız bölüm no, enerji aldığı tablo adı, kurulu güç, bağlantı gücü, sayaç tipi, kullanım amacı). DİKKAT: "TABLO YÜKLEME CETVELİ" / "YÜK DAĞILIMI" (satırları LİNYE, sorti, sigorta olan tablo) güç dağıtım tablosu DEĞİLDİR; projede güç dağıtım tablosu yoksa null',
+  pano: 'SAYAÇ PANOSU / ANA GİRİŞ TEK HAT veya KOLON ŞEMASI (binaya girişteki ana sigorta / TMŞ / YKŞ / kaçak akım rölesi ve sayaçların önündeki sigortalar)' };
 $('b-ro-ic').addEventListener('click', async () => {
   const sample = await ornekVar(); if (!sample || !D.icDoc) return;
   const btn = $('b-ro-ic'); btn.disabled = true;
   try {
-    const doc = D.icDoc, n = Math.min(doc.numPages, 6), lim = await sample.limits();
-    durum('d-ro-ic', 'Paftada bölümler aranıyor… (1/2)');
-    const kucuk = [];
-    for (let p = 1; p <= n; p++) kucuk.push(await bolgeResmi(doc, p, undefined, 1600));
+    const doc = D.icDoc, nS = Math.min(doc.numPages, 4), lim = await sample.limits(), enCok = Math.max(1, lim.images.maxCount || 5);
+    // 1) yer bulma: parçalar
+    durum('d-ro-ic', 'Paftada bölümler aranıyor… (1/3)');
+    const parca = [];
+    for (let p = 1; p <= nS && parca.length < enCok; p++) {
+      const v1 = (await doc.getPage(p)).getViewport({ scale: 1 });
+      const { l, nx, ny } = parcalaraBol(v1, Math.max(1, Math.floor(enCok / nS)));
+      l.forEach((k, i) => parca.push({ p, k, ad: `sayfa ${p}${l.length > 1 ? `, soldan ${i % nx + 1}. / yukarıdan ${Math.floor(i / nx) + 1}. parça (sayfanın ${Math.round(k[0] * 100)}–${Math.round(k[2] * 100)}% arası)` : ''}` }));
+    }
+    const resim1 = [];
+    for (const q of parca.slice(0, enCok)) resim1.push(await bolgeResmi(doc, q.p, q.k, 1500));
     const yer = await sample.json(
-      `Ekteki ${n} resim bir elektrik iç tesisat projesi PDF'inin sayfaları (sırayla sayfa 1..${n}). Aşağıdaki bölümlerin hangi sayfada ve sayfanın neresinde olduğunu bul.
-Bölümler:
-- "antet": proje künyesi (mal sahibi, adres, il/ilçe/mahalle, ada/parsel, kurulu güç, talep gücü, bağımsız bölüm adedi, kat adedi, toplam alan)
-- "guc": GÜÇ DAĞILIM TABLOSU (bağımsız bölüm no, enerji aldığı tablo adı, kurulu güç, bağlantı gücü, sayaç tipi, kullanım amacı)
-- "pano": sayaç panosu / ana giriş tek hat veya kolon şeması (binanın girişindeki ana sigorta, TMŞ, YKŞ, kaçak akım rölesi ve sayaç değerlerinin yazdığı yer)
-Her biri için {"sayfa": sayfa no, "kutu": [x0, y0, x1, y1]} ver; kutu sayfanın sol üstünden 0-1 arası kesir, bölümü cömertçe (biraz pay bırakarak) kapsasın. Bulamadığın için null.
+      `Ekteki ${resim1.length} resim bir elektrik iç tesisat projesi paftasının parçaları: ${parca.slice(0, enCok).map((q, i) => `${i + 1}. resim = ${q.ad}`).join('; ')}.
+Aşağıdaki bölümlerin hangi resimde ve o resmin neresinde olduğunu bul:
+- "antet": ${BOLUM_AD.antet}
+- "guc": ${BOLUM_AD.guc}
+- "pano": ${BOLUM_AD.pano}
+Her biri için {"resim": resim no, "kutu": [x0, y0, x1, y1]} ver; kutu O RESMİN sol üstünden 0-1 arası kesir, bölümün tamamını kapsasın. Bir bölüm iki parçaya bölünmüşse büyük kısmının olduğu resmi seç. Bulamadığın için null.
 Yalnız şu JSON'u döndür: {"antet": ..., "guc": ..., "pano": ...}`,
-      { images: kucuk.slice(0, lim.images.maxCount), modelTier: 'default' });
-    const parcalar = [], adlar = [];
+      { images: resim1, modelTier: 'default' });
+    const bolge = {};
     for (const k of ['antet', 'guc', 'pano']) {
-      const y = yer && yer[k];
-      if (!y || !Array.isArray(y.kutu) || y.kutu.length !== 4) continue;
-      const [a, b, c, d] = y.kutu.map(Number), pay = 0.02;
-      parcalar.push(await bolgeResmi(doc, Math.min(n, Math.max(1, +y.sayfa || 1)), [a - pay, b - pay, c + pay, d + pay], 2400));
-      adlar.push(k);
+      const y = yer && yer[k], q = y && parca[(+y.resim || 0) - 1];
+      if (q && kutuMu(y.kutu)) bolge[k] = { p: q.p, k: icineAl(q.k, y.kutu) };
     }
-    if (!parcalar.length) throw { code: 'bos' };
-    durum('d-ro-ic', 'Değerler okunuyor… (2/2)');
-    const v = await sample.json(
-      `Ekteki resimler bir elektrik iç tesisat projesinden kesitler: ${adlar.map((a, i) => `${i + 1}. resim = ${{ antet: 'antet (proje künyesi)', guc: 'güç dağılım tablosu', pano: 'sayaç panosu / ana giriş şeması' }[a]}`).join('; ')}.
-Resimlerde YAZAN değerleri oku; tahmin etme, göremediğin alanı null bırak. Sayıları olduğu gibi yaz (W cinsinden güçler tam sayı).
-Döndürülecek JSON:
-{"malSahibi": str, "kullanim": str, "adres": str, "il": str, "ilce": str, "belediye": str, "mahalle": str, "pafta": str, "ada": str, "parsel": str,
- "kat": str (ör. "SIĞ+Z+3"), "alan": str (yalnız sayı, ör. "922"), "bagimsiz": str (antetteki gibi, ör. "14+1"), "kuruluW": sayı, "talepW": sayı,
- "korumalar": [ {"tur": "sigorta"|"tms"|"kar"|"tmsyks", "deger": str} ]  // binaya girişteki ana koruma(lar), enerji yönünde sırayla. "TMŞ+YKŞ 4x125A 300mA" gibi tek cihaz = [{"tur":"tmsyks","deger":"4x125A 300mA"}]; sigorta "4x40A 10kA"; kaçak akım rölesi "4x40A 300mA",
- "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh varsa true),
- "satirlar": [ {"bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str, "onu": str} ]  // güç dağılım tablosunun HER satırı (kaç satır varsa hepsi, ör. D1...D14 ve ORTAK), toplam satırları hariç. "onu" = o bağımsız bölümün sayacının önündeki sigorta/otomat (kolon veya pano şemasından, ör. "4x32A 10kA"); göremezsen null
-}`,
-      { images: parcalar, modelTier: 'default' });
+    if (!Object.keys(bolge).length) throw { code: 'bos' };
+    // 2) yakınlaşıp kesin sınır
+    durum('d-ro-ic', 'Bölümlere yakınlaşılıyor… (2/3)');
+    const adlar = Object.keys(bolge), genis = {}, resim2 = [];
+    for (const a of adlar) {
+      const { k } = bolge[a], w = k[2] - k[0], h = k[3] - k[1], m = Math.max(w, h) * 0.35;
+      genis[a] = [k[0] - m, k[1] - m, k[2] + m, k[3] + m].map(x => Math.min(1, Math.max(0, x)));
+      resim2.push(await bolgeResmi(doc, bolge[a].p, genis[a], 1600));
+    }
+    try {
+      const ince = await sample.json(`Ekteki resimler bir iç tesisat paftasından yakın çekimler: ${adlar.map((a, i) => `${i + 1}. resimde ${BOLUM_AD[a]}`).join('; ')}.
+Her resimde o bölümün (çerçevesi ve başlığı dahil) tam sınırını ver: [x0, y0, x1, y1], resmin sol üstünden 0-1 kesir. Bölüm resimde yoksa null.
+Yalnız şu JSON'u döndür: {"kutular": [ ... resim sırasıyla ... ]}`, { images: resim2, modelTier: 'default' });
+      adlar.forEach((a, i) => { const kk = ince && ince.kutular && ince.kutular[i]; if (kutuMu(kk)) bolge[a].k = icineAl(genis[a], kk); });
+    } catch (x) { /* ilk bulunan kutuyla devam */ }
+    // 3) okuma: her bölüm ayrı, yüksek çözünürlükte
+    durum('d-ro-ic', 'Değerler okunuyor… (3/3)');
+    const kes = async a => { const k = bolge[a].k, pw = (k[2] - k[0]) * 0.03, ph = (k[3] - k[1]) * 0.03; return bolgeResmi(doc, bolge[a].p, [k[0] - pw, k[1] - ph, k[2] + pw, k[3] + ph], 2400); };
     const ic = D.ic || {}, resimden = {};
-    for (const k of ['malSahibi', 'kullanim', 'adres', 'il', 'ilce', 'belediye', 'mahalle', 'pafta', 'ada', 'parsel', 'kat', 'alan', 'bagimsiz']) {
-      if (v[k] != null && String(v[k]).trim()) { ic[k] = String(v[k]).trim(); resimden[k] = 1; }
-    }
-    for (const k of ['kuruluW', 'talepW']) { const x = parseFloat(String(v[k] == null ? '' : v[k]).replace(/\./g, '').replace(',', '.')); if (!isNaN(x)) { ic[k] = x; resimden[k] = 1; } }
-    if (v.sayac) { ic.sayac = String(v.sayac).replace(/\s+/g, '').replace(/[X*]/, 'x').replace(/A$/i, ''); resimden.sayac = 1; }
-    if (typeof v.reaktif === 'boolean') { ic.reaktif = v.reaktif; resimden.sayacTur = 1; }
-    if (Array.isArray(v.korumalar) && v.korumalar.length) {
-      ic.korumalar = v.korumalar.filter(k => ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2).map(k => ({ tur: k.tur, deger: String(k.deger || '') }));
-      Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: ic.korumalar.length > 1, k2deger: ic.korumalar.length > 1 });
-    }
-    const satirYap = l => (Array.isArray(l) ? l : []).map(r => ({ bb: String(r.bb ?? ''), tablo: String(r.tablo ?? ''), kurulu: String(r.kurulu ?? '').replace(/\D/g, ''), baglanti: String(r.baglanti ?? '').replace(/\D/g, ''),
-        sayac: String(r.sayac ?? ''), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? ''), onu: r.onu ? String(r.onu) : '' }));
-    if (ic.gucKaynak === 'yazı') { /* tablo PDF yazısından kesin okundu; resimden okunan kullanılmaz */ }
-    else if (Array.isArray(v.satirlar) && v.satirlar.length) {
-      let a = satirYap(v.satirlar);
-      // güç dağıtım tablosu ikinci kez, yalnız tablo resmine bakılarak okunur; iki okuma karşılaştırılır
-      const gi = adlar.indexOf('guc');
-      if (gi >= 0) {
-        durum('d-ro-ic', 'Güç dağıtım tablosu ikinci kez okunuyor (karşılaştırma)…');
-        try {
-          const v2 = await sample.json(`Ekteki resim bir elektrik iç tesisat projesindeki GÜÇ DAĞITIM TABLOSU. Tablonun HER satırını (toplam satırları hariç) sırayla oku; yazanı aynen yaz, tahmin etme.
-Yalnız şu JSON'u döndür: {"satirlar": [ {"bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str} ]}  // kurulu ve baglanti W cinsinden tam sayı (tabloda kW yazıyorsa 1000 ile çarp)`,
-            { images: [parcalar[gi]], modelTier: 'default' });
-          const b2 = satirYap(v2 && v2.satirlar);
-          const ayni = b2.length === a.length && b2.every((r, i) => r.kurulu === a[i].kurulu && r.baglanti === a[i].baglanti);
-          const top = l => l.reduce((t, r) => t + (parseFloat(r.kurulu) || 0), 0), hedef = ic.kuruluW || (D.ic && D.ic.kuruluW);
-          if (!ayni) {
-            if (hedef && Math.abs(top(b2) - hedef) <= 1 && Math.abs(top(a) - hedef) > 1) a = b2;
-            else if (!(hedef && Math.abs(top(a) - hedef) <= 1)) D.gucFark = true;
-          }
-        } catch (x) { D.gucFark = true; }
+    const bos = x => x == null || x === '' || (typeof x === 'number' && isNaN(x));
+    if (bolge.antet) {
+      const v = await sample.json(`Ekteki resim bir elektrik iç tesisat projesinin ANTETİ (proje künyesi). Resimde YAZAN değerleri aynen oku; tahmin etme, göremediğini null bırak.
+Yalnız şu JSON'u döndür: {"malSahibi": str, "kullanim": str, "adres": str, "il": str, "ilce": str, "belediye": str, "mahalle": str, "pafta": str, "ada": str, "parsel": str,
+ "kat": str (ör. "SIĞ+Z+3"), "alan": str (yalnız sayı), "bagimsiz": str (ör. "14+1" ya da "6"), "kuruluW": sayı (W), "talepW": sayı (W)}`, { images: [await kes('antet')], modelTier: 'default' });
+      for (const k of ['malSahibi', 'kullanim', 'adres', 'il', 'ilce', 'belediye', 'mahalle', 'pafta', 'ada', 'parsel', 'kat', 'alan', 'bagimsiz'])
+        if (bos(ic[k]) && v && v[k] != null && String(v[k]).trim()) { ic[k] = String(v[k]).trim(); resimden[k] = 1; }
+      for (const k of ['kuruluW', 'talepW']) {
+        const x = parseFloat(String(v && v[k] != null ? v[k] : '').replace(/\./g, '').replace(',', '.'));
+        if (bos(ic[k]) && !isNaN(x)) { ic[k] = x; resimden[k] = 1; }
       }
-      ic.satirlar = a; ic.gucKaynak = 'resim';
-      resimden.sayacAdet = 1;
+    }
+    const satirYap = l => (Array.isArray(l) ? l : []).map(r => ({ bb: String(r.bb ?? '').trim(), tablo: String(r.tablo ?? '').trim(), kurulu: String(r.kurulu ?? '').replace(/\D/g, ''),
+      baglanti: String(r.baglanti ?? '').replace(/\D/g, ''), sayac: String(r.sayac ?? '').trim(), kullanim: String(r.kullanim ?? '').trim(), tesis: String(r.tesis ?? '').trim(), onu: '' }));
+    if (bolge.guc && ic.gucKaynak !== 'yazı') {
+      const im = await kes('guc');
+      const istem = `Ekteki resim bir elektrik iç tesisat projesindeki GÜÇ DAĞILIM / DAĞITIM TABLOSU. Tablonun HER veri satırını yukarıdan aşağı sırayla oku (TOPLAM, BG'ler toplamı, eş zamanlılık, diversite satırları HARİÇ).
+Yazanı aynen yaz, tahmin etme. "kurulu" ve "baglanti" W cinsinden tam sayı olsun (tabloda kW yazıyorsa 1000 ile çarp; "W" harfini yazma).
+Yalnız şu JSON'u döndür: {"satirlar": [ {"bb": bağımsız bölüm no, "tablo": enerji aldığı tablo adı, "kurulu": str, "baglanti": str, "sayac": sayaç tipi, "kullanim": kullanım amacı, "tesis": tesisat no (boşsa "")} ]}`;
+      const o1 = satirYap((await sample.json(istem, { images: [im], modelTier: 'default' }) || {}).satirlar);
+      durum('d-ro-ic', 'Güç dağıtım tablosu ikinci kez okunuyor (karşılaştırma)…');
+      let o2 = [];
+      try { o2 = satirYap((await sample.json(istem, { images: [im], modelTier: 'default' }) || {}).satirlar); } catch (x) { }
+      const ayni = o2.length === o1.length && o2.every((r, i) => r.kurulu === o1[i].kurulu && r.baglanti === o1[i].baglanti && r.tablo === o1[i].tablo);
+      const top = l => l.reduce((t, r) => t + (parseFloat(r.kurulu) || 0), 0), hedef = ic.kuruluW;
+      const tutar = l => l.length && hedef > 0 && Math.abs(top(l) - hedef) <= 1;
+      let a = o1;
+      D.gucFark = false;
+      if (!ayni) { if (tutar(o2) && !tutar(o1)) a = o2; else if (!tutar(o1)) D.gucFark = true; }
+      // tek bağımsız bölümlü projede tablo okunmaz: satır antetten gelir (linye cetveli karışmasın)
+      if (a.length && !(BHP.bbSayisi(ic.bagimsiz) === 1 && a.length > 1)) { ic.satirlar = a; ic.gucKaynak = 'resim'; resimden.sayacAdet = 1; }
+    }
+    if (bolge.pano) {
+      const v = await sample.json(`Ekteki resim bir elektrik iç tesisat projesindeki SAYAÇ PANOSU / ANA GİRİŞ / KOLON ŞEMASI. Resimde YAZAN değerleri aynen oku, tahmin etme.
+Yalnız şu JSON'u döndür:
+{"korumalar": [ {"tur": "sigorta"|"tms"|"kar"|"tmsyks", "deger": str} ],  // binaya girişteki ANA koruma(lar), enerji yönünde sırayla. TMŞ+YKŞ tek cihaz ise [{"tur":"tmsyks","deger":"4x125A 300mA"}]; sigorta ör. "4x40A 10kA"; kaçak akım rölesi ör. "4x40A 300mA"
+ "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh / reaktif varsa true),
+ "onu": [ {"kime": [tablo adları] ya da ["hepsi"], "deger": str} ]  // her sayacın ÖNÜNDEKİ sigorta/otomat, ör. {"kime": ["D1","D2"], "deger": "3x32A 6kA"}; hepsi aynıysa ["hepsi"]
+}`, { images: [await kes('pano')], modelTier: 'default' });
+      if (v && Array.isArray(v.korumalar) && v.korumalar.length) {
+        ic.korumalar = v.korumalar.filter(k => ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2).map(k => ({ tur: k.tur, deger: String(k.deger || '').replace(/[X*]/g, 'x') }));
+        Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: ic.korumalar.length > 1, k2deger: ic.korumalar.length > 1 });
+      }
+      if (v && v.sayac) { ic.sayac = String(v.sayac).replace(/\s+/g, '').replace(/[X*]/, 'x').replace(/A$/i, ''); resimden.sayac = 1; }
+      if (v && typeof v.reaktif === 'boolean') { ic.reaktif = v.reaktif; resimden.sayacTur = 1; }
+      if (v && Array.isArray(v.onu) && ic.satirlar) {
+        const bul = r => (v.onu.find(o => Array.isArray(o.kime) && o.kime.some(t => String(t).trim() && [r.tablo, r.bb].includes(String(t).trim())))
+          || v.onu.find(o => Array.isArray(o.kime) && o.kime.some(t => /hepsi|tüm|daire/i.test(String(t))))) || null;
+        ic.satirlar.forEach(r => { const o = bul(r); if (o && o.deger) r.onu = String(o.deger).replace(/[X*]/g, 'x'); });
+      }
     }
     ic.resimden = resimden; D.ic = ic;
-    durum('d-ro-ic', `Resimden okundu: ${Object.keys(resimden).length} bilgi${ic.satirlar ? ', güç dağılım tablosunda ' + ic.satirlar.length + ' satır' : ''}. Turuncu kutuları kontrol edin.`, 'iyi');
+    const k = ic.satirlar ? BHP.gucKontrol(Object.assign({}, ic, { satirlar: ic.satirlar, kuruluW: ic.kuruluW, bagimsiz: ic.bagimsiz, talepW: ic.talepW })) : null;
+    durum('d-ro-ic', `Resimden okundu: ${Object.keys(resimden).length} bilgi${ic.satirlar ? `, güç dağıtım tablosunda ${ic.satirlar.length} satır` : ''}` +
+      (k && k.hata.length ? ` — KONTROL: ${k.hata.join(' · ')}` : D.gucFark ? ' — iki okuma farklı, tabloyu kontrol edin' : ic.satirlar ? ' — tablo antetle uyumlu' : '') + '. Turuncu kutuları kontrol edin.',
+      k && k.hata.length || D.gucFark ? 'kotu' : 'iyi');
     durum('d-ic', 'Resimden okundu.', 'iyi');
     alanlariDoldur();
   } catch (x) { durum('d-ro-ic', x && x.code === 'bos' ? 'Paftada antet, güç tablosu ya da pano bulunamadı. Bilgileri elle doldurun.' : hataYaz(x), 'kotu'); }

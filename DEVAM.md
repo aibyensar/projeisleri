@@ -168,6 +168,16 @@ alt satırlar yalnız toplam kurulu + eş zamanlı bağlantı gücü; pano topra
 Kullanıcı: "en büyük problem iç tesisattan bilgiler yanlış geliyor" — örnek iç tesisat PDF'leri ISTENDI (gelmeden düzeltilemez); "sembollerde
 hâlâ hata var" dedi, hangileri olduğu soruldu.
 
+**v8.3 — iç tesisat okuma (kullanıcı 4 örnek iç tesisat PDF'i gönderdi; "biri hariç hepsinde sıkıntı"; dosyalar depoda YOK):**
+Bulgular: dört PDF'in hiçbirinde güç dağıtım tablosu yazı değil (çizgi/OLE); birinde hiç yazı yok; sayfalar çok geniş (8300x1644 pt'ye kadar)
+→ eski "resimden oku" sayfayı tek 1600 px resimde gösteriyordu, tablo okunamayacak kadar küçük kalıyordu. Antette sagindaki satırın sağındaki
+HER şeyi alıyordu → artık ilk yazı öbeğinden sonra boşlukta durur; adres de öyle.
+Yeni resimden okuma (baglanti-hatti.html, b-ro-ic): 1) sayfa en/boy oranına göre parçalara bölünür, bölümler (antet, güç, pano) bulunur;
+2) her bölüme %35 pay ile yakınlaşıp kesin sınır alınır; 3) her bölüm 2400 px ayrı ayrı okunur; güç tablosu 2 kez okunur, karşılaştırılır,
+Σkurulu antetle kontrol; "tablo yükleme cetveli / yük dağılımı" (linye satırlı) güç tablosu sayılmaz; tek BB'de tablo antetten.
+PDF yazısından okunan antet değerleri önceliklidir, resim yalnız boşları doldurur. Yazıdan okunamayan bilgi varsa resimden okuma kendiliğinden başlar.
+Sahte cevaplarla akış denendi (test/resimden-oku-dene.js); GERÇEK claude.ai'de kullanıcı henüz denemedi.
+
 **AÇIK KONULAR (sıradaki)**
 0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu

@@ -14,14 +14,26 @@
   const baslikHarf = s => temiz(s).toLocaleLowerCase('tr-TR').replace(/(^|[\s\/(-])(\S)/g, (a, b, c) => b + c.toLocaleUpperCase('tr-TR'));
 
   // Bir etiketin sağındaki (aynı satırdaki) yazılar
+  // Değer, etiketin sağındaki ilk yazıdan başlar; arada büyük boşluk olan (başka hücre/çizim) yazılar alınmaz.
   function sagindaki(ogeler, etiket, enAz = 60, tol = 4) {
-    const l = ogeler.find(o => etiket.test(temiz(o.s)));
-    if (!l) return '';
-    return temiz(ogeler.filter(o => o !== l && Math.abs(o.y - l.y) <= tol && o.x > l.x + enAz)
-      .sort((a, b) => a.x - b.x).map(o => o.s).join(' '));
+    for (const l of ogeler.filter(o => etiket.test(temiz(o.s)))) {
+      const h = l.h || 3;
+      const sag = ogeler.filter(o => o !== l && Math.abs(o.y - l.y) <= Math.max(tol, h * 0.6) && o.x > l.x + Math.min(enAz, (l.w || enAz)))
+        .sort((a, b) => a.x - b.x);
+      if (!sag.length || sag[0].x - (l.x + (l.w || 0)) > Math.max(enAz * 4, h * 40)) continue;
+      const al = [sag[0]];
+      for (const o of sag.slice(1)) {
+        const onceki = al[al.length - 1], bosluk = o.x - (onceki.x + (onceki.w || temiz(onceki.s).length * h * 0.6));
+        if (bosluk > h * 2.5) break;
+        al.push(o);
+      }
+      const t = temiz(al.map(o => o.s).join(' '));
+      if (t) return t;
+    }
+    return '';
   }
   // Bir etiketin altındaki ilk yazı (tablo başlığı altındaki değer)
-  const ETIKET_SOZ = /^(ADEDİ|BÖLÜM|ALANI|İNŞAAT|SINIFI|TOPLAM|BAĞIMSIZ|KAT|YAPI|GÜCÜ|GÜÇ BİLGİLERİ.*)$/;
+  const ETIKET_SOZ = /^(ADEDİ|BÖLÜM|ALANI|ALAN|M2|M²|İNŞAAT|SINIFI|TOPLAM|BAĞIMSIZ|KAT|YAPI|GÜCÜ|GÜÇ BİLGİLERİ.*)$/;
   function altindaki(ogeler, etiket, enCok = 45, yatay = 30) {
     const ler = ogeler.filter(o => etiket.test(temiz(o.s)));
     for (const l of ler) {
@@ -95,7 +107,7 @@
     const adresler = ogeler.filter(o => temiz(o.s) === 'ADRES');
     if (ms && adresler.length) {
       const a = adresler.sort((p, q) => Math.abs(p.y - ms.y) - Math.abs(q.y - ms.y))[0];
-      v.adres = temiz(ogeler.filter(o => o !== a && Math.abs(o.y - a.y) <= 4 && o.x > a.x + 40).sort((p, q) => p.x - q.x).map(o => o.s).join(' '));
+      v.adres = sagindaki([a, ...ogeler.filter(o => o !== a && !/^ADRES$/.test(temiz(o.s)))], /^ADRES$/, 40);
     }
     v.il = altindaki(ogeler, /^İL$/);
     v.ilce = altindaki(ogeler, /^İLÇE$/);
