@@ -98,5 +98,8 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
   * Başka mühendislerin iç tesisat PDF'lerinde yazılar çizgi olabilir → okunamaz; araç uyarır, kullanıcı elle girer.
     Güç dağılım tablosu için "daire sayısı + güç + ortak" ile satır üretme var.
   * Denenen: Ayşe Çelenk (20247911, box C-06, 15 BB, 57839 W, 12 m) → bakırda 3x25/16 mm² NYY (133 A), %0,34.
+- İNDİRME: claude.ai içinde sayfa kendi başına dosya indiremiyor. Bağlantı hattı aracı AYRI artifact olarak yayında:
+  https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (`downloads` izniyle; claude.use("downloads").save). Yayın kopyası
+  araclar/baglanti-hatti.html'den yollar düzeltilerek (../ → kök) üretilir; ana sitedeki kart bu adrese gider.
 - Sıradaki: kullanıcı Faruk Erdoğan ve Ayşe Çelenk işleriyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
   Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).

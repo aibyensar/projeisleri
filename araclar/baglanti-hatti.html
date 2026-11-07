@@ -417,10 +417,30 @@ $('indir').addEventListener('click', async () => {
   klasor.file(`BHP-${ad}.dxf`, dxf);
   klasor.file(uyduAd, D.uydu); klasor.file(vazAd, D.vaziyet);
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `BHP-${ad}.zip`;
+  const dosyaAdi = `BHP-${ad}.zip`;
+  // claude.ai içinde sayfa kendisi indiremez; platformun "dosya kaydet" izniyle verilir
+  const dl = await indirmeAraci();
+  if (dl) {
+    try { await dl.save({ filename: dosyaAdi, data: blob }); durum('d-indir', `Kaydedildi: ${dosyaAdi}`, 'iyi'); }
+    catch (x) {
+      if (x && x.code === 'declined') durum('d-indir', 'Kaydetme iptal edildi. Tekrar basabilirsiniz.');
+      else if (x && x.code === 'rate_limited') durum('d-indir', 'Açık bir kaydetme penceresi var; onu kapatıp tekrar deneyin.');
+      else durum('d-indir', 'Dosya kaydedilemedi (' + ((x && x.code) || 'bilinmeyen') + ').', 'kotu');
+    }
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = dosyaAdi;
   document.body.appendChild(a); a.click(); a.remove();
-  durum('d-indir', `İndirildi: BHP-${ad}.zip`, 'iyi');
+  durum('d-indir', `İndirme başlatıldı: ${dosyaAdi}. İnmediyse sayfayı ana sayfadan değil doğrudan açmayı deneyin.`, 'iyi');
 });
+let _dl;
+function indirmeAraci() {
+  if (_dl !== undefined) return Promise.resolve(_dl);
+  if (!window.claude || typeof window.claude.use !== 'function') { _dl = null; return Promise.resolve(null); }
+  return Promise.race([window.claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 10000))])
+    .then(x => (_dl = x || null)).catch(() => (_dl = null));
+}
+indirmeAraci();
 satirlariCiz();
 </script>
 </body>
