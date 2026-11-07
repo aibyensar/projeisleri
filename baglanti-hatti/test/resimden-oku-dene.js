@@ -13,13 +13,15 @@ const { chromium } = require('playwright');
     window.__istek = [];
     const cevap = (istem, o) => {
       window.__istek.push({ ilk: istem.slice(0, 60), resim: o.images.length });
-      if (/hangi resimde/.test(istem)) return { antet: { resim: 1, kutu: [0, 0.5, 0.6, 1] }, guc: window.__GUC, pano: { resim: 4, kutu: [0.5, 0.1, 0.9, 0.9] } };
+      if (/hangi resimde/.test(istem)) return { antet: { resim: 1, kutu: [0, 0.5, 0.6, 1] }, guc: window.__GUC, pano: { resim: 1, kutu: [0, 0.6, 0.3, 1] } };
       if (/yakın çekimler/.test(istem)) return { kutular: [[0.1, 0.1, 0.9, 0.9], window.__ince || null, [0.2, 0.2, 0.8, 0.8]] };
       if (/ANTETİ/.test(istem)) return { malSahibi: 'ÖRNEK MAL SAHİBİ', kuruluW: 122640, talepW: 32962, bagimsiz: '6', alan: '450' };
       if (/kırmızı numaralar/.test(istem)) { window.__g = (window.__g || 0) + 1; const m = istem.match(/\(1\.\.(\d+)\)/); window.__bant = m && m[1];
         const deg = window.__g === 2 ? '20400' : '20440';
         return { kuruluBirim: 'W', bantlar: [{ no: 1, tur: 'baslik' }, { no: 2, tur: 'baslik' }].concat(['TZA-1', 'TZA-2', 'TZB-1', 'TZB-2', 'TZC-1', 'TZC-2'].map((t, i) => ({ no: i + 3, tur: 'veri', bb: String(i + 1), tablo: t, kurulu: i === 0 ? deg : '20440', baglanti: '12776', sayac: '3*10 A', kullanim: 'MESKEN', tesis: '' }))) }; }
-      if (/SAYAÇ PANOSU \/ ANA GİRİŞ \/ KOLON/.test(istem)) return { korumalar: [{ tur: 'tmsyks', deger: '4x100A 300mA' }], sayac: '3x10', reaktif: false, onu: [{ kime: ['hepsi'], deger: '3x32A 6kA' }] };
+      if (/SAYAÇ PANOSU \/ ANA GİRİŞ \/ KOLON/.test(istem)) { window.__pano = (window.__pano || 0) + 1;
+        return { ana: [{ tur: 'tmsyks', deger: '4X100A 300mA' }], sayac: '3x10', reaktif: false,
+          sayaclar: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'].map((t, i) => ({ no: i + 1, tablo: t, onu: i === 2 && window.__pano === 2 ? '3x25A 6kA' : '3x32A 6kA' })) }; }
       return {};
     };
     window.claude = { use: async n => n === 'sample' ? { limits: async () => ({ images: { maxCount: 5 } }), json: async (i, o) => cevap(i, o) } : null };
@@ -36,6 +38,8 @@ const { chromium } = require('playwright');
   console.log('kırmızı hücre:', await p.$$eval('#satirlar input', l => l.filter(e => e.style.border).map(e => e.dataset.j + ':' + e.dataset.k)));
   const b64 = await p.evaluate(async () => { const src = document.getElementById('gucResim').src; const bl = await (await fetch(src)).blob(); return await new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result.split(',')[1]); f.readAsDataURL(bl); }); });
   require('fs').writeFileSync(S + '/numarali.jpg', Buffer.from(b64, 'base64'));
-  console.log('onu ilk satır:', await p.$eval('#satirlar input[data-k=onu]', e => e.value));
+  console.log('onu sütunu:', await p.$$eval('#satirlar input[data-k=onu]', l => l.map(e => e.value + (e.style.border ? '(KIRMIZI)' : ''))));
+  console.log('pano:', await p.textContent('#d-pano'), '| k1:', await p.inputValue('#a-k1tur'), await p.inputValue('#a-k1deger'), '| onay kutusu:', await p.isVisible('#panoOnayKutu'));
+  console.log('indir:', await p.textContent('#d-indir'));
   await b.close();
 })();

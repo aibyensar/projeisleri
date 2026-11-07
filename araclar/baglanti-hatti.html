@@ -98,6 +98,18 @@
     <p class="not">Yeşil kenarlı kutular belgelerin yazısından, turuncu kenarlılar resimden okundu. Hepsini kontrol edin, gerekirse düzeltin.</p>
     <div id="hatNotu"></div>
     <div class="alanlar" id="alanlar"></div>
+    <div id="panoKutu" hidden style="margin:8px 0;padding:10px;border:1px solid var(--cizgi);border-radius:8px">
+      <b style="font-size:.9rem">Sayaç panosu: ana kesici ve sayaç önü sigortalar</b>
+      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (4. bölümdeki tabloda "Sayaç önü sigorta" sütunu). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır.</p>
+      <img id="panoResim" hidden alt="İç tesisat sayaç panosu / kolon şeması" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
+      <label id="panoOnayKutu" hidden style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="panoOnay"> Ana kesiciyi ve sayaç önü sigortalarını resimle karşılaştırdım, doğru.</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" class="kucuk-dugme" id="b-pano-tekrar">Sigortaları tekrar oku</button>
+        <button type="button" class="kucuk-dugme" id="b-pano-goster">Panonun yerini resimde ben göstereyim</button>
+      </div>
+      <span class="durum" id="d-pano">Yalnız sigortalar yeniden okunur; diğer bilgilere dokunulmaz.</span>
+      <div id="panoSecYeri"></div>
+    </div>
   </div>
 
   <div class="kart">
@@ -290,6 +302,7 @@ $('f-ic').addEventListener('change', async e => {
     D.gucFark = false; D.supheli = {}; D.gucResimUrl = null; $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
     if (await ornekVar()) {
       $('ro-ic').hidden = false; $('gucTekrar').hidden = false; $('gucSec').hidden = true; D.gucYer = null;
+      $('panoKutu').hidden = false; D.panoYer = null; D.panoKaynak = null; D.panoSupheli = {}; $('panoResim').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
       // yazıdan okunamayan bilgi varsa resimden okuma kendiliğinden başlar (claude.ai izin ister)
       const eksikYazi = ['malSahibi', 'ada', 'parsel', 'kuruluW', 'talepW'].some(k => !D.ic[k] || (typeof D.ic[k] === 'number' && isNaN(D.ic[k])));
       if (eksikYazi || (!D.ic.satirlar && BHP.bbSayisi(D.ic.bagimsiz || (D.gdz && D.gdz.bagimsiz)) !== 1)) setTimeout(() => $('b-ro-ic').click(), 300);
@@ -337,7 +350,9 @@ const ALANLAR = [
     }
   }
   $('alanlar').innerHTML = h;
-  $('alanlar').addEventListener('input', () => { guncelle(); satirOzet(); if (typeof isaretCiz === 'function') isaretCiz(); });
+  const panoTemizle = e => { const id = (e.target.id || '').slice(2); if (D.panoSupheli && D.panoSupheli[id]) { delete D.panoSupheli[id]; panoSupheliGoster(); } };
+  $('alanlar').addEventListener('change', panoTemizle);
+  $('alanlar').addEventListener('input', e => { panoTemizle(e); guncelle(); satirOzet(); if (typeof isaretCiz === 'function') isaretCiz(); });
 })();
 function alanlariDoldur() {
   const g = D.gdz || {}, i = D.ic || {};
@@ -525,6 +540,7 @@ function guncelle() {
     if (D.gucFark) eksik.push('güç dağıtım tablosu: kırmızı hücreleri iç tesisatla karşılaştırıp düzeltin');
     if (D.ic && D.ic.gucKaynak === 'resim' && !$('gucOnay').checked) eksik.push('güç dağıtım tablosu: resimle karşılaştırıp "doğru" kutusunu işaretleyin (4. bölüm)');
   }
+  if (D.panoKaynak === 'resim' && !$('panoOnay').checked) eksik.push('sayaç panosu: ana kesici ve sayaç önü sigortaları resimle karşılaştırıp "doğru" kutusunu işaretleyin (3. bölüm)');
   if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
   if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
   else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (8. bölüm)');
@@ -785,14 +801,123 @@ async function gucYenidenOku(yer) {
   finally { dugmeler.forEach(b => b.disabled = false); $('b-guc-oku').disabled = !GS.secim; }
 }
 $('b-guc-tekrar').addEventListener('click', () => gucYenidenOku(D.gucYer || null));
+// ---- Sayaç panosu korumaları: ana kesici (branşman kablosunun girdiği) ve her sayacın önündeki kesici ----
+// 2 okuma (farklıysa 3), değer değer çoğunluk; tutmayan değer kırmızı işaretlenir, resim gösterilir, onay kutusu istenir.
+const PANO_ISTEM = `Ekteki resim bir elektrik iç tesisat projesinin SAYAÇ PANOSU / ANA GİRİŞ / KOLON ŞEMASI bölümü.
+Enerji yolu: ŞEBEKE → BRANŞMAN KABLOSU → (1) ANA KESİCİ → bara → her bağımsız bölüm için (2) SAYAÇ ÖNÜ KESİCİ → SAYAÇ → o bölümün kolon hattı / tablosu.
+(1) ANA KESİCİ: branşman kablosunun panoya girdiği İLK koruma. Cinsi projeden projeye değişir: sigorta (buşonlu / NH, ör. "3x63A"), TMŞ (kompakt şalter, ör. "3x100A"), kaçak akımlı TMŞ / TMŞ+YKŞ tek cihaz (ör. "4x125A 300mA"); arkasında ayrı bir kaçak akım rölesi (K.A.R, ör. "4x63A 300mA") olabilir. Enerji yönünde sırayla en çok 2 cihaz yaz.
+(2) SAYAÇ ÖNÜ KESİCİ: bara ile her sayaç ARASINDAKİ otomat / sigorta. Sayacın ARKASINDAKİ kesiciler, dairelerin kendi tablolarındaki (TN, D1 tablosu vb.) sigortalar ve linye sigortaları SAYAÇ ÖNÜ DEĞİLDİR.
+Değerleri resimde YAZDIĞI gibi aynen yaz (kutup x akım, kA, mA); tahmin etme, okuyamadığına null.
+Yalnız şu JSON'u döndür:
+{"ana": [ {"tur": "sigorta"|"tms"|"tmsyks"|"kar", "deger": str} ],
+ "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh / reaktif varsa true),
+ "sayaclar": [ {"no": soldan/yukarıdan sıra 1.., "tablo": sayacın beslediği tablo / bağımsız bölüm adı (yazıyorsa, yoksa null), "onu": str} ]}`;
+const kesiciYaz = s => String(s == null ? '' : s).replace(/\s*[xX*×]\s*/g, 'x').replace(/\s+/g, ' ').trim();
+const kesiciAnahtar = s => kesiciYaz(s).toUpperCase().replace(/\s/g, '');
+function cogunluk(liste) {                                   // [değer] → { v, adet } (boşlar sayılmaz)
+  const say = {}, ilk = {};
+  liste.forEach(v => { const k = kesiciAnahtar(v); if (!k) return; say[k] = (say[k] || 0) + 1; if (!ilk[k]) ilk[k] = kesiciYaz(v); });
+  const en = Object.entries(say).sort((a, b) => b[1] - a[1])[0];
+  return en ? { v: ilk[en[0]], adet: en[1] } : { v: '', adet: 0 };
+}
+// satirlar: güç tablosu satırları (sayaç önü bunlara yazılır). Dönen: { ana, sayac, reaktif, onu: [satır sırasıyla], supheli: {alan: 1} }
+async function panoOku(sample, ham, satirlar, yaz) {
+  let sonHata = null;
+  const oku = async () => { try { return await sample.json(PANO_ISTEM, { images: [ham], modelTier: 'default' }) || {}; } catch (x) { sonHata = x; return {}; } };
+  const ana = o => (Array.isArray(o.ana) ? o.ana : []).filter(k => k && ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2);
+  const onuListe = o => {                                    // okumayı satırlara eşle: tablo adıyla, yoksa sırayla, tek değer varsa hepsine
+    const s = (Array.isArray(o.sayaclar) ? o.sayaclar : []).filter(x => x && x.onu);
+    return satirlar.map((r, j) => {
+      const ad = x => String(x.tablo || '').trim().toUpperCase();
+      const t = s.find(x => ad(x) && [String(r.tablo || '').toUpperCase(), String(r.bb || '').toUpperCase()].includes(ad(x)));
+      if (t) return t.onu;
+      if (s.length === satirlar.length) return s[j].onu;
+      const farkli = [...new Set(s.map(x => kesiciAnahtar(x.onu)))];
+      return farkli.length === 1 ? s[0].onu : '';
+    });
+  };
+  yaz('Sayaç panosu okunuyor…');
+  const okumalar = [await oku()];
+  yaz('Sayaç panosu ikinci kez okunuyor (karşılaştırma)…'); okumalar.push(await oku());
+  const imza = o => JSON.stringify([ana(o).map(k => k.tur + kesiciAnahtar(k.deger)), onuListe(o).map(kesiciAnahtar), kesiciAnahtar(o.sayac)]);
+  if (imza(okumalar[0]) !== imza(okumalar[1])) { yaz('İki okuma farklı; üçüncü kez okunuyor…'); okumalar.push(await oku()); }
+  if (okumalar.every(o => !ana(o).length && !(o.sayaclar || []).length) && sonHata) throw sonHata;
+  const n = okumalar.length, supheli = {}, tutmaz = c => c.adet < 2;
+  // ana kesici: cihaz sayısı ve her cihazın türü + değeri
+  const adet = cogunluk(okumalar.map(o => String(ana(o).length))).v | 0;
+  const anaS = [];
+  for (let i = 0; i < Math.min(2, adet); i++) {
+    const tur = cogunluk(okumalar.map(o => (ana(o)[i] || {}).tur)), deg = cogunluk(okumalar.map(o => (ana(o)[i] || {}).deger));
+    anaS.push({ tur: (tur.v || '').toLowerCase(), deger: deg.v });
+    if (tutmaz(tur)) supheli[`k${i + 1}tur`] = 1;
+    if (tutmaz(deg)) supheli[`k${i + 1}deger`] = 1;
+  }
+  const sayac = cogunluk(okumalar.map(o => String(o.sayac || '').replace(/A$/i, '')));
+  if (sayac.v && tutmaz(sayac)) supheli.sayac = 1;
+  const rk = cogunluk(okumalar.map(o => typeof o.reaktif === 'boolean' ? String(o.reaktif) : ''));
+  const onuL = okumalar.map(onuListe);
+  const onu = satirlar.map((_, j) => { const c = cogunluk(onuL.map(l => l[j])); if (c.v && tutmaz(c)) supheli['onu:' + j] = 1; return c.v; });
+  return { ana: anaS, sayac: sayac.v.replace(/\s+/g, ''), reaktif: rk.v ? rk.v === 'true' : null, onu, supheli, n };
+}
+function panoResmiGoster(im) {
+  D.panoResimUrl && URL.revokeObjectURL(D.panoResimUrl); D.panoResimUrl = URL.createObjectURL(im);
+  $('panoResim').src = D.panoResimUrl; $('panoResim').hidden = false; $('panoOnayKutu').hidden = false; $('panoOnay').checked = false;
+}
+function panoSupheliGoster() {
+  const s = D.panoSupheli || {};
+  for (const id of ['k1tur', 'k1deger', 'k2tur', 'k2deger', 'sayac']) { const el = $('a-' + id); el.style.border = s[id] ? '2px solid var(--kotu)' : ''; el.title = s[id] ? 'Okumalar birbirini tutmadı' : ''; }
+}
+// Okunan pano bilgisini sayfaya yazar (diğer alanlara dokunmaz)
+function panoUygula(v) {
+  const k = v.ana.concat([{ tur: '', deger: '' }, { tur: '', deger: '' }]);
+  if (v.ana.length) { $('a-k1tur').value = k[0].tur; $('a-k1deger').value = k[0].deger; $('a-k2tur').value = k[1].tur; $('a-k2deger').value = k[1].deger; }
+  if (v.sayac) $('a-sayac').value = v.sayac;
+  if (v.reaktif !== null) $('a-sayacTur').value = v.reaktif ? 'Aktif-Reaktif' : 'Aktif';
+  for (const id of ['k1tur', 'k1deger', 'k2tur', 'k2deger', 'sayac', 'sayacTur']) $('a-' + id).classList.add('resimden');
+  D.satirlar.forEach((r, j) => { if (v.onu[j]) r.onu = v.onu[j]; });
+  D.supheli = D.supheli || {};
+  Object.keys(D.supheli).filter(x => x.endsWith(':onu')).forEach(x => delete D.supheli[x]);
+  Object.keys(v.supheli).filter(x => x.startsWith('onu:')).forEach(x => { D.supheli[x.slice(4) + ':onu'] = 1; });
+  D.gucFark = Object.keys(D.supheli).length > 0;
+  D.panoSupheli = Object.fromEntries(Object.keys(v.supheli).filter(x => !x.startsWith('onu:')).map(x => [x, 1]));
+  D.panoKaynak = 'resim';
+  if (D.ic) { D.ic.korumalar = v.ana.length ? v.ana : D.ic.korumalar; if (v.sayac) D.ic.sayac = v.sayac; }
+  panoSupheliGoster(); satirlariCiz(); guncelle();
+}
+function panoOzet(v) {
+  const ad = { sigorta: 'sigorta', tms: 'TMŞ', tmsyks: 'TMŞ+YKŞ', kar: 'K.A.R' };
+  const sup = Object.keys(v.supheli).length;
+  return `Ana kesici: ${v.ana.length ? v.ana.map(k => `${ad[k.tur] || k.tur} ${k.deger}`).join(' + ') : 'okunamadı'} · sayaç önü: ${[...new Set(v.onu.filter(Boolean))].join(', ') || 'okunamadı'}` +
+    (sup ? ` — ${sup} değerde okumalar tutmadı (kırmızı)` : ' — okumalar birbirini tuttu') + '. Resimle karşılaştırıp kutuyu işaretleyin.';
+}
+async function panoYenidenOku(yer) {
+  const sample = await ornekVar(); if (!sample || !D.icDoc) return;
+  const dugmeler = ['b-pano-tekrar', 'b-pano-goster', 'b-guc-oku'].map($); dugmeler.forEach(b => b.disabled = true);
+  const yaz = (t, s) => durum('d-pano', t, s);
+  try {
+    if (!yer) {
+      const b = await bolumBul(sample, D.icDoc, ['pano'], yaz);
+      if (!b.pano) { yaz('Sayaç panosu paftada bulunamadı. "Panonun yerini resimde ben göstereyim" düğmesiyle gösterin.', 'kotu'); return; }
+      yer = b.pano;
+    }
+    D.panoYer = yer;
+    const ham = await kesKutu(D.icDoc, yer);
+    const v = await panoOku(sample, ham, D.satirlar, yaz);
+    panoResmiGoster(ham); panoUygula(v);
+    yaz(panoOzet(v), Object.keys(v.supheli).length || !v.ana.length ? 'kotu' : 'iyi');
+  } catch (x) { yaz(hataYaz(x) + ' Tekrar deneyebilirsiniz.', 'kotu'); }
+  finally { dugmeler.forEach(b => b.disabled = false); $('b-guc-oku').disabled = !GS.secim; }
+}
+$('b-pano-tekrar').addEventListener('click', () => panoYenidenOku(D.panoYer || null));
+$('panoOnay').addEventListener('change', () => guncelle());
 // ---- Tabloyu elle gösterme: sayfa resminde sürükleyerek alan seçilir; "yakınlaştır" ile seçilen alana girilir ----
-const GS = { p: 1, gorunum: [0, 0, 1, 1], secim: null, bas: null };
+const GS = { p: 1, gorunum: [0, 0, 1, 1], secim: null, bas: null, hedef: 'guc' };
 async function gsCiz() {
   $('gucSecDurum').textContent = 'Resim hazırlanıyor…';
   const bl = await bolgeResmi(D.icDoc, GS.p, GS.gorunum, 1800);
   const im = $('gucSayfaResim'); im.src && URL.revokeObjectURL(im.src); im.src = URL.createObjectURL(bl);
   GS.secim = null; gsCerceve(); $('b-guc-oku').disabled = true; $('b-guc-yakin').disabled = true;
-  $('gucSecDurum').textContent = 'Tablonun bir köşesinden karşı köşesine sürükleyin. Tablo küçük görünüyorsa önce kabaca seçip "Yakınlaştır"a basın.';
+  $('gucSecDurum').textContent = (GS.hedef === 'pano' ? 'Sayaç panosunun / kolon şemasının (ana kesici ve sayaçlar)' : 'Tablonun') + ' bir köşesinden karşı köşesine sürükleyin. Küçük görünüyorsa önce kabaca seçip "Yakınlaştır"a basın.';
 }
 function gsCerceve() {
   const c = $('gucCerceve'), s = GS.secim;
@@ -811,18 +936,23 @@ $('gucSecKutu').addEventListener('pointerup', () => {
   gsCerceve(); $('b-guc-oku').disabled = !GS.secim; $('b-guc-yakin').disabled = !GS.secim;
 });
 const gsSayfaKesri = s => { const g = GS.gorunum, w = g[2] - g[0], h = g[3] - g[1]; return [g[0] + s[0] * w, g[1] + s[1] * h, g[0] + s[2] * w, g[1] + s[3] * h]; };
-$('b-guc-goster').addEventListener('click', async () => {
+async function secimAc(hedef) {
   if (!D.icDoc) return;
+  GS.hedef = hedef;
+  (hedef === 'pano' ? $('panoSecYeri') : $('gucTekrar')).appendChild($('gucSec'));   // seçim alanı ilgili kutunun içinde açılır
   $('gucSec').hidden = false;
   $('gucSayfa').innerHTML = Array.from({ length: D.icDoc.numPages }, (_, i) => `<option value="${i + 1}">${i + 1}. sayfa</option>`).join('');
-  GS.p = (D.gucYer && D.gucYer.p) || 1; $('gucSayfa').value = GS.p; GS.gorunum = [0, 0, 1, 1];
+  const yer = hedef === 'pano' ? D.panoYer : D.gucYer;
+  GS.p = (yer && yer.p) || 1; $('gucSayfa').value = GS.p; GS.gorunum = [0, 0, 1, 1];
   await gsCiz(); $('gucSec').scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
+}
+$('b-guc-goster').addEventListener('click', () => secimAc('guc'));
+$('b-pano-goster').addEventListener('click', () => secimAc('pano'));
 $('gucSayfa').addEventListener('change', () => { GS.p = +$('gucSayfa').value; GS.gorunum = [0, 0, 1, 1]; gsCiz(); });
 $('b-guc-yakin').addEventListener('click', () => { if (!GS.secim) return; const k = gsSayfaKesri(GS.secim), m = 0.04 * Math.max(k[2] - k[0], k[3] - k[1]);
   GS.gorunum = [k[0] - m, k[1] - m, k[2] + m, k[3] + m].map(x => Math.min(1, Math.max(0, x))); gsCiz(); });
 $('b-guc-bastan').addEventListener('click', () => { GS.gorunum = [0, 0, 1, 1]; gsCiz(); });
-$('b-guc-oku').addEventListener('click', () => { if (GS.secim) gucYenidenOku({ p: GS.p, k: gsSayfaKesri(GS.secim) }); });
+$('b-guc-oku').addEventListener('click', () => { if (!GS.secim) return; const yer = { p: GS.p, k: gsSayfaKesri(GS.secim) }; (GS.hedef === 'pano' ? panoYenidenOku : gucYenidenOku)(yer); });
 
 $('b-ro-ic').addEventListener('click', async () => {
   const sample = await ornekVar(); if (!sample || !D.icDoc) return;
@@ -860,27 +990,18 @@ Yalnız şu JSON'u döndür: {"malSahibi": str, "kullanim": str, "adres": str, "
         else if (!a.length) gucNot = 'güç tablosunun satırları okunamadı';
       } catch (x) { gucNot = 'güç tablosu okunamadı (' + hataYaz(x) + ')'; }
     } else if (!bolge.guc && ic.gucKaynak !== 'yazı' && BHP.bbSayisi(ic.bagimsiz || (D.gdz && D.gdz.bagimsiz)) !== 1) gucNot = 'güç tablosu paftada bulunamadı';
+    let panoSonuc = null;
     if (bolge.pano) {
+      D.panoYer = bolge.pano;
       try {
-        const v = await sample.json(`Ekteki resim bir elektrik iç tesisat projesindeki SAYAÇ PANOSU / ANA GİRİŞ / KOLON ŞEMASI. Resimde YAZAN değerleri aynen oku, tahmin etme.
-Yalnız şu JSON'u döndür:
-{"korumalar": [ {"tur": "sigorta"|"tms"|"kar"|"tmsyks", "deger": str} ],  // binaya girişteki ANA koruma(lar), enerji yönünde sırayla. TMŞ+YKŞ tek cihaz ise [{"tur":"tmsyks","deger":"4x125A 300mA"}]; sigorta ör. "4x40A 10kA"; kaçak akım rölesi ör. "4x40A 300mA"
- "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh / reaktif varsa true),
- "onu": [ {"kime": [tablo adları] ya da ["hepsi"], "deger": str} ]  // her sayacın ÖNÜNDEKİ sigorta/otomat, ör. {"kime": ["D1","D2"], "deger": "3x32A 6kA"}; hepsi aynıysa ["hepsi"]
-}`, { images: [await kes('pano')], modelTier: 'default' });
-        if (v && Array.isArray(v.korumalar) && v.korumalar.length) {
-          ic.korumalar = v.korumalar.filter(k => ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2).map(k => ({ tur: k.tur, deger: String(k.deger || '').replace(/[X*]/g, 'x') }));
-          Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: ic.korumalar.length > 1, k2deger: ic.korumalar.length > 1 });
-        }
-        if (v && v.sayac) { ic.sayac = String(v.sayac).replace(/\s+/g, '').replace(/[X*]/, 'x').replace(/A$/i, ''); resimden.sayac = 1; }
-        if (v && typeof v.reaktif === 'boolean') { ic.reaktif = v.reaktif; resimden.sayacTur = 1; }
-        if (v && Array.isArray(v.onu) && ic.satirlar) {
-          const bul = r => (v.onu.find(o => Array.isArray(o.kime) && o.kime.some(t => String(t).trim() && [r.tablo, r.bb].includes(String(t).trim())))
-            || v.onu.find(o => Array.isArray(o.kime) && o.kime.some(t => /hepsi|tüm|daire/i.test(String(t))))) || null;
-          ic.satirlar.forEach(r => { const o = bul(r); if (o && o.deger) r.onu = String(o.deger).replace(/[X*]/g, 'x'); });
-        }
-      } catch (x) { /* pano okunamazsa korumalar elle girilir */ }
-    }
+        const ham = await kes('pano'), v = await panoOku(sample, ham, ic.satirlar || [{ bb: '1', tablo: 'AT' }], yaz);
+        panoSonuc = { v, ham };
+        if (v.ana.length) { ic.korumalar = v.ana; Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: v.ana.length > 1, k2deger: v.ana.length > 1 }); }
+        if (v.sayac) { ic.sayac = v.sayac; resimden.sayac = 1; }
+        if (v.reaktif !== null) { ic.reaktif = v.reaktif; resimden.sayacTur = 1; }
+        if (ic.satirlar) ic.satirlar.forEach((r, j) => { if (v.onu[j]) r.onu = v.onu[j]; });
+      } catch (x) { durum('d-pano', 'Sayaç panosu okunamadı (' + hataYaz(x) + '). Tekrar okutun ya da yerini gösterin.', 'kotu'); }
+    } else durum('d-pano', 'Sayaç panosu paftada bulunamadı. Tekrar okutun ya da yerini resimde gösterin.', 'kotu');
     ic.resimden = resimden; D.ic = ic;
     const k = ic.satirlar ? BHP.gucKontrol(Object.assign({}, ic, { satirlar: ic.satirlar, kuruluW: ic.kuruluW, bagimsiz: ic.bagimsiz, talepW: ic.talepW })) : null;
     durum('d-ro-ic', `Resimden okundu: ${Object.keys(resimden).length} bilgi${ic.satirlar ? `, güç dağıtım tablosunda ${ic.satirlar.length} satır` : ''}` +
@@ -889,6 +1010,7 @@ Yalnız şu JSON'u döndür:
     durum('d-ic', 'Resimden okundu.', 'iyi');
     if (gucNot) durum('d-guc', 'Güç tablosu okunamadı. Aşağıdan tekrar okutun ya da tablonun yerini resimde gösterin.', 'kotu');
     alanlariDoldur();
+    if (panoSonuc) { panoResmiGoster(panoSonuc.ham); panoUygula(panoSonuc.v); durum('d-pano', panoOzet(panoSonuc.v), Object.keys(panoSonuc.v.supheli).length || !panoSonuc.v.ana.length ? 'kotu' : 'iyi'); }
   } catch (x) {
     durum('d-ro-ic', x && x.code === 'bos' ? 'Paftada antet, güç tablosu ya da pano bulunamadı. Bilgileri elle doldurun; güç tablosunu 4. bölümden resimde gösterip okutabilirsiniz.' : hataYaz(x) + ' Düğmeye tekrar basabilirsiniz.', 'kotu');
     durum('d-guc', 'Güç tablosu okunamadı. Tekrar okutun ya da tablonun yerini resimde gösterin.', 'kotu');

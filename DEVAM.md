@@ -136,6 +136,13 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    sürükleyerek alan seç, Yakınlaştır / Bütün sayfa, "Seçtiğim alanı oku"). Kod: bolumBul, gucTablosunuOku, gucYenidenOku (html).
    Antet/pano okuma hatası artık bütün okumayı durdurmaz. Deneme: baglanti-hatti/test/guc-tekrar-dene.js (sahte cevaplar).
    Kullanıcıya sorulacak: önceki denemede ekranda ne yazıyordu (neden okunamadığı bilinmiyor); yeni düğmelerle deneyip sonucu bildirsin.
+1c. SİGORTA OKUMA — YAPILDI (7 Kasım 2026): kullanıcı "ana kesiciyi (branşmanın girdiği; cinsi projeden projeye değişir) ve bağımsız
+   bölüm sayaçlarının önündeki kesicileri yanlış okuyor" dedi. Yeni istem (PANO_ISTEM): enerji yolu şebeke → branşman → ANA KESİCİ (en çok 2
+   cihaz: sigorta / TMŞ / TMŞ+YKŞ / ayrı K.A.R) → bara → SAYAÇ ÖNÜ → sayaç; sayaç arkası, daire tabloları ve linye sigortaları sayılmaz.
+   Sayaçlar tek tek ({no, tablo, onu}) okunur, satırlara tablo adıyla / sırayla eşlenir. 2 okuma (farklıysa 3), değer değer çoğunluk;
+   tutmayanlar kırmızı (k1..k2, sayaç; tabloda onu hücresi). 3. bölümde pano kutusu: panonun resmi + "karşılaştırdım, doğru" (panoOnay,
+   işaretlenmeden indirilmez) + "Sigortaları tekrar oku" + "Panonun yerini resimde ben göstereyim" (güç tablosuyla ortak seçim alanı, GS.hedef).
+   Kullanıcıdan istenecek: yanlış okunan bir projenin kolon şeması / sayaç panosu (ekran görüntüsü) — istemi gerçek örnekle ayarlamak için.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
