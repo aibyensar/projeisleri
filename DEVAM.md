@@ -155,7 +155,8 @@ gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullan�
    hata varsa İNDİR kapalı. Gerçek iç tesisat PDF'iyle HENÜZ DENENMEDİ (kullanıcıdan örnek istendi).
 2. Resimler eşit (277x150 mm), web kirpVeSigdir "cover" (boşluksuz, ortadan kırpar); RESIM 2000x1083.
 3/7. Semboller: tek hatta kullanıcının sembol tablosundaki 3~ W otomat, 3~ buşonlu, 3~ sayaç, topraklama; TMŞ/YKŞ IEC.
-   Vaziyette box = dikdörtgen yarısı dolu (kullanıcıya soruldu), pano = iki üçgen (kendi lejantı), etiketler dolgusuz, altı çizili.
+   KULLANICI KURALI: box küçük KARE, direk ÇEMBER (vaziyet, tek hat, hesap şeması). Pano = iki üçgen (kendi lejantı); etiketler dolgusuz, altı çizili.
+   Montaj detayı ölçüleri (kablo 100 cm, pano alt kotu 1 m, kazık L=2 m) kullanıcı tarafından onaylandı.
 4. Montaj detayı JS'de (BHPCizim.detay) baştan: box/direk, beton kaide, pano, Ø100 PVC boru, ikaz şeridi, kum yatağı, 100 cm,
    parsel sınırı, parsel dışı/içi ölçüleri, topraklama iletkeni + kazığı. Şablondaki eski detay blokları kullanılmıyor.
 5. Yük dağılımı cetveli kaldırıldı. 6. "20 °C" kaldırıldı. 8. Sayaçlar baradan YUKARI. 9. topraklamaKesit: ≤35 → 16, üstü ≥ S/2 standart.

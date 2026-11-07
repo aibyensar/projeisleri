@@ -78,7 +78,7 @@
     c.yazi('TEK HAT ŞEMASI', X0 + 2, Y1 - 3.5, 3.0, { stil: KALIN });
     c.cizgi(X0 + 2, Y1 - 5.6, X0 + 2 + genislik('TEK HAT ŞEMASI', 3.0), Y1 - 5.6, T);
     const yh = Y0 + 34, kx = X0 + 26, r = 9;
-    c.daire(kx, yh, r, S);
+    if (v.baglanti === 'box') c.kutu(kx - r, yh - r, kx + r, yh + r, S); else c.daire(kx, yh, r, S);   // box kare, direk çember
     c.yazi(v.baglanti === 'box' ? 'AG BOX' : 'AG DİREK', kx, yh, 2.2, { stil: KALIN, hiza: 'orta' });
     const ad = v.kaynakAd || (v.baglanti === 'box' ? 'AG SAHA DAĞITIM KUTUSU' : 'AG DİREĞİ');
     const ah = Math.min(2.8, 120 / Math.max(1, genislik(ad, 1)));
@@ -288,7 +288,7 @@
     const X = xc + 6;
     const ys = ust - 13, sx0 = X + 32, sx1 = x1 - 66;
     c.yazi(v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)', sx0 - 3, ys, 2.4, { stil: KALIN, hiza: 'sag' });
-    c.dolgu([[sx0, ys - 2.5], [sx0 + 5, ys - 2.5], [sx0 + 5, ys + 2.5], [sx0, ys + 2.5]], { katman: 'BHP-SEMBOL' });
+    if (v.baglanti === 'box') c.kutu(sx0, ys - 2.5, sx0 + 5, ys + 2.5, S); else c.daire(sx0 + 2.5, ys, 2.5, S);
     c.cizgi(sx0 + 5, ys, sx1, ys, S);
     c.yazi(v.kablo.yazi, (sx0 + sx1) / 2, ys + 3.5, 2.5, { stil: KALIN, hiza: 'orta' });
     c.yazi(`L = ${sayiYaz(v.L)} m`, (sx0 + sx1) / 2, ys - 3.5, 2.5, { hiza: 'orta' });
@@ -426,8 +426,8 @@
       const ara = (isaret.ara || []).map(P);
       const yol = [a, ...ara, b];
       c.cokgen(yol, { katman: 'BHP-VAZIYET', lt: 'BHP-KESIK', kalin: true, renk: 1 });
-      // AG saha dağıtım kutusu: dikdörtgen, köşegenle yarısı dolu (dağıtım kutusu işareti)
-      if (v.baglanti === 'box') { c.kutu(a[0] - 4, a[1] - 2.8, a[0] + 4, a[1] + 2.8, K); c.dolgu([[a[0] - 4, a[1] - 2.8], [a[0] + 4, a[1] - 2.8], [a[0] + 4, a[1] + 2.8]], { ...K, renk: 1 }); }
+      // kullanıcının kuralı: box küçük kare, direk çember
+      if (v.baglanti === 'box') c.kutu(a[0] - 2.6, a[1] - 2.6, a[0] + 2.6, a[1] + 2.6, K);
       else c.daire(a[0], a[1], 2.8, K);
       // sayaç panosu: uzun kenarı parsel sınırına paralel (kullanıcı sınır üzerinde 2 nokta tıklar)
       const aci = panoAci(isaret, W, H), ca = Math.cos(aci), sa = Math.sin(aci);
