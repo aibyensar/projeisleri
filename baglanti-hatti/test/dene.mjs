@@ -1,5 +1,6 @@
 // Deneme: GDZ görüşü ve iç tesisat PDF'lerini okur, hesabı yapar, şablonu doldurur.
-// Kullanım: node dene.mjs <gdz.pdf> <ic-tesisat.pdf> <cikis-klasoru> [cu|al] [en-kucuk-kesit]
+// Kullanım: node dene.mjs <gdz.pdf> <ic-tesisat.pdf> <cikis-klasoru> [cu|al] [en-kucuk-kesit] [elle.json]
+// elle.json: PDF'ten okunamayan bilgiler (birleşik bilgilerin üzerine yazılır)
 // pdf.js gerekir: npm install pdfjs-dist@4.10.38 (yolu PDFJS ortam değişkeniyle de verilebilir)
 import fs from 'fs';
 import path from 'path';
@@ -7,6 +8,7 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pdfjs = await import(process.env.PDFJS || 'pdfjs-dist/legacy/build/pdf.mjs');
 const BHP = require('../../ortak/bhp.js');
+const BHPCizim = require('../../ortak/bhp-cizim.js');
 
 async function sayfalar(dosya) {
   const doc = await pdfjs.getDocument({ data: new Uint8Array(fs.readFileSync(dosya)), verbosity: 0 }).promise;
@@ -21,13 +23,13 @@ async function sayfalar(dosya) {
   }
   return out;
 }
-const [gdzP, icP, cikis, iletken = 'al', enKucuk = '16'] = process.argv.slice(2);
+const [gdzP, icP, cikis, iletken = 'al', enKucuk = '10', elle] = process.argv.slice(2);
 const g = BHP.gdzOku(await sayfalar(gdzP));
 const gs = await sayfalar(gdzP);
 const i = BHP.icTesisatOku((await sayfalar(icP))[0]);
 console.log('GDZ', g, '\nuydu sayfası', BHP.uyduSayfasi(gs) + 1);
 console.log('İÇ TESİSAT', i);
-const b = BHP.birlestir(g, i);
+const b = Object.assign(BHP.birlestir(g, i), elle ? JSON.parse(fs.readFileSync(elle, 'utf8')) : {});
 console.log('BİRLEŞİK', b);
 const k = BHP.kabloOner(iletken, b.talepW, b.uzunluk, +enKucuk);
 console.log('KABLO', k, BHP.hesap(k, b.talepW, b.uzunluk));
@@ -35,5 +37,8 @@ const ad = b.basvuruNo || 'bhp';
 const d = BHP.degerler(b, k, `${ad}-uydu.jpg`, `${ad}-vaziyet.jpg`);
 const sablon = fs.readFileSync(new URL('../BHP-SABLON.dxf', import.meta.url), 'utf8');
 fs.mkdirSync(cikis, { recursive: true });
-fs.writeFileSync(path.join(cikis, `BHP-${ad}.dxf`), BHP.doldur(sablon, d));
+const cz = BHPCizim.hepsi(BHP.cizimVerisi(b, k));
+fs.writeFileSync(path.join(cikis, `BHP-${ad}.dxf`), BHPCizim.dxfeEkle(BHP.doldur(sablon, d), cz, b.baglanti));
+for (const [ad2, bolge] of Object.entries(BHPCizim.BOLGE))
+  fs.writeFileSync(path.join(cikis, `onizleme-${ad2}.svg`), BHPCizim.svg(cz, bolge, 1400).replace('<svg ', '<svg style="background:#fff;color:#000" '));
 console.log('yazıldı', path.join(cikis, `BHP-${ad}.dxf`));

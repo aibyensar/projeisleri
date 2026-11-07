@@ -86,5 +86,17 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
 - Okunamayanlar: iç tesisat PDF'inde sayaç tipi ve güç dağılım tablosu resim → varsayılan 3x10, "AT"; kullanıcı düzeltebilir.
 - Bilinen eksikler: vaziyet planındaki direk/kablo/ada-parsel yazıları eski yerinde kalır, kullanıcı taşır. Havai hat yok
   (kullanıcı "yeraltı çiz" dedi). Tek bağımsız bölüm satırı. Monofaze bağlantı yok.
-- Sıradaki: kullanıcı Faruk Erdoğan işiyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
+- 2. SÜRÜM (7 Kasım 2026, kullanıcı isteğiyle "en iyisini çıkaralım"):
+  * Şablon iki kaynaktan: `python3 sablon-olustur.py <direkli harmandalı_BHP.dxf> <boxlu BHP.dxf> BHP-SABLON.dxf`.
+    Direk ve box detayı blok olarak (BHP_DETAY_DIREK / BHP_DETAY_BOX); web aracı kullanılmayanın yerleşimini siler.
+    Eski iç tesisat sembol listesi, eski tek hat şeması ve vaziyet lejantı silindi; bağlantı hattına özel 15 satırlık
+    SEMBOL LİSTESİ çizildi. Dosya başında `999 BHP {...}` açıklaması: model alanı tutamacı ve bölgeler.
+  * `ortak/bhp-cizim.js`: tek hat şeması (direk/box, korumalar sırayla, n sayaç), gerilim düşümü + akım hesabı (formül ve
+    katalog kaynağı notlu), çok satırlı güç dağılım tablosu, MALZEME LİSTESİ. Aynı çizim DXF varlıklarına ve SVG önizlemeye çevrilir.
+    HATCH yolunda 92=3 (dış sınır) olmalı, yoksa dolgu görünmez.
+  * GDZ "Bağlantı Şekli" (Direk Bağlantısı / Box Çıkışı) okunur. Uzunluk = parsel dışı + parsel içi.
+  * Başka mühendislerin iç tesisat PDF'lerinde yazılar çizgi olabilir → okunamaz; araç uyarır, kullanıcı elle girer.
+    Güç dağılım tablosu için "daire sayısı + güç + ortak" ile satır üretme var.
+  * Denenen: Ayşe Çelenk (20247911, box C-06, 15 BB, 57839 W, 12 m) → bakırda 3x25/16 mm² NYY (133 A), %0,34.
+- Sıradaki: kullanıcı Faruk Erdoğan ve Ayşe Çelenk işleriyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
   Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).

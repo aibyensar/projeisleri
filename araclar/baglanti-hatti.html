@@ -8,7 +8,7 @@
 <style>
   .yukle { display: grid; gap: 12px; }
   .yukle label { display: block; border: 1px dashed var(--cizgi); border-radius: 8px; padding: 12px; cursor: pointer; }
-  .yukle label b { display: block; }
+  .yukle label b { display: block; color: var(--yazi); }
   .yukle input[type=file] { margin-top: 8px; max-width: 100%; }
   .durum { font-size: .85rem; color: var(--soluk); display: block; margin-top: 4px; }
   .durum.iyi { color: var(--iyi); } .durum.kotu { color: var(--kotu); }
@@ -21,7 +21,7 @@
   .alanlar h3 { grid-column: 1 / -1; margin: 6px 0 0; font-size: .9rem; color: var(--soluk); }
   .alanlar label { font-size: .85rem; min-width: 0; }
   .alanlar .genis { grid-column: 1 / -1; }
-  .alanlar input, .alanlar select, #kesit, #enKucuk { width: 100%; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
+  input[type=text], input[type=number], select { width: 100%; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
     border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
   .okundu { border-color: var(--iyi) !important; }
   .formul { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; overflow-wrap: anywhere; }
@@ -35,9 +35,21 @@
   .ana-dugme { font: inherit; font-weight: 700; font-size: 1.05rem; padding: 14px 18px; border-radius: 8px; border: 0; cursor: pointer;
     background: var(--vurgu); color: #fff; width: 100%; }
   .ana-dugme:disabled { opacity: .5; cursor: not-allowed; }
+  .kucuk-dugme { font: inherit; font-size: .85rem; padding: 8px 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
   .uyari { background: var(--kotu-zemin); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: .9rem; }
-  .bilgi { background: var(--iyi-zemin); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: .9rem; }
   ol.adimlar { padding-left: 20px; margin: 8px 0 0; } ol.adimlar li { margin-bottom: 4px; }
+  .tablo-kutu { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.duz { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  table.duz th { text-align: left; font-weight: 600; color: var(--soluk); padding: 4px; white-space: nowrap; }
+  table.duz td { padding: 2px; }
+  table.duz input { padding: 6px; min-width: 64px; }
+  table.duz td.genis input { min-width: 220px; }
+  .sil { border: 0; background: none; color: var(--kotu); cursor: pointer; font-size: 1.1rem; padding: 4px 8px; }
+  .uret { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; align-items: end; margin: 10px 0; }
+  .uret label { font-size: .8rem; }
+  .onizleme { background: #fff; color: #000; border: 1px solid var(--cizgi); border-radius: 8px; padding: 8px; margin-bottom: 10px; --kablo: #c0392b; }
+  .onizleme h4 { margin: 0 0 4px; font-size: .8rem; color: #555; }
 </style>
 </head>
 <body>
@@ -56,7 +68,7 @@
       <label><b>Onaylı iç tesisat projesi (PDF)</b>
         <input type="file" id="f-ic" accept="application/pdf,.pdf">
         <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
-      <label><b>TKGM parsel görüntüsü (resim) — vaziyet planı</b>
+      <label><b>TKGM parsel görüntüsü (resim), vaziyet planı için</b>
         <input type="file" id="f-tkgm" accept="image/*">
         <span class="durum" id="d-tkgm">Henüz yüklenmedi</span></label>
     </div>
@@ -72,25 +84,51 @@
       <label>Kablo<select id="kesit" disabled><option>Önce seçim yapın</option></select></label>
       <label>En küçük kesit (mm²)<input id="enKucuk" type="number" min="1" step="any"></label>
     </div>
-    <p class="not" style="margin-bottom:0">Araç, akım ve gerilim düşümüne göre uygun olan en küçük kesiti önerir. İsterseniz listeden değiştirin.</p>
+    <p class="not" style="margin-bottom:0">Araç, akım ve gerilim düşümüne göre uygun en küçük kesiti önerir (bakırda en az 6, alüminyumda en az 10 mm²). İsterseniz listeden değiştirin.</p>
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">3. Okunan bilgiler</h2>
+    <h2 style="margin-top:0">3. Bilgiler</h2>
     <p class="not">Yeşil kenarlı kutular belgelerden okundu. Hepsini kontrol edin, gerekirse düzeltin.</p>
     <div id="hatNotu"></div>
     <div class="alanlar" id="alanlar"></div>
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">4. Hesap</h2>
-    <div id="sonuc"><p class="not">Belgeleri yükleyip kablo türünü seçince hesap burada görünür.</p></div>
+    <h2 style="margin-top:0">4. Güç dağılım tablosu</h2>
+    <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin.</p>
+    <div class="uret">
+      <label>Daire sayısı<input type="number" id="u-adet" min="0" step="1" inputmode="numeric"></label>
+      <label>Tablo adı öneki<input type="text" id="u-onek" value="D"></label>
+      <label>Daire kurulu güç (W)<input type="number" id="u-kurulu" min="0" inputmode="decimal"></label>
+      <label>Daire bağlantı gücü (W)<input type="number" id="u-baglanti" min="0" inputmode="decimal"></label>
+      <label>Ortak kurulu (W)<input type="number" id="u-okurulu" min="0" inputmode="decimal"></label>
+      <label>Ortak bağlantı (W)<input type="number" id="u-obaglanti" min="0" inputmode="decimal"></label>
+      <button type="button" class="kucuk-dugme" id="u-yap">Satırları üret</button>
+    </div>
+    <div class="tablo-kutu"><table class="duz" id="satirlar"></table></div>
+    <button type="button" class="kucuk-dugme" id="satirEkle" style="margin-top:8px">+ Satır ekle</button>
+    <p class="durum" id="d-satir"></p>
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">5. Resimler</h2>
+    <h2 style="margin-top:0">5. Hesap ve önizleme</h2>
+    <div id="sonuc"><p class="not">Belgeleri yükleyip kablo türünü seçince hesap burada görünür.</p></div>
+    <div id="onizleme"></div>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">6. Malzeme listesi</h2>
+    <p class="not">Uzunluk ve bağlantı türüne göre önerildi. Miktarları düzeltebilir, satır ekleyip silebilirsiniz.</p>
+    <div class="tablo-kutu"><table class="duz" id="malzeme"></table></div>
+    <button type="button" class="kucuk-dugme" id="malzemeEkle" style="margin-top:8px">+ Satır ekle</button>
+    <button type="button" class="kucuk-dugme" id="malzemeSifirla" style="margin-top:8px">Öneriye dön</button>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">7. Resimler</h2>
     <div class="resimler">
-      <figure><img id="r-uydu" alt="GDZ uydu görüntüsü" hidden><figcaption id="c-uydu">GDZ yazısındaki uydu görüntüsü (üstteki pafta)</figcaption></figure>
+      <figure><img id="r-uydu" alt="GDZ uydu görüntüsü" hidden><figcaption id="c-uydu">GDZ yazısındaki uydu görüntüsü (paftanın üstü)</figcaption></figure>
       <figure><img id="r-vaziyet" alt="Vaziyet planı" hidden><figcaption id="c-vaziyet">TKGM görüntüsü (vaziyet planı)</figcaption></figure>
     </div>
     <label class="durum" style="margin-top:10px">Uydu görüntüsü bulunamazsa kendiniz seçin:
@@ -98,13 +136,13 @@
   </div>
 
   <div class="kart">
-    <h2 style="margin-top:0">6. Projeyi indirin</h2>
+    <h2 style="margin-top:0">8. Projeyi indirin</h2>
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <p class="durum" id="d-indir"></p>
     <ol class="adimlar">
       <li>İnen .zip dosyasını açın. İçindeki <b>3 dosya aynı klasörde</b> kalsın (çizim ve 2 resim).</li>
       <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
-      <li><b>Vaziyet planında</b> direk, kablo ve ada/parsel yazılarını resimdeki gerçek yerlerine taşıyın.</li>
+      <li><b>Vaziyet planında</b> enerji noktası, kablo ve ada/parsel yazılarını resimdeki gerçek yerlerine taşıyın.</li>
       <li>Resim görünmezse: <code>XREF</code> yazıp Enter, resmin yolunu zip'i açtığınız klasör olarak gösterin.</li>
     </ol>
   </div>
@@ -112,6 +150,7 @@
 
 <script src="../veri/katalog.js"></script>
 <script src="../ortak/bhp.js"></script>
+<script src="../ortak/bhp-cizim.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module">
 import * as pdfjs from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
@@ -119,17 +158,16 @@ pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pd
 
 const $ = id => document.getElementById(id);
 const durum = (id, t, s) => { const e = $(id); e.textContent = t; e.className = 'durum' + (s ? ' ' + s : ''); };
-const D = { gdz: null, gdzSayfalar: null, gdzDoc: null, ic: null, iletken: null, uydu: null, vaziyet: null, sablon: null };
+const kac = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const D = { gdz: null, ic: null, iletken: null, uydu: null, vaziyet: null, sablon: null, satirlar: [], malzeme: null, kablo: null };
 
-// Şablonu önceden indir
-// (yayında .txt adıyla durur; depoda .dxf)
+// Şablon (yayında .txt adıyla durur; depoda .dxf)
 const sablonAl = yol => fetch(yol).then(r => r.ok ? r.text() : Promise.reject(r.status));
 sablonAl('../baglanti-hatti/BHP-SABLON.txt').catch(() => sablonAl('../baglanti-hatti/BHP-SABLON.dxf'))
-  .then(t => { if (!t.includes('{{KABLO}}')) throw 0; D.sablon = t; guncelle(); }).catch(() => durum('d-indir', 'Çizim şablonu yüklenemedi. Sayfayı yenileyin.', 'kotu'));
+  .then(t => { if (!t.includes('{{KABLO}}')) throw 0; D.sablon = t; guncelle(); })
+  .catch(() => durum('d-indir', 'Çizim şablonu yüklenemedi. Sayfayı yenileyin.', 'kotu'));
 
-async function pdfAc(dosya) {
-  return pdfjs.getDocument({ data: new Uint8Array(await dosya.arrayBuffer()) }).promise;
-}
+async function pdfAc(dosya) { return pdfjs.getDocument({ data: new Uint8Array(await dosya.arrayBuffer()) }).promise; }
 async function sayfaYazilari(doc) {
   const out = [];
   for (let p = 1; p <= doc.numPages; p++) {
@@ -162,19 +200,18 @@ function kirpVeSigdir(kaynak, [W, H]) {
   return new Promise(res => c1.toBlob(res, 'image/jpeg', 0.9));
 }
 function resimGoster(id, blob) { const im = $(id); im.src = URL.createObjectURL(blob); im.hidden = false; }
-async function dosyadanResim(dosya) { return createImageBitmap(dosya); }
 
 $('f-gdz').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   durum('d-gdz', 'Okunuyor…');
   try {
-    D.gdzDoc = await pdfAc(f); D.gdzSayfalar = await sayfaYazilari(D.gdzDoc);
-    D.gdz = BHP.gdzOku(D.gdzSayfalar);
+    const doc = await pdfAc(f), sayfalar = await sayfaYazilari(doc);
+    D.gdz = BHP.gdzOku(sayfalar);
     if (!D.gdz.basvuruNo) throw new Error('Bu bir GDZ bağlantı görüşü gibi görünmüyor.');
-    durum('d-gdz', `Okundu: ${D.gdz.basvuruNo} · ${D.gdz.sahibi} · ${D.gdz.direk || 'direk bulunamadı'}`, 'iyi');
-    const sn = BHP.uyduSayfasi(D.gdzSayfalar);
+    durum('d-gdz', `Okundu: ${D.gdz.basvuruNo} · ${D.gdz.sahibi} · ${D.gdz.baglantiSekli || ''} · ${D.gdz.direk || 'enerji noktası bulunamadı'}`, 'iyi');
+    const sn = BHP.uyduSayfasi(sayfalar);
     if (sn >= 0) {
-      const pg = await D.gdzDoc.getPage(sn + 1), vp = pg.getViewport({ scale: 3 });
+      const pg = await doc.getPage(sn + 1), vp = pg.getViewport({ scale: 3 });
       const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
       await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
       D.uydu = await kirpVeSigdir(cv, BHP.RESIM.uydu);
@@ -188,66 +225,75 @@ $('f-ic').addEventListener('change', async e => {
   durum('d-ic', 'Okunuyor…');
   try {
     const s = await sayfaYazilari(await pdfAc(f));
-    D.ic = BHP.icTesisatOku(s[0]);
-    const n = Object.values(D.ic).filter(v => v && !(typeof v === 'number' && isNaN(v))).length;
-    durum('d-ic', n > 5 ? `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}` : 'Az bilgi okunabildi; kutuları kontrol edin.', n > 5 ? 'iyi' : 'kotu');
+    D.ic = BHP.icTesisatOku(s.flat());
+    const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
+    if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
+    else durum('d-ic', 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
     alanlariDoldur();
   } catch (x) { durum('d-ic', 'Okunamadı: ' + x.message, 'kotu'); }
 });
 $('f-tkgm').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
-  D.vaziyet = await kirpVeSigdir(await dosyadanResim(f), BHP.RESIM.vaziyet);
+  D.vaziyet = await kirpVeSigdir(await createImageBitmap(f), BHP.RESIM.vaziyet);
   resimGoster('r-vaziyet', D.vaziyet); durum('d-tkgm', 'Yüklendi', 'iyi'); guncelle();
 });
 $('f-uydu').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
-  D.uydu = await kirpVeSigdir(await dosyadanResim(f), BHP.RESIM.uydu);
+  D.uydu = await kirpVeSigdir(await createImageBitmap(f), BHP.RESIM.uydu);
   resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = 'Sizin seçtiğiniz resim'; guncelle();
 });
 
 // ---- Düzenlenebilir alanlar ----
+const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=Kaçak akım rölesi (K.A.R)|tmsyks=TMŞ + YKŞ (kaçak akımlı)';
 const ALANLAR = [
   ['Yapı', [['malSahibi', 'Mal sahibi', 'genis'], ['kullanim', 'Kullanım amacı'], ['adres', 'Adres', 'genis'],
     ['il', 'İl'], ['ilce', 'İlçe'], ['belediye', 'Belediye'], ['mahalle', 'Mahalle'], ['pafta', 'Pafta'], ['ada', 'Ada'], ['parsel', 'Parsel'],
-    ['kat', 'Kat adedi'], ['alan', 'Toplam alan (m²)'], ['bagimsiz', 'Bağımsız bölüm']]],
+    ['kat', 'Kat adedi'], ['alan', 'Toplam alan (m²)'], ['bagimsiz', 'Bağımsız bölüm (antet)']]],
   ['Güç', [['kuruluW', 'Kurulu güç (W)', '', 'number'], ['talepW', 'Talep / bağlantı gücü (W)', '', 'number']]],
-  ['Bağlantı hattı', [['direk', 'Bağlantı noktası (direk)', 'genis'], ['uzunluk', 'Uzunluk (m)', '', 'number']]],
-  ['Sayaç panosu', [['sigortaA', 'Ana sigorta'], ['sigortaKA', 'Kesme gücü'], ['karA', 'K.A.R akımı'], ['karMA', 'K.A.R hassasiyeti'],
-    ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif']]],
-  ['Güç dağılım tablosu', [['tabloAdi', 'Enerji aldığı tablo'], ['gucKullanim', 'Kullanım amacı'], ['tesisNo', 'Tesisat no (varsa)']]],
+  ['Bağlantı hattı', [['baglanti', 'Enerji alınan yer', '', 'select:direk=Direk|box=AG box'], ['direk', 'Direk / box adı', 'genis'],
+    ['Ldis', 'Parsel dışı (m)', '', 'number'], ['Lic', 'Parsel içi (m)', '', 'number']]],
+  ['Sayaç panosu korumaları (sırayla)', [['k1tur', '1. koruma', '', KORUMA], ['k1deger', '1. değer (4x40A 10kA gibi)'],
+    ['k2tur', '2. koruma', '', KORUMA], ['k2deger', '2. değer (4x40A 300mA gibi)'],
+    ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif']]],
 ];
 (function alanlariKur() {
-  const k = $('alanlar'); let h = '';
+  let h = '';
   for (const [baslik, liste] of ALANLAR) {
     h += `<h3>${baslik}</h3>`;
     for (const [id, ad, sinif, tip] of liste) {
       const g = tip && tip.startsWith('select:')
-        ? `<select id="a-${id}">${tip.slice(7).split('|').map(o => `<option>${o}</option>`).join('')}</select>`
+        ? `<select id="a-${id}">${tip.slice(7).split('|').map(o => { const [v, t] = o.includes('=') ? o.split('=') : [o, o || '—']; return `<option value="${v}">${t || '—'}</option>`; }).join('')}</select>`
         : `<input id="a-${id}" ${tip === 'number' ? 'type="number" inputmode="decimal" step="any" min="0"' : 'type="text"'}>`;
       h += `<label class="${sinif || ''}">${ad}${g}</label>`;
     }
   }
-  k.innerHTML = h;
-  k.addEventListener('input', guncelle);
+  $('alanlar').innerHTML = h;
+  $('alanlar').addEventListener('input', guncelle);
 })();
 function alanlariDoldur() {
-  const b = BHP.birlestir(D.gdz || {}, D.ic || {});
-  b.sayacTur = b.reaktif ? 'Aktif-Reaktif' : 'Aktif';
-  const okunan = new Set();
   const g = D.gdz || {}, i = D.ic || {};
-  const kaynakVar = { malSahibi: i.malSahibi || g.sahibi, kullanim: i.kullanim || g.kullanim, adres: i.adres || g.adres, il: i.il || g.adres,
+  const b = BHP.birlestir(g, i);
+  const k = b.korumalar.concat([{ tur: '', deger: '' }, { tur: '', deger: '' }]);
+  Object.assign(b, { k1tur: k[0].tur, k1deger: k[0].deger, k2tur: k[1].tur, k2deger: k[1].deger, sayacTur: b.reaktif ? 'Aktif-Reaktif' : 'Aktif' });
+  const ok = v => v !== undefined && v !== null && v !== '' && !(typeof v === 'number' && isNaN(v));
+  const kaynak = { malSahibi: i.malSahibi || g.sahibi, kullanim: i.kullanim || g.kullanim, adres: i.adres || g.adres, il: i.il || g.adres,
     ilce: i.ilce || g.adres, belediye: i.belediye || g.adres, mahalle: i.mahalle || g.adres, pafta: i.pafta, ada: i.ada || g.ada, parsel: i.parsel || g.parsel,
-    kat: i.kat, alan: i.alan, bagimsiz: i.bagimsiz || g.bagimsiz, kuruluW: i.kuruluW || g.kuruluKW, talepW: i.talepW || g.talepKW,
-    direk: g.direk, uzunluk: g.uzunluk, sigortaA: i.sigortaA, sigortaKA: i.sigortaKA, karA: i.karA, karMA: i.karMA, sayac: i.sayac, sayacTur: i.karMA };
+    kat: i.kat, alan: i.alan, bagimsiz: g.bagimsiz, kuruluW: ok(i.kuruluW) ? i.kuruluW : g.kuruluKW, talepW: ok(i.talepW) ? i.talepW : g.talepKW,
+    baglanti: g.baglantiSekli, direk: g.direk, Ldis: g.sinira, Lic: g.sinira != null ? g.parselIci : undefined,
+    k1deger: i.sigortaA, k2deger: i.karMA, sayacAdet: g.bagimsiz, sayacTur: i.karMA };
   for (const [, liste] of ALANLAR) for (const [id] of liste) {
-    const el = $('a-' + id); if (!el) continue;
-    const v = b[id]; el.value = (v === undefined || (typeof v === 'number' && isNaN(v))) ? '' : v;
-    const k = kaynakVar[id]; el.classList.toggle('okundu', !!(k && !(typeof k === 'number' && isNaN(k))));
+    const el = $('a-' + id); const v = b[id];
+    el.value = ok(v) ? v : '';
+    el.classList.toggle('okundu', ok(kaynak[id]));
   }
-  const not = $('hatNotu');
-  not.innerHTML = g.hatTipi === 'HAVAI'
-    ? `<div class="uyari">GDZ yazısında hat <b>havai</b> görünüyor. Bu araç şimdilik <b>yeraltı</b> olarak çizer.</div>`
-    : (g.kaziIzni === 'Yok' ? `<div class="uyari">GDZ yazısına göre <b>kazı izni yok</b>.</div>` : '');
+  D.satirlar = b.satirlar; D.malzeme = null;
+  if (b.sayacAdet > 1) { $('u-adet').value = b.sayacAdet - 1; }
+  satirlariCiz();
+  const not = [];
+  if (g.hatTipi === 'HAVAI') not.push('GDZ yazısında hat <b>havai</b> görünüyor. Bu araç şimdilik <b>yeraltı</b> olarak çizer.');
+  if (g.kaziIzni === 'Yok') not.push('GDZ yazısına göre <b>kazı izni yok</b>.');
+  if (b.sayacAdet > 1) not.push(`<b>${b.sayacAdet} bağımsız bölüm</b> var. Güç dağılım tablosunu (4. bölüm) ve sayaç panosu korumalarını kontrol edin.`);
+  $('hatNotu').innerHTML = not.map(t => `<div class="uyari">${t}</div>`).join('');
   guncelle();
 }
 function bilgiler() {
@@ -255,11 +301,52 @@ function bilgiler() {
   for (const [, liste] of ALANLAR) for (const [id, , , tip] of liste) {
     const v = $('a-' + id).value.trim(); b[id] = tip === 'number' ? parseFloat(v.replace(',', '.')) || 0 : v;
   }
+  b.uzunluk = (b.Ldis || 0) + (b.Lic || 0);
   b.reaktif = b.sayacTur === 'Aktif-Reaktif';
   b.basvuruNo = (D.gdz && D.gdz.basvuruNo) || 'bhp';
   b.alan = /\d/.test(b.alan) ? b.alan.replace(/\s*m²?$/, '') : '-';
+  b.korumalar = [{ tur: b.k1tur, deger: b.k1deger }, { tur: b.k2tur, deger: b.k2deger }].filter(k => k.tur);
+  b.sayacAdet = Math.max(1, Math.round(b.sayacAdet || D.satirlar.length || 1));
+  b.satirlar = D.satirlar;
   return b;
 }
+
+// ---- Güç dağılım satırları ----
+const SUTUN = [['bb', 'B.B. No'], ['tablo', 'Tablo adı'], ['kurulu', 'Kurulu (W)'], ['baglanti', 'Bağlantı (W)'], ['sayac', 'Sayaç tipi'], ['kullanim', 'Kullanım'], ['tesis', 'Tesisat no']];
+function satirlariCiz() {
+  $('satirlar').innerHTML = `<tr>${SUTUN.map(s => `<th>${s[1]}</th>`).join('')}<th></th></tr>` +
+    D.satirlar.map((r, j) => `<tr>${SUTUN.map(([k]) => `<td><input type="text" data-j="${j}" data-k="${k}" value="${kac(r[k])}"></td>`).join('')}<td><button class="sil" data-sil="${j}" aria-label="Satırı sil">×</button></td></tr>`).join('');
+  satirOzet();
+}
+function satirOzet() {
+  const t = D.satirlar.reduce((a, r) => a + (parseFloat(r.kurulu) || 0), 0), tb = D.satirlar.reduce((a, r) => a + (parseFloat(r.baglanti) || 0), 0);
+  durum('d-satir', `${D.satirlar.length} satır · toplam kurulu ${t} W · satırların bağlantı gücü toplamı ${tb} W (eş zamanlı bağlantı gücü yukarıdaki talep gücüdür)`);
+}
+$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; satirOzet(); guncelle(); } });
+$('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
+$('satirEkle').addEventListener('click', () => {
+  const son = D.satirlar[D.satirlar.length - 1] || {};
+  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || '3FAZ', kullanim: son.kullanim || '', tesis: '' });
+  satirlariCiz(); guncelle();
+});
+$('u-yap').addEventListener('click', () => {
+  const n = parseInt($('u-adet').value, 10) || 0, on = $('u-onek').value || 'D';
+  const kul = (D.satirlar[0] && D.satirlar[0].kullanim) || 'KONUT';
+  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '' }));
+  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '' });
+  $('a-sayacAdet').value = D.satirlar.length;
+  satirlariCiz(); guncelle();
+});
+
+// ---- Malzeme listesi ----
+function malzemeCiz() {
+  $('malzeme').innerHTML = '<tr><th>Malzeme</th><th>Birim</th><th>Miktar</th><th></th></tr>' +
+    D.malzeme.map((r, j) => `<tr><td class="genis"><input type="text" data-j="${j}" data-k="ad" value="${kac(r.ad)}"></td><td><input type="text" data-j="${j}" data-k="birim" value="${kac(r.birim)}"></td><td><input type="number" step="any" data-j="${j}" data-k="miktar" value="${kac(r.miktar)}"></td><td><button class="sil" data-sil="${j}" aria-label="Satırı sil">×</button></td></tr>`).join('');
+}
+$('malzeme').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { const r = D.malzeme[+el.dataset.j]; r[el.dataset.k] = el.dataset.k === 'miktar' ? parseFloat(el.value) || 0 : el.value; D.malzemeElle = true; onizle(); } });
+$('malzeme').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.malzeme.splice(+j, 1); D.malzemeElle = true; malzemeCiz(); onizle(); } });
+$('malzemeEkle').addEventListener('click', () => { (D.malzeme = D.malzeme || []).push({ ad: '', birim: 'adet', miktar: 1 }); D.malzemeElle = true; malzemeCiz(); });
+$('malzemeSifirla').addEventListener('click', () => { D.malzemeElle = false; guncelle(); });
 
 // ---- Kablo seçimi ----
 $('iletken').addEventListener('click', e => {
@@ -273,8 +360,7 @@ $('enKucuk').addEventListener('input', () => { D.elleSecilen = null; guncelle();
 $('kesit').addEventListener('change', () => { D.elleSecilen = $('kesit').value; guncelle(); });
 
 function guncelle() {
-  const sel = $('kesit');
-  const b = bilgiler();
+  const sel = $('kesit'), b = bilgiler();
   const N = b.talepW, L = b.uzunluk;
   let kablo = null;
   if (D.iletken && N > 0 && L > 0) {
@@ -289,33 +375,44 @@ function guncelle() {
     kablo = liste.find(k => k.ad === secili);
   } else if (D.iletken) { sel.disabled = true; sel.innerHTML = '<option>Güç ve uzunluk gerekli</option>'; }
   D.kablo = kablo;
-  // hesap
+  if (kablo && !D.malzemeElle) { D.malzeme = BHP.malzemeOner(b, kablo); malzemeCiz(); }
   const s = $('sonuc');
   if (kablo) {
     const h = BHP.hesap(kablo, N, L), v = BHP.virgul;
     s.innerHTML = `
       <div class="sonuc-satir"><b>Gerilim düşümü</b><span class="formul">%e = ${v(h.c, 7)} × ${N} × ${String(L).replace('.', ',')} / ${String(kablo.kesit).replace('.', ',')} = ${v(h.e, 5)} ≈ %${v(h.e, 2)} &lt; %1,5</span>
         <span class="${h.eUygun ? 'uygun' : 'degil'}"> ${h.eUygun ? 'uygun' : 'UYGUN DEĞİL'}</span></div>
-      <div class="sonuc-satir"><b>Akım kontrolü</b><span class="formul">I = ${N} / 527 = ${v(h.I, 3)} A &lt; ${kablo.iz} A</span>
+      <div class="sonuc-satir"><b>Akım kontrolü</b><span class="formul">I = ${N} / 527 = ${v(h.I, 2)} A &lt; ${kablo.iz} A</span>
         <span class="${h.iUygun ? 'uygun' : 'degil'}"> ${h.iUygun ? 'uygun' : 'UYGUN DEĞİL'}</span>
         <span class="durum">${kablo.yazi}, toprakta ${kablo.iz} A (Öznur Kablo kataloğu)</span></div>`;
   }
-  // indirme düğmesi
+  onizle();
   const eksik = [];
   if (!D.sablon) eksik.push('çizim şablonu');
   if (!D.gdz) eksik.push('GDZ yazısı');
   if (!D.iletken) eksik.push('bakır/alüminyum seçimi');
   if (!kablo) eksik.push('kablo');
+  if (!D.satirlar.length) eksik.push('güç dağılım tablosu');
   if (!D.uydu) eksik.push('uydu görüntüsü');
   if (!D.vaziyet) eksik.push('TKGM görüntüsü');
   $('indir').disabled = eksik.length > 0;
   if (eksik.length) durum('d-indir', 'Eksik: ' + eksik.join(', ')); else durum('d-indir', 'Hazır.', 'iyi');
 }
+function cizim() {
+  const b = bilgiler();
+  return { b, c: BHPCizim.hepsi(BHP.cizimVerisi(b, D.kablo, D.malzeme)) };
+}
+function onizle() {
+  if (!D.kablo) { $('onizleme').innerHTML = ''; return; }
+  const { c } = cizim(), B = BHPCizim.BOLGE;
+  $('onizleme').innerHTML = [['Tek hat şeması', 'tekhat'], ['Gerilim düşümü ve akım hesabı', 'hesap'], ['Güç dağılım tablosu', 'guc'], ['Malzeme listesi', 'malzeme']]
+    .map(([ad, k]) => `<div class="onizleme"><h4>${ad}</h4>${BHPCizim.svg(c, B[k], 900)}</div>`).join('');
+}
 
 $('indir').addEventListener('click', async () => {
-  const b = bilgiler(), ad = b.basvuruNo;
+  const { b, c } = cizim(), ad = b.basvuruNo;
   const uyduAd = `${ad}-uydu.jpg`, vazAd = `${ad}-vaziyet.jpg`;
-  const dxf = BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd));
+  const dxf = BHPCizim.dxfeEkle(BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd)), c, b.baglanti);
   const zip = new JSZip(), klasor = zip.folder(`BHP-${ad}`);
   klasor.file(`BHP-${ad}.dxf`, dxf);
   klasor.file(uyduAd, D.uydu); klasor.file(vazAd, D.vaziyet);
@@ -324,6 +421,7 @@ $('indir').addEventListener('click', async () => {
   document.body.appendChild(a); a.click(); a.remove();
   durum('d-indir', `İndirildi: BHP-${ad}.zip`, 'iyi');
 });
+satirlariCiz();
 </script>
 </body>
 </html>

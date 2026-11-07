@@ -47,6 +47,7 @@
     v.talepKW = sayi(bul(/^Talep Edilen Güç \(kW\)/));
     v.bagimsiz = bul(/^Bağımsız Bölüm Sayısı/);
     v.kaziIzni = bul(/^Kazı İz(in|ni) Durumu/);
+    v.baglantiSekli = bul(/^Bağlantı Şekli/);
     // Enerji alınacak şebeke noktası: etiketin altındaki satır
     for (const s of sayfalar) {
       const l = s.find(o => /^Enerji Alınacak Şebeke Noktası/.test(temiz(o.s)));
@@ -171,6 +172,13 @@
     const adresParca = temiz(g.adres).split('/').map(temiz); // sokak/mahalle/ilçe/il
     const kullanim = buyuk(ilk(i.kullanim, g.kullanim) || '');
     const alanS = temiz(i.alan || '');
+    const kuruluW = Math.round(ilk(i.kuruluW, g.kuruluKW * 1000) || 0), talepW = Math.round(ilk(i.talepW, g.talepKW * 1000) || 0);
+    const bbSayi = parseInt(ilk(g.bagimsiz, (i.bagimsiz || '').replace(/\D+/g, '')) || '1', 10) || 1;
+    const gucKullanim = /MESKEN|KONUT/.test(kullanim) ? 'KONUT' : kullanim;
+    const sayac = i.sayac || '3x10';
+    const satirlar = bbSayi === 1
+      ? [{ bb: '1', tablo: 'AT', kurulu: String(kuruluW), baglanti: String(talepW), sayac: '3FAZ', kullanim: gucKullanim, tesis: '' }]
+      : Array.from({ length: bbSayi }, (_, k) => ({ bb: String(k + 1), tablo: `D${k + 1}`, kurulu: '', baglanti: '', sayac: '3FAZ', kullanim: gucKullanim, tesis: '' }));
     return {
       basvuruNo: g.basvuruNo || '',
       malSahibi: buyuk(ilk(i.malSahibi, g.sahibi) || ''),
@@ -183,41 +191,66 @@
       pafta: ilk(i.pafta) || '-',
       ada: ilk(i.ada, g.ada) || '',
       parsel: ilk(i.parsel, g.parsel) || '',
-      kuruluW: Math.round(ilk(i.kuruluW, g.kuruluKW * 1000) || 0),
-      talepW: Math.round(ilk(i.talepW, g.talepKW * 1000) || 0),
-      bagimsiz: (i.bagimsiz && i.bagimsiz !== '-') ? i.bagimsiz : (g.bagimsiz || '1'),
+      kuruluW, talepW,
+      bagimsiz: String(bbSayi),
       kat: i.kat || '-',
       alan: /\d/.test(alanS) ? alanS.replace(/\s*m²?$/, '') : '-',
       direk: buyuk(g.direk || ''),
-      uzunluk: g.uzunluk || 0,
+      baglanti: /box/i.test(g.baglantiSekli || '') ? 'box' : 'direk',
+      uzunluk: g.uzunluk || 0, Ldis: g.sinira != null ? g.sinira : (g.uzunluk || 0), Lic: g.parselIci || 0,
       hatTipiGdz: g.hatTipi || '',
-      sigortaA: i.sigortaA || '4x40A', sigortaKA: i.sigortaKA || '10kA',
-      karA: i.karA || '4x40A', karMA: i.karMA || '300mA',
-      sayac: i.sayac || '3x10', reaktif: !!i.reaktif,
-      tabloAdi: 'AT',
-      tesisNo: '',
-      gucKullanim: kullanim === 'MESKEN' ? 'KONUT' : kullanim,
+      korumalar: bbSayi === 1
+        ? [{ tur: 'sigorta', deger: `${i.sigortaA || '4x40A'} ${i.sigortaKA || '10kA'}` }, { tur: 'kar', deger: `${i.karA || '4x40A'} ${i.karMA || '300mA'}` }]
+        : [{ tur: 'tmsyks', deger: '' }],
+      sayac, sayacAdet: bbSayi, reaktif: !!i.reaktif,
+      satirlar,
     };
   }
 
-  // ---------- Şablonu doldur ----------
+  // ---------- Malzeme listesi önerisi (kullanıcı düzeltebilir) ----------
+  function malzemeOner(b, kablo) {
+    const L = Math.ceil(b.uzunluk || 0), direk = b.baglanti !== 'box';
+    const r = [
+      { ad: `${kablo.yazi} yeraltı kablosu`, birim: 'm', miktar: L },
+      { ad: 'Kablo kanalı kazısı ve dolgusu (40x100 cm)', birim: 'm', miktar: L },
+      { ad: 'Kablo altı ve üstü elenmiş kum', birim: 'm', miktar: L },
+      { ad: 'Koruma tuğlası', birim: 'adet', miktar: 4 * L },
+      { ad: 'Plastik ikaz şeridi', birim: 'm', miktar: L },
+    ];
+    if (direk) {
+      r.push({ ad: 'AG kablo başlığı (dış tip)', birim: 'adet', miktar: 1 });
+      r.push({ ad: 'Galvanizli çelik koruma borusu (direk inişi, 3 m)', birim: 'adet', miktar: 1 });
+    }
+    r.push({ ad: 'Galvaniz topraklama kazığı 65x65x7 mm, L=2 m', birim: 'adet', miktar: direk ? 1 : 2 });
+    r.push({ ad: '1x16 mm² NYY topraklama iletkeni', birim: 'm', miktar: direk ? 3 : 6 });
+    r.push({ ad: 'Sayaç panosu (TEDAŞ şartnamesine uygun)', birim: 'adet', miktar: 1 });
+    r.push({ ad: `Elektronik sayaç ${b.sayac}A`, birim: 'adet', miktar: b.sayacAdet || 1 });
+    const AD = { sigorta: 'Sigorta', kar: 'Kaçak akım rölesi', tms: 'TMŞ', tmsyks: 'TMŞ + YKŞ' };
+    for (const k of b.korumalar || []) if (k.tur) r.push({ ad: `${AD[k.tur]} ${k.deger}`.trim(), birim: 'adet', miktar: 1 });
+    return r;
+  }
+
+  // ---------- Çizim verisi (ortak/bhp-cizim.js için) ----------
+  function cizimVerisi(b, kablo, malzeme) {
+    const N = b.talepW, L = b.uzunluk;
+    return {
+      baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L),
+      korumalar: (b.korumalar || []).filter(k => k.tur),
+      sayacAdet: b.sayacAdet || 1, sayacTip: b.sayac, sayacTur: b.reaktif ? 'Aktif-Reaktif (kombi)' : 'Aktif',
+      satirlar: b.satirlar, kuruluToplam: b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0) || b.kuruluW,
+      malzeme: malzeme || malzemeOner(b, kablo),
+    };
+  }
+
+  // ---------- Şablondaki yazılar ----------
   function degerler(b, kablo, uyduDosya, vaziyetDosya) {
-    const N = b.talepW, L = b.uzunluk, h = hesap(kablo, N, L);
-    const e = h.e;
+    const L = b.uzunluk;
     return {
       MALSAHIBI: b.malSahibi, KULLANIM: b.kullanim, ADRES: b.adres, IL: b.il, ILCE: b.ilce, BELEDIYE: b.belediye,
       MAHALLE: b.mahalle, PAFTA: b.pafta, ADA: b.ada, PARSEL: b.parsel,
       KURULU: `${b.kuruluW} W`, TALEP: `${b.talepW} W`, BB: b.bagimsiz, KAT: b.kat, ALAN: b.alan === '-' ? '-' : `${b.alan} m²`,
       KABLO: kablo.yazi, UZUNLUK: `${String(L).replace('.', ',')} m`, HATTIPI: 'YERALTI', DIREK: b.direk,
       ADAPARSEL: `${b.ada}/${b.parsel}`,
-      H_L: String(L).replace('.', ','), H_N: String(N), H_C: virgul(h.c, 7), H_S: String(kablo.kesit).replace('.', ','),
-      H_E1: virgul(e, 5), H_E: virgul(e, 6), H_ER: virgul(e, 2),
-      H_SONUC: h.uygun ? 'KULLANILAN KESİTLER UYGUNDUR' : 'KESİT UYGUN DEĞİL',
-      H_I: virgul(h.I, 3), H_IZ: String(kablo.iz),
-      G_BB: b.bagimsiz, G_TABLO: b.tabloAdi, G_KURULU: String(b.kuruluW), G_BAGLANTI: String(N),
-      G_SAYAC: b.sayac.toUpperCase().replace('X', 'X'), G_KULLANIM: b.gucKullanim, G_TESIS: b.tesisNo, G_TOPLAM: String(N),
-      P_SIG: b.sigortaA, P_SIGKA: b.sigortaKA, P_KAR: b.karA, P_KARMA: b.karMA,
-      P_SAYAC: `${b.sayac}A`, P_SAYACTUR: b.reaktif ? 'Aktif-Reaktif' : 'Aktif',
       UYDU: '.\\' + uyduDosya, VAZIYET: '.\\' + vaziyetDosya,
     };
   }
@@ -225,7 +258,7 @@
     return sablon.replace(/\{\{([A-Z_0-9]+)\}\}/g, (a, k) => temiz(d[k] === undefined ? '' : d[k]));
   }
 
-  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, degerler, doldur, virgul, baslikHarf,
-    RESIM: { uydu: [2000, 1087], vaziyet: [2000, 1056] } };
+  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, cizimVerisi, degerler, doldur,
+    virgul, baslikHarf, RESIM: { uydu: [2000, 1087], vaziyet: [2000, 1056] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);
