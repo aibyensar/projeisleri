@@ -132,7 +132,7 @@ const ANAHTAR = 'kablo-kesiti-ayarlar-2';
 const BIRIM = { '3': 100, '1': 200 };
 const katsayiHesapla = (faz, il) => +(BIRIM[faz] / (ayar('k-' + il) * ayar('u-' + faz) ** 2)).toPrecision(3);
 const VARSAYILAN_TIP = { cu: 'NYY', al: 'NAYY' };
-const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
+const DOSEME_ADI = { toprak: 'Yeraltı', hava: 'Havai hat', boru: 'Boruda' };
 const FIRMA = 'Öznur Kablo';
 
 const $ = id => document.getElementById(id);

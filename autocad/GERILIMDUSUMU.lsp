@@ -522,6 +522,16 @@
   (if (not (vl-string-search "X" et)) (setq et (strcat (if (= faz "3") "5X" "3X") et)))
   (strcat et " mm² " tip))
 
+;;; Döşeme adları: katalogdaki toprak/hava/boru → Yeralti/Havai/Boru
+(defun ict:doseme-kw (d) (cond ((= d "toprak") "Yeralti") ((= d "hava") "Havai") (T "Boru")))
+(defun ict:doseme-kod (k) (cond ((= k "Yeralti") "toprak") ((= k "Havai") "hava") (T "boru")))
+
+;;; İç hat adı: son hat linye, öncekiler kolon hattı
+(defun ict:hat-ismi (i n)
+  (cond ((= i (1- n)) "LİNYE HATTI")
+        ((> n 2) (strcat "KOLON HATTI " (itoa (1+ i))))
+        (T "KOLON HATTI")))
+
 ;;; Kablodan faz tahmini: 2x, 3x (nötrü küçültülmemiş) ve tek damar → monofaze;
 ;;; 4x, 5x, 3x25/16 gibi → trifaze. Kullanıcı Enter ile kabul eder veya değiştirir.
 (defun ict:faz-tahmin (etiket)
@@ -599,9 +609,10 @@
     (if eski-ce (setvar "CMDECHO" eski-ce))
     (command-s "_.UNDO" "_E")
     (if (not (member m '("Function cancelled" "quit / exit abort" "İşlev iptal edildi")))
-      (princ (strcat "\nHata: " m)))
+      (princ (strcat "\nHATA (" (if *ict-adim* *ict-adim* "?") "): " m
+                     "\nBu satırı Proje İşleri'ne iletin.")))
     (princ))
-  (setq eski-dz (getvar "DIMZIN") eski-ce (getvar "CMDECHO"))
+  (setq eski-dz (getvar "DIMZIN") eski-ce (getvar "CMDECHO") *ict-adim* "başlangıç")
   (setvar "DIMZIN" 0)
   (setvar "CMDECHO" 0)
 
@@ -628,10 +639,10 @@
             bk (ict:kablo btip)
             bsatir (ict:sor-satir btip (if *ict-bsatir* *ict-bsatir* "4x6"))
             *ict-bsatir* (car bsatir)
-            bdos-kw (vl-string-trim " " (apply 'strcat (mapcar '(lambda (d) (strcat (cond ((= d "toprak") "Toprak") ((= d "hava") "Hava") (T "Boru")) " ")) (caddr bk))))
-            bdos (ict:sor-kw "Branşman döşeme" bdos-kw (if (and *ict-bdos* (vl-string-search *ict-bdos* bdos-kw)) *ict-bdos* (if (vl-string-search "Hava" bdos-kw) "Hava" (car (caddr bk)))))
+            bdos-kw (vl-string-trim " " (apply 'strcat (mapcar '(lambda (d) (strcat (ict:doseme-kw d) " ")) (caddr bk))))
+            bdos (ict:sor-kw "Branşman döşeme" bdos-kw (if (and *ict-bdos* (vl-string-search *ict-bdos* bdos-kw)) *ict-bdos* (if (vl-string-search "Havai" bdos-kw) "Havai" (ict:doseme-kw (car (caddr bk))))))
             *ict-bdos* bdos
-            bdos (vl-position (strcase bdos T) (caddr bk))
+            bdos (vl-position (ict:doseme-kod bdos) (caddr bk))
             bL (ict:sor-real "Branşman uzunluğu (m)" (if *ict-bL* *ict-bL* 15.0))
             *ict-bL* bL
             bfaz (ict:sor-kw (strcat "Branşman " (strcase (ict:rep (car bsatir) "." ",")) " " btip " faz") "Trifaze Monofaze" (ict:faz-tahmin (car bsatir)))))
@@ -639,11 +650,14 @@
           *ict-sfaz* bfaz))
   (setq bfk (if (= bfaz "Trifaze") "3" "1"))
 
-  (setq n (ict:sor-int "İç hat sayısı" (if *ict-n* *ict-n* 2)) *ict-n* n
+  (setq *ict-adim* "iç hat sayısı")
+  (setq n (ict:sor-int "İç hat sayısı (kolon + linye)" (if *ict-n* *ict-n* 2)) *ict-n* n
         hatlar '() i 0)
   (while (< i n)
-    (setq hat (nth i *ict-hatlar*))
-    (princ (strcat "\n--- İç hat " (itoa (1+ i)) " / " (itoa n) " (%e" (itoa (+ i 2)) ") ---"))
+    (setq *ict-adim* (strcat (ict:hat-ismi i n) " soruları")
+          hat (nth i *ict-hatlar*))
+    (if (/= (type hat) 'LIST) (setq hat nil))
+    (princ (strcat "\n--- " (ict:hat-ismi i n) " (%e" (itoa (+ i 2)) ") ---"))
     (setq faz (ict:sor-kw "Faz" "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
           tip (ict:sor-kw "Kablo tipi" (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
           satir (ict:sor-satir tip (if hat (nth 2 hat) (if (= tip "NYA") "2.5" "5x6")))
@@ -654,12 +668,14 @@
     (setq i (1+ i)))
   (setq *ict-hatlar* (mapcar '(lambda (x) (list (nth 0 x) (nth 1 x) (car (nth 2 x)) (nth 3 x) (nth 4 x) (nth 5 x))) hatlar))
 
+  (setq *ict-adim* "yazı yüksekliği ve nokta")
   (setq h (ict:sor-real "Yazı yüksekliği (çizim birimi)" (if *ict-h* *ict-h* (getvar "TEXTSIZE"))) *ict-h* h)
   (setq pt (getpoint "\nHesabın yerleşeceği nokta (sol üst köşe): "))
   (if (not pt) (exit))
   (setq pt (trans pt 1 0))
 
   ;; --- hesap
+  (setq *ict-adim* "hesap")
   (setq u (if (= bfk "3") (ict:ayar "U3" 380.0) (ict:ayar "U1" 220.0))
         cosfi (ict:ayar "COSFI" 0.8) limit (ict:ayar "LIMIT" 1.5)
         bolen (* (if (= bfk "3") (sqrt 3.0) 1.0) u cosfi)
@@ -667,6 +683,7 @@
         bolen (atof (rtos bolen 2 3)))
 
   ;; --- çizim
+  (setq *ict-adim* "çizim")
   (command "_.UNDO" "_BE")
   (ict:sinir-sifirla)
   (ict:stil)
@@ -714,13 +731,15 @@
   ;; hat listesi: (no faz-kodu iletken S L P nt? açıklama ad)
   (setq liste '() no (if mevcut 1 2))
   (if mevcut
-    (setq liste (list (list no bfk (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) bfk)))
+    (setq liste (list (list no bfk (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) bfk) "BRANŞMAN HATTI"))
           no (1+ no)))
+  (setq i 0)
   (foreach x hatlar
     (setq liste (append liste (list (list no (if (= (nth 0 x) "Trifaze") "3" "1") (cadr (ict:kablo (nth 1 x)))
                                           (cadr (nth 2 x)) (nth 3 x) (nth 4 x) nil (nth 5 x)
-                                          (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1")))))
-          no (1+ no)))
+                                          (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1"))
+                                          (ict:hat-ismi i (length hatlar)))))
+          no (1+ no) i (1+ i)))
 
   (setq toplam 0.0 adlar "" degerler "")
   (foreach x liste
@@ -730,7 +749,7 @@
           toplam (+ toplam eY)
           adlar (strcat adlar (if (= adlar "") "" " + ") "%e" (itoa (nth 0 x)))
           degerler (strcat degerler (if (= degerler "") "" " + ") (ict:n2 eY)))
-    (if (/= (nth 7 x) "") (ict:satir (nth 7 x) 7))
+    (ict:satir (strcat (nth 9 x) " (" (nth 8 x) ")" (if (/= (nth 7 x) "") (strcat ": " (nth 7 x)) "")) 7)
     (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (if (nth 6 x) "Nt" "N") " x L / S") 7)
     (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (ict:n0 (nth 5 x)) " x " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))) 7)
     (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:n2 eY)) 7)

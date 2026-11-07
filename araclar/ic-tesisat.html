@@ -111,7 +111,7 @@
 <script>
 const VARSAYILAN = { 'u-3': 380, 'u-1': 220, 'k-cu': 56, 'k-al': 35, cosfi: 0.8, limit: 1.5 };
 const ANAHTAR = 'ic-tesisat-ayarlar';
-const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
+const DOSEME_ADI = { toprak: 'Yeraltı', hava: 'Havai hat', boru: 'Boruda' };
 const $ = id => document.getElementById(id);
 const ayar = id => +$(id).value;
 const tr = (x, b = 2) => x.toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b, useGrouping: false });
@@ -283,11 +283,12 @@ function hesapla() {
   if (mevcut) {
     const tip = $('b-tip').value;
     const b = satirlar(tip).find(x => x.etiket === $('b-satir').value);
-    liste.push({ ad: `Branşman ${kabloAdi(tip, b.etiket, faz)}`, faz, il: KABLOLAR[tip].iletken, S: b.S, L: ayar('b-L'), P: Nt, nt: true });
+    liste.push({ isim: 'BRANŞMAN HATTI', kablo: kabloAdi(tip, b.etiket, faz), ad: '', faz, il: KABLOLAR[tip].iletken, S: b.S, L: ayar('b-L'), P: Nt, nt: true });
   }
   hatlar.forEach((h, i) => {
     const x = satirlar(h.tip).find(r => r.etiket === h.satir);
-    liste.push({ ad: h.ad, kablo: kabloAdi(h.tip, h.satir, h.faz), faz: h.faz, il: KABLOLAR[h.tip].iletken, S: x.S, L: +h.L, P: +h.P, hatNo: i });
+    const isim = i === hatlar.length - 1 ? 'LİNYE HATTI' : hatlar.length > 2 ? `KOLON HATTI ${i + 1}` : 'KOLON HATTI';
+    liste.push({ isim, ad: h.ad, kablo: kabloAdi(h.tip, h.satir, h.faz), faz: h.faz, il: KABLOLAR[h.tip].iletken, S: x.S, L: +h.L, P: +h.P, hatNo: i });
   });
 
   let toplam = 0; const adlar = [], degerler = [];
@@ -297,8 +298,8 @@ function hesapla() {
     const e = c * h.P * h.L / h.S;
     const eY = +e.toFixed(2);
     toplam += eY; adlar.push(`%e${no}`); degerler.push(tr(eY));
-    if (h.hatNo != null) $('hb-' + h.hatNo).textContent = `%e${no} · ${h.kablo} · ${h.faz === '3' ? 'trifaze' : 'monofaze'}`;
-    if (h.ad && !h.nt) satirlarCikti.push(h.ad);
+    if (h.hatNo != null) $('hb-' + h.hatNo).textContent = `%e${no} · ${h.isim.charAt(0) + h.isim.slice(1).toLocaleLowerCase('tr')} · ${h.kablo} · ${h.faz === '3' ? 'trifaze' : 'monofaze'}`;
+    satirlarCikti.push(`${h.isim} (${h.kablo})${h.ad ? ': ' + h.ad : ''}`);
     satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${h.nt ? 'Nt' : 'N'} x L / S`);
     satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${tr(h.P, 0)} x ${trSerbest(h.L)} / ${trSerbest(h.S)}`);
     satirlarCikti.push(`%e${no} = ${tr(eY)}`, '');
