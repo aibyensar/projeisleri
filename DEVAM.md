@@ -139,6 +139,10 @@ gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullan�
 - Malzeme listesi ve genel notlar paftadan çıktı (onaylı projelerde yok); web sayfasında o kartlar gizli. Zip'te logo yok (3 dosya).
 - Vaziyette "3. Parsel sınırı (2 nokta)": pano bu çizgiye paralel; pano sembolü kullanıcının sembol tablosundaki gibi (iki dolu üçgen),
   güzergâh kırmızı kesikli. Çizgi tipleri BHP-KESIK / BHP-GIZLI (kullanıcının DASHED'i çok sık).
+- v7.1: kullanıcı "açınca PC donuyor, içerik yok, yazı boyutu/şekli toparla" dedi. Şablonda sadeleştirme: bloklar ve ölçüler çizgiye
+  açıldı, elips → çoklu çizgi, nokta/boş yazı silindi, bütün yazılar Arial (BHP/BHP-K), MTEXT biçim kodları temizlendi, renkler katmandan
+  (hepsi 7), çizgi tipleri yalnız BHP-KESIK/BHP-GIZLI, kullanılmayan blok/çizgi tipi/stil silindi, taşan tablo yazıları daraltıldı.
+  Donmanın asıl nedeni AutoCAD'de doğrulanamadı; kullanıcıdan sonuç ve hata yazısı istendi.
 - Eşzamanlılık katsayısı satırı konmadı (onaylı projedeki 0,43 hesapla tutmuyor); kullanıcıya sorulacak.
 
 **AÇIK KONULAR (sıradaki)**

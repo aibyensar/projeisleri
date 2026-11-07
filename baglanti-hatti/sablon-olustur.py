@@ -33,6 +33,30 @@ dd = ezdxf.readfile(os.path.join(gecici, 'direk.dxf'))
 m = d.modelspace()
 
 
+# ---------- Sadeleştirme: AutoCAD'i yoracak/dağınık görünen şeyleri temizle ----------
+# Bloklar çizgiye açılır, elips → çoklu çizgi, nokta ve boş yazılar silinir.
+def sadelestir(doc):
+    sm = doc.modelspace()
+    for tur in range(8):
+        ins = [e for e in sm if e.dxftype() in ('INSERT', 'DIMENSION')]
+        if not ins: break
+        for e in ins:
+            try: e.explode()
+            except Exception as x: print('açılamadı', e.dxf.handle, x); sm.delete_entity(e)
+    for e in list(sm):
+        t = e.dxftype()
+        if t in ('POINT', 'ATTDEF', 'ATTRIB'): sm.delete_entity(e)
+        elif t == 'ELLIPSE':
+            pts = [(v.x, v.y) for v in e.flattening(0.05)]
+            if len(pts) > 1: sm.add_lwpolyline(pts, dxfattribs={'layer': e.dxf.layer, 'color': e.dxf.get('color', 256)})
+            sm.delete_entity(e)
+        elif t == 'MTEXT' and not e.plain_text().strip(): sm.delete_entity(e)
+        elif t == 'TEXT' and not e.dxf.text.strip(): sm.delete_entity(e)
+
+
+sadelestir(d); sadelestir(dd)
+
+
 def kut(e):
     b = bbox.extents([e])
     return (b.extmin.x, b.extmin.y, b.extmax.x, b.extmax.y) if b.has_data else None
@@ -192,6 +216,90 @@ UYDU_PX, VAZ_PX = (2000, 1087), (2000, 1056)
 r1, kUydu = resim('{{UYDU}}', 'BHP-UYDU', UYDU_RESIM, *UYDU_PX)
 r2, kVaz = resim('{{VAZIYET}}', 'BHP-VAZIYET', VAZ_RESIM, *VAZ_PX)
 m.set_redraw_order([(r1.dxf.handle, '1'), (r2.dxf.handle, '2')])
+
+# ---------- Tek düzen: tek yazı tipi (Arial), tek renk, iki çizgi tipi ----------
+KALINLAR = ('BD', 'BOLD', 'BLACK', 'HEAVY')
+def kalin_mi(doc, e):
+    st = doc.styles.get(e.dxf.get('style', 'Standard')) if e.dxf.get('style', 'Standard') in doc.styles else None
+    f = ((st.dxf.font if st else '') + ' ' + (st.dxf.name if st else '')).upper()
+    if any(k in f for k in KALINLAR): return True
+    return e.dxftype() == 'MTEXT' and '|b1' in e.text
+def duzenle(yer):
+    for e in yer:
+        t = e.dxftype()
+        if e.dxf.layer.startswith('BHP'): continue
+        e.dxf.color = 256
+        lt = (e.dxf.get('linetype') or 'BYLAYER').upper()
+        if lt not in ('BYLAYER', 'CONTINUOUS', 'BYBLOCK'):
+            e.dxf.linetype = 'BHP-KESIK'
+        if e.dxf.hasattr('ltscale'): e.dxf.discard('ltscale')
+        if t == 'TEXT':
+            k0 = kut(e); w0 = (k0[2] - k0[0]) if k0 else 0
+            e.dxf.style = 'BHP-K' if kalin_mi(d, e) else 'BHP'
+            e.dxf.width = 1; e.dxf.oblique = 0
+            k1 = kut(e); w1 = (k1[2] - k1[0]) if k1 else 0
+            if w0 > 0.5 and w1 > w0 * 1.02: e.dxf.width = round(max(0.6, w0 / w1), 3)   # eski genişliğine sığsın
+        elif t == 'MTEXT':
+            k = kalin_mi(d, e)
+            e.text = e.plain_text(split=False).replace('\n', '\\P')
+            e.dxf.style = 'BHP-K' if k else 'BHP'
+        elif t == 'HATCH' and not e.dxf.solid_fill:
+            e.dxf.color = 256
+duzenle(m)
+# Arial eski yazı tiplerinden geniş: tablo hücresinden taşan yazıyı sağındaki ilk dikey çizgiye sığacak kadar daralt
+dikey = []
+for e in m.query('LINE LWPOLYLINE'):
+    pts = [(e.dxf.start.x, e.dxf.start.y), (e.dxf.end.x, e.dxf.end.y)] if e.dxftype() == 'LINE' else [(p[0], p[1]) for p in e.get_points()]
+    if e.dxftype() == 'LWPOLYLINE' and e.closed: pts.append(pts[0])
+    for (ax, ay), (bx, by) in zip(pts, pts[1:]):
+        if abs(ax - bx) < 0.05 and abs(ay - by) > 2: dikey.append((ax, min(ay, by), max(ay, by)))
+daralan = 0
+for e in m.query('TEXT'):
+    if e.dxf.layer.startswith('BHP') or (e.dxf.get('halign', 0) or 0) != 0: continue
+    k = kut(e)
+    if not k: continue
+    ym = (k[1] + k[3]) / 2
+    sag = [x for x, y0, y1 in dikey if x > k[0] + 1 and y0 <= ym <= y1]
+    if not sag: continue
+    xr = min(sag)
+    if k[2] > xr - 0.5 and xr - k[0] > 3:
+        e.dxf.width = round(max(0.5, (xr - 0.8 - k[0]) / (k[2] - k[0])), 3); daralan += 1
+print('daraltılan yazı', daralan)
+for ad in ('BHP_DETAY_BOX', 'BHP_DETAY_DIREK'): duzenle(d.blocks.get(ad))
+# katmanlar: siyah/beyaz, düz çizgi (renk 7); kullanıcının "uyarı" katmanları da tek renk
+for k in d.layers:
+    if k.dxf.name.startswith('BHP') or k.dxf.name in ('0', 'DEFPOINTS', 'Defpoints'): continue
+    k.dxf.color = 7; k.dxf.linetype = 'Continuous'
+# kullanılmayan bloklar, çizgi tipleri, yazı stilleri silinir
+kullanilan = {'BHP_DETAY_BOX', 'BHP_DETAY_DIREK'}
+def blok_ref(yer):
+    for e in yer.query('INSERT'):
+        if e.dxf.name not in kullanilan:
+            kullanilan.add(e.dxf.name); blok_ref(d.blocks.get(e.dxf.name))
+blok_ref(m)
+for ad in ('BHP_DETAY_BOX', 'BHP_DETAY_DIREK'): blok_ref(d.blocks.get(ad))
+for ds in d.dimstyles:                                     # ölçü oku blokları kalmalı
+    for a in ('dimblk', 'dimblk1', 'dimblk2', 'dimldrblk'):
+        v = ds.dxf.get(a)
+        if v: kullanilan.add(v)
+for b in list(d.blocks):
+    if not b.name.startswith(('*', '_')) and b.name not in kullanilan and not b.is_any_layout:
+        try: d.blocks.delete_block(b.name, safe=False)
+        except Exception as x: print('blok silinemedi', b.name, x)
+lt_kul = {'BYLAYER', 'BYBLOCK', 'CONTINUOUS', 'BHP-KESIK', 'BHP-GIZLI'}
+for lt in list(d.linetypes):
+    if lt.dxf.name.upper() not in lt_kul:
+        try: d.linetypes.remove(lt.dxf.name)
+        except Exception: pass
+for st in list(d.styles):
+    if st.dxf.name not in ('Standard', 'BHP', 'BHP-K'):
+        try: d.styles.remove(st.dxf.name)
+        except Exception: pass
+d.styles.get('Standard').dxf.font = 'arial.ttf'
+# boyut stilleri yazı stili olarak silinen stilleri gösterebilir: Standard'a çevir
+for ds in d.dimstyles:
+    try: ds.dxf.dimtxsty = 'Standard'
+    except Exception: pass
 
 # ---------- Kaydet; web aracının bölgelerini başa yaz ----------
 TX0, TY0, TX1, TY1 = PAFTA[0] - 10, PAFTA[1] - 10, PAFTA[2] + 10, PAFTA[3] + 10
