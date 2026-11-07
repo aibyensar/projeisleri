@@ -68,7 +68,7 @@ Kullanıcı iç tesisat aracını henüz "tamam" demedi; son değişikliği (web
 Sonra sırayla: kompanzasyon, trafo gücü seçimi, aydınlatma; teklif hazırlayıcı, keşif/metraj, hakediş; proje takip,
 müşteri listesi, periyodik kontrol hatırlatıcı. Her yeni araçta önce kullanıcının kendi yöntemini/örneğini isteyin.
 
-## Bağlantı hattı projesi (BHP) aracı — 3. sürüm yayında, kullanıcı AutoCAD'de deniyor (son güncelleme 7 Kasım 2026)
+## Bağlantı hattı projesi (BHP) aracı — v6 (tek pafta) yayında, kullanıcı AutoCAD'de deniyor (son güncelleme 7 Kasım 2026)
 Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Araç bunu hızlandırır.
 
 **Yayın:** ayrı artifact https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (capabilities: `downloads: true`, `sample: {images: true}`).
@@ -86,6 +86,11 @@ baglanti-hatti/BHP-SABLON.dxf       Üretilmiş şablon; başında `999 BHP {jso
 baglanti-hatti/kapak.json           Kullanıcının KAPAK.dwg'si (araclar/dwg-oku.mjs, @mlightcad/libredwg-web convert())
 baglanti-hatti/logo/agy-logo.png    Kullanıcının logosu (beyaz zeminli baskı hali; logo-lacivert.png asıl)
 baglanti-hatti/test/dene.mjs        Node denemesi: node dene.mjs <gdz.pdf> <ic.pdf> <klasör> cu|al <enküçük> [elle.json]
+                                    (PDFJS ortam değişkeni = pdfjs-dist/legacy/build/pdf.mjs yolu; npm i pdfjs-dist@4.10.38 jszip)
+baglanti-hatti/test/tarayici.js     Playwright ile sayfayı baştan sona doldurur, indir butonunu dener, zip indirir
+                                    (yollar eski oturuma göre; önce kökte python3 -m http.server 8765; cdnjs node_modules'tan verilir)
+baglanti-hatti/test/onizleme.sh     DXF → PNG önizleme (onizleme-ciz.py, ezdxf+pymupdf+pdftoppm). Çizimi değiştirince MUTLAKA bakın.
+baglanti-hatti/yayin-hazirla.py     Yayın klasörü kurar
 ```
 Şablon üretimi: `python3 baglanti-hatti/sablon-olustur.py <harmandalı_BHP.dxf> <boxlu BHP.dxf> baglanti-hatti/kapak.json baglanti-hatti/logo/agy-logo.png baglanti-hatti/BHP-SABLON.dxf`
 Kaynak DXF'ler (kullanıcının direkli ve boxlu projeleri) depoda YOK (kişisel bilgi); yeni oturumda gerekirse kullanıcıdan tekrar istenir.
@@ -114,13 +119,25 @@ Tarayıcı denemesinde cdnjs erişilemiyor → playwright route ile node_modules
 
 **Denenen işler:** Faruk Erdoğan (20247913, direk KARAALİ TR-1 C-23, 4 m, 8500 W) ; Ayşe Çelenk (20247911, box MURADİYE TR-5
 (BELEDİYE KABİN) C-06, 12 m, 15 BB, 57839 W, iç tesisatı Talha Kır çizmiş, yazıları çizgi) ; Semih Işık (20254622, eski düzen).
-Son gönderilen zip'ler: v6 (tek pafta).
+Son gönderilen zip'ler: v6 (tek pafta). Kullanıcının yüklediği PDF/resimler yeni oturumda YOK; deneme için tekrar istenir.
+Ayşe işinde elle girilenler: 14 adet D1..D14 (kurulu 12820 W, bağlantı 6728 W, sayaç önü 4x32A 10kA) + ORTAK (19220 W, 4x40A 10kA),
+talep 57839 W, kurulu 198700 W, koruma TMŞ+YKŞ 4x125A 300mA, KONUT, SIĞ+Z+3, 922 m², 14+1 BB.
+
+**Son istekte (v6) yapılanlar:** tüm bölümler tek paftada (pafta 2 kalktı, şartname sağ sütuna); başlık numaraları kaldırıldı;
+sayaç önü sigortaları tabloda, tek hatta (her grup ayrı kol: sigorta → sayaç → iç tesisat) ve malzemede; indir butonu yalnız
+gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullanıcının uyarısı: "eksik olursa revize gelir, eksiksiz olmalı".
 
 **AÇIK KONULAR (sıradaki)**
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
    soruldu (resimden oku mu, satır üret mi). Cevaba göre resimden okumayı sağlamlaştır.
-2. Kullanıcı v6 zip'lerini AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
+2. Kullanıcı v6 zip'lerini (tek pafta, sayaç önü sigortalı) AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
 3. Kapaktaki küçük GDZ logosu okunamadı (OLE) — kullanıcı resim olarak gönderirse eklenecek.
 4. Havai hat çizimi yok (kullanıcıdan havai BHP örneği istenecek).
 5. Kullanıcının "örnek yapıp atacağım" dediği şey gelmedi.
-6. Dal (claude/laughing-dijkstra-5c7tbv) hâlâ main'e birleştirilmedi; kullanıcıya sade dille sorulacak.
+6. Dal (claude/laughing-dijkstra-5c7tbv) hâlâ main'e birleştirilmedi; kullanıcıya sade dille soruldu, cevap bekleniyor.
+7. Gerçek claude.ai'de "resimden oku" (sample) ve indirme (downloads) akışı kullanıcı tarafından henüz doğrulanmadı.
+
+**Yeni oturumda ilk iş:** kullanıcıya v6'yı AutoCAD'de açıp açmadığını ve gördüğü eksikleri sorun (ekran görüntüsü isteyin);
+1 ve 6 numaralı soruların cevabını alın. Değişiklikten sonra: dene.mjs + tarayici.js + onizleme.sh → bak → yayin-hazirla.py →
+aynı URL'ye publish (files: ortak/bhp.js, ortak/bhp-cizim.js, baglanti-hatti/BHP-SABLON.txt; capabilities korunur) → commit/push
+→ DEVAM.md güncelle → kullanıcıya önizleme PNG + zip gönder.
