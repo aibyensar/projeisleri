@@ -101,5 +101,14 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
 - İNDİRME: claude.ai içinde sayfa kendi başına dosya indiremiyor. Bağlantı hattı aracı AYRI artifact olarak yayında:
   https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (`downloads` izniyle; claude.use("downloads").save). Yayın kopyası
   araclar/baglanti-hatti.html'den yollar düzeltilerek (../ → kök) üretilir; ana sitedeki kart bu adrese gider.
-- Sıradaki: kullanıcı Faruk Erdoğan ve Ayşe Çelenk işleriyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
+- RESİMDEN OKUMA (kullanıcı: "GDZ'den her türlüsü gelebilir, hepsini okuyabilmeli"): yazısı çizgi olan PDF'lerde
+  "resimden oku" düğmesi → claude.use("sample") ile 2 adım: (1) küçük sayfa resimlerinde antet / güç dağılım tablosu /
+  sayaç panosu bölgelerini bul, (2) o bölgeleri yüksek çözünürlükte kesip değerleri JSON olarak oku. Resimden okunan kutular
+  turuncu kenarlı. GDZ yazısı için de aynı düğme var. Yayın: `python3 baglanti-hatti/yayin-hazirla.py <klasör>`;
+  capabilities {downloads: true, sample: {images: true}}. Gerçek claude.ai'de henüz denenmedi (burada sahte yardımcıyla denendi).
+- LOGO: kullanıcının yeni logosu `baglanti-hatti/logo/` (lacivert zeminli asıl + beyaz zeminli baskı hali). Henüz paftaya konmadı.
+- PAFTA DÜZENİ: kullanıcı "proje düzensiz/karışık" dedi. Taslak önerildi (numaralı çerçeveli bölümler). Kullanıcı:
+  kâğıt boyutu ve antetin (kapak) yeri kendi örneklerindeki gibi kalsın (antet sol altta), gerisini ben düzenleyeyim;
+  ayrıca bir örnek yapıp gönderecek → örnek gelince paftayı yeniden düzenle.
+- Sıradaki: kullanıcının örneğini bekle; kullanıcı Faruk Erdoğan ve Ayşe Çelenk işleriyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
   Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).
