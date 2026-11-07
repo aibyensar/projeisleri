@@ -90,10 +90,13 @@ baglanti-hatti/test/dene.mjs        Node denemesi: node dene.mjs <gdz.pdf> <ic.p
 Şablon üretimi: `python3 baglanti-hatti/sablon-olustur.py <harmandalı_BHP.dxf> <boxlu BHP.dxf> baglanti-hatti/kapak.json baglanti-hatti/logo/agy-logo.png baglanti-hatti/BHP-SABLON.dxf`
 Kaynak DXF'ler (kullanıcının direkli ve boxlu projeleri) depoda YOK (kişisel bilgi); yeni oturumda gerekirse kullanıcıdan tekrar istenir.
 
-**Pafta:** kullanıcının kâğıdı 954 x 900 mm, antet (kapak) sol altta. Pafta 1/2: 1 vaziyet (TKGM), 2 GDZ krokisi (görüşün uydu
-sayfası), 3 bağlantı detayı (direk/box bloğu), 4 kablo kanalı detayı, 5 tek hat, 6 gerilim düşümü + akım, 7 güç dağılım,
-8 malzeme, 9 sembol listesi (16), 10 genel notlar (12, kaynaklı), şerit (tarih/başvuru/ölçek/pafta). Pafta 2/2: kullanıcının
-TEDAŞ "Enerji Kabloları Uygulama Usul ve Esasları" metni aynen, 4 sütun. Tek yazı tipi Arial (BHP / BHP-K), siyah baskı.
+**Pafta:** TEK PAFTA (1 / 1). Kullanıcının kâğıdı 954 x 900 mm, antet (kapak) sol altta. Bölüm başlıklarında NUMARA YOK
+(kullanıcı istemedi). Bölümler: vaziyet (TKGM), GDZ krokisi, bağlantı detayı (direk/box), kablo kanalı detayı, tek hat,
+gerilim düşümü + akım, güç dağılım, malzeme, sembol listesi, genel notlar (8 madde + kazı izni), şerit. Sağ sütunda
+TEDAŞ "Enerji Kabloları Uygulama Usul ve Esasları" metni aynen, 2 sütun. Tek yazı tipi Arial, siyah baskı.
+**Sayaç önü sigorta:** satırlarda "onu" alanı; tek hatta her sayaç grubu baradan inen dal: sigorta → sayaç → iç tesisat;
+malzemede "Sayaç önü sigorta ..." adetli. Birden çok satır varsa ve biri boşsa İNDİR kapalı ("İndirmek için eksik: ...").
+Resimler eksikse yalnız uyarı (indir açık, zip'e konmaz).
 Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png — kullanıcı zip'i AYIKLAYIP açmalı (içinden açınca salt okunur).
 
 **Kullanıcı kuralları:** bakır/alüminyumu kullanıcı seçer; en küçük kesit Cu 6, Al 10 mm²; trifaze 16'ya kadar 4x, üstü 3x../..;
@@ -111,12 +114,12 @@ Tarayıcı denemesinde cdnjs erişilemiyor → playwright route ile node_modules
 
 **Denenen işler:** Faruk Erdoğan (20247913, direk KARAALİ TR-1 C-23, 4 m, 8500 W) ; Ayşe Çelenk (20247911, box MURADİYE TR-5
 (BELEDİYE KABİN) C-06, 12 m, 15 BB, 57839 W, iç tesisatı Talha Kır çizmiş, yazıları çizgi) ; Semih Işık (20254622, eski düzen).
-Son gönderilen zip'ler: v5.
+Son gönderilen zip'ler: v6 (tek pafta).
 
 **AÇIK KONULAR (sıradaki)**
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
    soruldu (resimden oku mu, satır üret mi). Cevaba göre resimden okumayı sağlamlaştır.
-2. Kullanıcı v5 zip'lerini AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
+2. Kullanıcı v6 zip'lerini AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
 3. Kapaktaki küçük GDZ logosu okunamadı (OLE) — kullanıcı resim olarak gönderirse eklenecek.
 4. Havai hat çizimi yok (kullanıcıdan havai BHP örneği istenecek).
 5. Kullanıcının "örnek yapıp atacağım" dediği şey gelmedi.

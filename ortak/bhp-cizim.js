@@ -47,7 +47,7 @@
   const CIHAZ_AD = { sigorta: 'SİGORTA', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'TMŞ+YKŞ' };
 
   // ---------- 5. Tek hat şeması (kendi koordinatlarında çizilir: x -40..390, y 5712..5782) ----------
-  const TEKHAT_KAYNAK = [-40, 5708, 392, 5786];
+  const TEKHAT_KAYNAK = [-40, 5684, 392, 5786];
   function tekHat(c, v) {
     const yh = 5752, mono = v.faz === 1;
     let xb;
@@ -58,13 +58,13 @@
     sembol.nokta(c, xb, yh);
     let x = xb;
     if (v.baglanti !== 'box') { c.cizgi(x, yh, x + 6, yh, S); sembol.baslik(c, x + 6, yh); x += 13; }
-    const xp = 222;
+    const xp = 176;
     c.cizgi(x, yh, xp, yh, { katman: 'BHP-KABLO', lt: 'DASHED' });
     sembol.ok(c, (x + xp) / 2 - 3, yh);
     c.yazi(v.kablo.yazi, (x + xp) / 2, yh + 6, 3.4, { stil: KALIN, hiza: 'orta' });
     c.yazi(`L = ${sayiYaz(v.L)} m  ·  YERALTI  ·  ${mono ? 'MONOFAZE 220 V' : 'TRİFAZE 380 V'}`, (x + xp) / 2, yh - 6, 2.8, { hiza: 'orta' });
     c.yazi(`Parsel dışı ${sayiYaz(v.Ldis)} m + parsel içi ${sayiYaz(v.Lic)} m`, (x + xp) / 2, yh - 11, 2.2, { hiza: 'orta' });
-    const px1 = xp, px2 = 386, py1 = 5720, py2 = 5782;
+    const px1 = xp, px2 = 388, py1 = 5688, py2 = 5782;
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', lt: 'DASHED' });
     c.yazi('SAYAÇ PANOSU (mühürlenebilir bölüm)', (px1 + px2) / 2, py2 - 4, 2.6, { stil: KALIN, hiza: 'orta' });
     x = px1;
@@ -74,27 +74,35 @@
       sembol[k.tur](c, x, yh);
       c.yazi(CIHAZ_AD[k.tur], x + w / 2, yh + 15, 2.2, { hiza: 'orta' });
       c.yazi(k.deger, x + w / 2, yh + 10.5, 2.4, { stil: KALIN, hiza: 'orta' });
-      c.cizgi(x + w, yh, x + w + 20, yh, S); x += w + 20;
+      c.cizgi(x + w, yh, x + w + 16, yh, S); x += w + 16;
     }
-    const n = Math.max(1, v.sayacAdet | 0), goster = Math.min(n, 4), sw = 13, ara = 5;
-    c.cizgi(x, yh, x + 3, yh, S);
-    const xs0 = x + 3;
-    const baraSon = xs0 + (goster - 1) * (sw + ara) + sw / 2 + (n > goster ? 14 : 0);
-    if (n > 1) c.cizgi(xs0 + sw / 2, yh, baraSon, yh, { ...S, kalin: true });
-    for (let i = 0; i < goster; i++) {
-      const sx = xs0 + i * (sw + ara);
-      if (i === goster - 1 && n > goster) c.yazi('…', sx - 2, yh + 4, 3.5, { hiza: 'orta' });
-      c.cizgi(sx + sw / 2, yh, sx + sw / 2, yh + 2, S);
-      sembol.sayac(c, sx, yh + 2, sw, 11);
-    }
-    const ortx = xs0 + Math.min(goster, 3) * (sw + ara) / 2;
-    c.yazi(n > 1 ? `${n} adet ${v.sayacTip}A elektronik sayaç` : `Elektronik sayaç ${v.sayacTip}A`, ortx, yh - 5, 2.4, { hiza: 'orta' });
-    c.yazi(v.sayacTur, ortx, yh - 9, 2.2, { hiza: 'orta' });
-    const xc = Math.min(px2 - 22, Math.max(baraSon + 6, xs0 + goster * (sw + ara)));
-    c.cizgi(baraSon, yh, xc + 10, yh, S); sembol.ok(c, xc + 10, yh);
-    c.yazi('İÇ TESİSAT', xc + 10, yh + 6, 2.4, { stil: KALIN, hiza: 'orta' });
-    c.cizgi(px2 - 6, py1, px2 - 6, py1 - 1, S); sembol.toprak(c, px2 - 6, py1 - 1);
-    c.yazi('1x16 mm² NYY pano topraklaması', px2 - 13, py1 - 3.5, 2.0, { hiza: 'sag' });
+    // bara ve sayaç grupları: her grup = sayaç önü sigorta → sayaç → iç tesisat (aşağı)
+    const gruplar = v.gruplar && v.gruplar.length ? v.gruplar : [{ onu: '', adet: v.sayacAdet || 1, ad: '', tip: v.sayacTip }];
+    const adim = 44, sigar = Math.max(1, Math.floor((px2 - 4 - x) / adim));
+    const goster = gruplar.slice(0, sigar), artan = gruplar.length - goster.length;
+    const xg0 = x + 6, xgSon = xg0 + (goster.length - 1) * adim;
+    c.cizgi(x, yh, Math.max(xgSon, x + 6), yh, { ...S, kalin: goster.length > 1 });
+    goster.forEach((g, i) => {
+      const gx = xg0 + i * adim;
+      let y = yh;
+      if (g.onu) {
+        c.cizgi(gx, y, gx, 5741, S);
+        c.kutu(gx - 2.4, 5731, gx + 2.4, 5741, S); c.cizgi(gx, 5731, gx, 5741, S);   // sigorta (düşey)
+        c.yazi('SİGORTA', gx + 4, 5738.5, 2.0);
+        c.yazi(g.onu, gx + 4, 5734.5, 2.3, { stil: KALIN });
+        y = 5731;
+      }
+      c.cizgi(gx, y, gx, 5727, S);
+      sembol.sayac(c, gx - 6.5, 5715, 13, 12);                                           // sayaç
+      c.yazi(`${g.tip}A`, gx + 8, 5721, 2.3, { stil: KALIN });
+      c.cizgi(gx, 5715, gx, 5705, S); c.dolgu([[gx, 5700], [gx - 2.5, 5706], [gx + 2.5, 5706]], S);   // iç tesisata
+      c.yazi(`${g.adet} adet${g.ad ? ' · ' + g.ad : ''}`, gx + 4, 5703, 2.2, { stil: KALIN });
+      c.yazi('iç tesisata', gx + 4, 5699.5, 2.0);
+    });
+    if (artan > 0) c.yazi(`+ ${artan} grup daha (güç dağılım tablosuna bakınız)`, xgSon + 12, yh + 4, 2.0);
+    c.yazi(`Toplam ${v.sayacAdet} adet elektronik sayaç · ${v.sayacTur}`, (px1 + px2) / 2, py1 + 3, 2.2, { hiza: 'orta' });
+    c.cizgi(px2 - 4, py1, px2 - 4, py1 - 1, S); sembol.toprak(c, px2 - 4, py1 - 1);
+    c.yazi('1x16 mm² NYY pano topraklaması', px2 - 11, py1 - 3.5, 2.0, { hiza: 'sag' });
   }
 
   // ---------- 6. Gerilim düşümü ve akım hesabı (kendi koordinatlarında: x 43..361, y 5812..5958) ----------

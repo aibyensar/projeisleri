@@ -102,7 +102,7 @@
 
   <div class="kart">
     <h2 style="margin-top:0">4. Güç dağılım tablosu</h2>
-    <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin.</p>
+    <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin. <b>Sayaç önü sigorta</b> her satırda girilmelidir (iç tesisat projesindeki kolon şemasından; örneğin 4x32A 10kA). Tek hat şemasında ve malzeme listesinde kullanılır.</p>
     <div class="uret">
       <label>Daire sayısı<input type="number" id="u-adet" min="0" step="1" inputmode="numeric"></label>
       <label>Tablo adı öneki<input type="text" id="u-onek" value="D"></label>
@@ -110,6 +110,8 @@
       <label>Daire bağlantı gücü (W)<input type="number" id="u-baglanti" min="0" inputmode="decimal"></label>
       <label>Ortak kurulu (W)<input type="number" id="u-okurulu" min="0" inputmode="decimal"></label>
       <label>Ortak bağlantı (W)<input type="number" id="u-obaglanti" min="0" inputmode="decimal"></label>
+      <label>Daire sayaç önü sigorta<input type="text" id="u-onu" placeholder="4x32A 10kA"></label>
+      <label>Ortak sayaç önü sigorta<input type="text" id="u-oonu" placeholder="4x40A 10kA"></label>
       <button type="button" class="kucuk-dugme" id="u-yap">Satırları üret</button>
     </div>
     <div class="tablo-kutu"><table class="duz" id="satirlar"></table></div>
@@ -166,7 +168,7 @@
     <ol class="adimlar">
       <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>4 dosya aynı yerde</b> kalsın: çizim, logo ve 2 resim.</li>
       <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
-      <li>Proje 2 paftadır: <b>1/2</b> ana pafta, <b>2/2</b> TEDAŞ kablo uygulama usul ve esasları (sizin metniniz). İkisi aynı çizimde yan yana durur.</li>
+      <li>Proje tek paftadır; TEDAŞ kablo uygulama usul ve esasları (sizin metniniz) paftanın sağ sütunundadır.</li>
       <li>Resim görünmezse: <code>XREF</code> yazıp Enter, resmin yolunu zip'i açtığınız klasör olarak gösterin.</li>
     </ol>
   </div>
@@ -353,7 +355,7 @@ function bilgiler() {
 }
 
 // ---- Güç dağılım satırları ----
-const SUTUN = [['bb', 'B.B. No'], ['tablo', 'Tablo adı'], ['kurulu', 'Kurulu (W)'], ['baglanti', 'Bağlantı (W)'], ['sayac', 'Sayaç tipi'], ['kullanim', 'Kullanım'], ['tesis', 'Tesisat no']];
+const SUTUN = [['bb', 'B.B. No'], ['tablo', 'Tablo adı'], ['kurulu', 'Kurulu (W)'], ['baglanti', 'Bağlantı (W)'], ['onu', 'Sayaç önü sigorta'], ['sayac', 'Sayaç tipi'], ['kullanim', 'Kullanım'], ['tesis', 'Tesisat no']];
 function satirlariCiz() {
   $('satirlar').innerHTML = `<tr>${SUTUN.map(s => `<th>${s[1]}</th>`).join('')}<th></th></tr>` +
     D.satirlar.map((r, j) => `<tr>${SUTUN.map(([k]) => `<td><input type="text" data-j="${j}" data-k="${k}" value="${kac(r[k])}"></td>`).join('')}<td><button class="sil" data-sil="${j}" aria-label="Satırı sil">×</button></td></tr>`).join('');
@@ -367,14 +369,14 @@ $('satirlar').addEventListener('input', e => { const el = e.target; if (el.datas
 $('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
 $('satirEkle').addEventListener('click', () => {
   const son = D.satirlar[D.satirlar.length - 1] || {};
-  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || '3FAZ', kullanim: son.kullanim || '', tesis: '' });
+  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || '3FAZ', kullanim: son.kullanim || '', tesis: '', onu: son.onu || '' });
   satirlariCiz(); guncelle();
 });
 $('u-yap').addEventListener('click', () => {
   const n = parseInt($('u-adet').value, 10) || 0, on = $('u-onek').value || 'D';
   const kul = (D.satirlar[0] && D.satirlar[0].kullanim) || 'KONUT';
-  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '' }));
-  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '' });
+  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '', onu: $('u-onu').value.trim() }));
+  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: '3FAZ', kullanim: kul, tesis: '', onu: $('u-oonu').value.trim() });
   $('a-sayacAdet').value = D.satirlar.length;
   satirlariCiz(); guncelle();
 });
@@ -462,16 +464,19 @@ function guncelle() {
         <span class="durum">${kablo.yazi}, toprakta ${kablo.iz} A (Öznur Kablo kataloğu)</span></div>`;
   }
   onizle();
-  const eksik = [];
-  if (!D.sablon) eksik.push('çizim şablonu');
-  if (!D.gdz) eksik.push('GDZ yazısı');
-  if (!D.iletken) eksik.push('bakır/alüminyum seçimi');
-  if (!kablo) eksik.push('kablo');
-  if (!D.satirlar.length) eksik.push('güç dağılım tablosu');
-  if (!D.uydu) eksik.push('uydu görüntüsü');
-  if (!D.vaziyet) eksik.push('TKGM görüntüsü');
+  const eksik = [], uyari = [];
+  if (!D.sablon) eksik.push('çizim şablonu yüklenemedi (sayfayı yenileyin)');
+  if (!D.gdz) eksik.push('GDZ bağlantı görüşü (1. bölüm)');
+  if (!D.iletken) eksik.push('bakır / alüminyum seçimi (2. bölüm)');
+  else if (!kablo) eksik.push('kablo: talep gücü ve uzunluk girilmeli (3. bölüm)');
+  if (!D.satirlar.length) eksik.push('güç dağılım tablosu (4. bölüm)');
+  else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (4. bölüm, her satır)');
+  if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
+  if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
+  else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (8. bölüm)');
   $('indir').disabled = eksik.length > 0;
-  if (eksik.length) durum('d-indir', 'Eksik: ' + eksik.join(', ')); else durum('d-indir', 'Hazır.', 'iyi');
+  if (eksik.length) durum('d-indir', 'İndirmek için eksik: ' + eksik.join(' · '), 'kotu');
+  else durum('d-indir', uyari.length ? 'Hazır. Dikkat: ' + uyari.join(' · ') : 'Hazır.', uyari.length ? '' : 'iyi');
 }
 function cizim() {
   const b = bilgiler();
@@ -493,7 +498,8 @@ $('indir').addEventListener('click', async () => {
   const dxf = BHPCizim.dxfeEkle(BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd)), c, b.baglanti);
   const zip = new JSZip(), klasor = zip.folder(`BHP-${ad}`);
   klasor.file(`BHP-${ad}.dxf`, dxf);
-  klasor.file(uyduAd, D.uydu); klasor.file(vazAd, D.vaziyet);
+  if (D.uydu) klasor.file(uyduAd, D.uydu);
+  if (D.vaziyet) klasor.file(vazAd, D.vaziyet);
   klasor.file('agy-logo.png', await logoAl());
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const dosyaAdi = `BHP-${ad}.zip`;
@@ -582,7 +588,7 @@ Döndürülecek JSON:
  "kat": str (ör. "SIĞ+Z+3"), "alan": str (yalnız sayı, ör. "922"), "bagimsiz": str (antetteki gibi, ör. "14+1"), "kuruluW": sayı, "talepW": sayı,
  "korumalar": [ {"tur": "sigorta"|"tms"|"kar"|"tmsyks", "deger": str} ]  // binaya girişteki ana koruma(lar), enerji yönünde sırayla. "TMŞ+YKŞ 4x125A 300mA" gibi tek cihaz = [{"tur":"tmsyks","deger":"4x125A 300mA"}]; sigorta "4x40A 10kA"; kaçak akım rölesi "4x40A 300mA",
  "sayac": str (ör. "3x10"), "reaktif": true|false (sayaçta kVArh varsa true),
- "satirlar": [ {"bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str} ]  // güç dağılım tablosunun HER satırı, ortak bölüm dahil; toplam satırları hariç
+ "satirlar": [ {"bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str, "onu": str} ]  // güç dağılım tablosunun HER satırı (kaç satır varsa hepsi, ör. D1...D14 ve ORTAK), toplam satırları hariç. "onu" = o bağımsız bölümün sayacının önündeki sigorta/otomat (kolon veya pano şemasından, ör. "4x32A 10kA"); göremezsen null
 }`,
       { images: parcalar, modelTier: 'default' });
     const ic = D.ic || {}, resimden = {};
@@ -598,7 +604,7 @@ Döndürülecek JSON:
     }
     if (Array.isArray(v.satirlar) && v.satirlar.length) {
       ic.satirlar = v.satirlar.map(r => ({ bb: String(r.bb ?? ''), tablo: String(r.tablo ?? ''), kurulu: String(r.kurulu ?? ''), baglanti: String(r.baglanti ?? ''),
-        sayac: String(r.sayac ?? '3FAZ'), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? '') }));
+        sayac: String(r.sayac ?? '3FAZ'), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? ''), onu: r.onu ? String(r.onu) : '' }));
       resimden.sayacAdet = 1;
     }
     ic.resimden = resimden; D.ic = ic;

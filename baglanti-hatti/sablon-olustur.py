@@ -5,7 +5,7 @@
 #   kapak.json: kullanıcının KAPAK.dwg dosyasının libredwg-web ile okunmuş hali (baglanti-hatti/araclar/dwg-oku.mjs)
 #
 # Pafta: kullanıcının paftasıyla aynı kâğıt (954 x 900 mm), antet (kapak) sol altta.
-# Pafta 1: numaralı çerçeveli bölümler; Pafta 2: TEDAŞ kablo döşeme usul ve esasları (kullanıcının metni, aynen).
+# Tek pafta: çerçeveli bölümler; sağ sütunda TEDAŞ kablo uygulama usul ve esasları (kullanıcının metni, aynen).
 # Sabit kısımlar burada çizilir; her işte değişenleri (tek hat, hesap, güç dağılım, malzeme, notlar, vaziyet
 # işaretleri) web aracı ortak/bhp-cizim.js ile bu dosyanın başındaki 999 açıklamasında yazan bölgelere çizer.
 import sys, json, math, ezdxf
@@ -54,17 +54,18 @@ def dolu(noktalar, katman='BHP-SEMBOL', renk=7, yer=None):
 PX0, PY0, PX1, PY1 = -269.5, 5393.6, 684.6, 6293.6      # kullanıcının paftası (954 x 900 mm)
 G = 5.0                                                   # bölümler arası boşluk
 BAS = 9.0                                                 # bölüm başlık şeridi yüksekliği
-BOLUM = {                                                 # ad: (x0, y0, x1, y1, no, başlık)
-    'vaziyet': (-264.5, 6088.6, 88.0, 6288.6, 1, 'VAZİYET PLANI (TKGM PARSEL SORGU)'),
-    'kroki':   (93.0, 6088.6, 386.0, 6288.6, 2, 'GDZ BAĞLANTI KROKİSİ (BAĞLANTI GÖRÜŞÜ EKİ)'),
-    'detay':   (-264.5, 5919.6, -34.5, 6083.6, 3, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI'),
-    'kanal':   (-264.5, 5754.6, -34.5, 5914.6, 4, 'KABLO KANALI DETAYI'),
-    'tekhat':  (-29.5, 5974.6, 386.0, 6083.6, 5, 'TEK HAT ŞEMASI'),
-    'hesap':   (-29.5, 5754.6, 386.0, 5969.6, 6, 'GERİLİM DÜŞÜMÜ VE AKIM HESABI'),
-    'guc':     (-29.5, 5398.6, 176.0, 5749.6, 7, 'GÜÇ DAĞILIM TABLOSU'),
-    'malzeme': (181.0, 5398.6, 386.0, 5749.6, 8, 'MALZEME LİSTESİ'),
-    'sembol':  (391.0, 6128.6, 679.6, 6288.6, 9, 'SEMBOL LİSTESİ'),
-    'notlar':  (391.0, 5418.6, 679.6, 6123.6, 10, 'GENEL NOTLAR'),
+BOLUM = {                                                 # ad: (x0, y0, x1, y1, no, başlık)  — tek pafta, numarasız
+    'vaziyet': (-264.5, 6088.6, 88.0, 6288.6, 0, 'VAZİYET PLANI (TKGM PARSEL SORGU)'),
+    'kroki':   (93.0, 6088.6, 386.0, 6288.6, 0, 'GDZ BAĞLANTI KROKİSİ (BAĞLANTI GÖRÜŞÜ EKİ)'),
+    'detay':   (-264.5, 5919.6, -34.5, 6083.6, 0, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI'),
+    'kanal':   (-264.5, 5754.6, -34.5, 5914.6, 0, 'KABLO KANALI DETAYI'),
+    'tekhat':  (-29.5, 5939.6, 386.0, 6083.6, 0, 'TEK HAT ŞEMASI'),
+    'hesap':   (-29.5, 5754.6, 386.0, 5934.6, 0, 'GERİLİM DÜŞÜMÜ VE AKIM HESABI'),
+    'guc':     (-29.5, 5564.6, 176.0, 5749.6, 0, 'GÜÇ DAĞILIM TABLOSU'),
+    'malzeme': (181.0, 5564.6, 386.0, 5749.6, 0, 'MALZEME LİSTESİ'),
+    'sembol':  (-29.5, 5479.6, 386.0, 5559.6, 0, 'SEMBOL LİSTESİ'),
+    'notlar':  (-29.5, 5398.6, 386.0, 5474.6, 0, 'GENEL NOTLAR'),
+    'sartname': (391.0, 5418.6, 679.6, 6288.6, 0, 'ELEKTRİK DAĞITIM ŞEBEKELERİ ENERJİ KABLOLARI UYGULAMA USUL VE ESASLARI (TEDAŞ)'),
 }
 ANTET = (-264.5, 5398.6, -34.5, 5749.6)
 SERIT = (391.0, 5398.6, 679.6, 5413.6)                    # tarih / başvuru / pafta no şeridi
@@ -81,7 +82,7 @@ for ad, (x0, y0, x1, y1, no, baslik) in BOLUM.items():
 # şerit (tarih, başvuru no, pafta)
 x0, y0, x1, y1 = SERIT
 kutu(x0, y0, x1, y1, 'BHP-BOLUM')
-for i, (et, yt) in enumerate((('PROJE TARİHİ', '{{TARIH}}'), ('GDZ BAŞVURU NO', '{{BASVURU}}'), ('ÖLÇEK', 'ÖLÇEKSİZ'), ('PAFTA', '1 / 2'))):
+for i, (et, yt) in enumerate((('PROJE TARİHİ', '{{TARIH}}'), ('GDZ BAŞVURU NO', '{{BASVURU}}'), ('ÖLÇEK', 'ÖLÇEKSİZ'), ('PAFTA', '1 / 1'))):
     w = (x1 - x0) / 4; xx = x0 + i * w
     if i: cizgi(xx, y0, xx, y1, 'BHP-BOLUM')
     yazi(et, xx + w / 2, y1 - 3.6, 2.0, 'BHP', A.MIDDLE_CENTER)
@@ -158,7 +159,7 @@ def sart_parcalari(n=4):
             yeni_e.translate(-SOL[k], (yy - y0) - ust, 0)
         bloklar.append(b)
     return bloklar
-bSartlar = sart_parcalari()
+bSartlar = sart_parcalari(2)
 
 # İçe alınanları sadeleştir: tek yazı tipi, siyah baskı (taramalar gri)
 for b in (bDirek, bBox, bKanal):          # detay yazıları 1,5 mm idi; basılınca okunaklı olsun
@@ -232,7 +233,7 @@ for i, (tur, anlam) in enumerate(SEMBOLLER):
     xs = x0 + kol * iki
     yy = y1 - BAS - 2 - satir * (sira + 0.5)
     sembol(tur, xs + 18, yy)
-    yazi(anlam, xs + 36, yy, 2.6)
+    yazi(anlam, xs + 36, yy, 2.5)
 cizgi(x0 + iki, y0, x0 + iki, y1 - BAS, 'BHP-BOLUM')
 
 # ---------- Antet (kullanıcının KAPAK çizimi) ----------
@@ -301,26 +302,17 @@ tl = d.add_image_def(filename='.\\agy-logo.png', size_in_pixel=LOGO_PX, name='BH
 r3 = m.add_image(tl, insert=logo_ins, size_in_units=(lw * s_ant, lh * s_ant), rotation=0, dxfattribs={'layer': 'BHP-ANTET'})
 m.set_redraw_order([(r1.dxf.handle, '1'), (r2.dxf.handle, '2')])
 
-# ---------- Pafta 2: kablo döşeme usul ve esasları (kullanıcının metni, aynen) ----------
-DX = PX1 - PX0 + 60.0                                     # 2. pafta, 1. paftanın sağında
-kutu(PX0 + DX, PY0, PX1 + DX, PY1, 'BHP-CERCEVE')
-sx0, sy0, sx1, sy1 = PX0 + DX + 5, PY0 + 25, PX1 + DX - 5, PY1 - 5
-bolum(sx0, sy0, sx1, sy1, 0, 'ELEKTRİK DAĞITIM ŞEBEKELERİ ENERJİ KABLOLARI UYGULAMA USUL VE ESASLARI (TEDAŞ) — PROJENİN EKİDİR')
-kw = (sx1 - sx0 - 10) / 4
+# ---------- Şartname metni (kullanıcının metni, aynen): sağ sütunda iki sütun halinde ----------
+sx0, sy0, sx1, sy1 = BOLUM['sartname'][:4]
+kw = (sx1 - sx0 - 6) / 2
 bbs = [bbox.extents(b) for b in bSartlar]
-s2 = min(min((kw - 8) / b.size.x for b in bbs), min((sy1 - BAS - sy0 - 12) / b.size.y for b in bbs), 2.0)
+s2 = min(min((kw - 4) / b.size.x for b in bbs), min((sy1 - BAS - sy0 - 8) / b.size.y for b in bbs), 1.3)
 for i, (b, bb) in enumerate(zip(bSartlar, bbs)):
-    kx0 = sx0 + 5 + i * kw
-    if i: cizgi(kx0, sy0 + 4, kx0, sy1 - BAS - 4, 'BHP')
-    ust = sy1 - BAS - 6
+    kx0 = sx0 + 3 + i * kw
+    if i: cizgi(kx0, sy0 + 3, kx0, sy1 - BAS - 3, 'BHP')
+    ust = sy1 - BAS - 4
     m.add_blockref(b.name, (kx0 + kw / 2 - bb.center.x * s2, ust - bb.extmax.y * s2), dxfattribs={'layer': 'BHP-DETAY', 'xscale': s2, 'yscale': s2})
-x0, y0, x1, y1 = PX0 + DX + 5, PY0 + 5, PX1 + DX - 5, PY0 + 20
-kutu(x0, y0, x1, y1, 'BHP-BOLUM')
-for i, (et, yt) in enumerate((('PROJE', 'ELEKTRİK BAĞLANTI HATTI PROJESİ'), ('MAL SAHİBİ', '{{MALSAHIBI}}'), ('ADA / PARSEL', '{{ADAPARSEL}}'), ('PAFTA', '2 / 2'))):
-    w = (x1 - x0) / 4; xx = x0 + i * w
-    if i: cizgi(xx, y0, xx, y1, 'BHP-BOLUM')
-    yazi(et, xx + w / 2, y1 - 3.6, 2.0, 'BHP', A.MIDDLE_CENTER)
-    yazi(yt, xx + w / 2, y0 + 4.4, 3.0, 'BHP-K', A.MIDDLE_CENTER)
+DX = 0.0
 
 # ---------- Kaydet; web aracının ihtiyaç duyduğu bilgileri başa yaz ----------
 # AutoCAD açılışta çizimin tamamını göstersin: sınırlar ve aktif görünüm (yoksa boş bir yere bakar)
@@ -333,7 +325,7 @@ d.saveas(cikis, encoding='utf-8')
 ic = lambda k: [BOLUM[k][0] + 3, BOLUM[k][1] + 3, BOLUM[k][2] - 3, BOLUM[k][3] - BAS - 3]
 bilgi = {'model': m.block_record_handle,
          'bolgeler': {k: ic(k) for k in ('tekhat', 'hesap', 'guc', 'malzeme', 'notlar')},
-         'resim': {'uydu': kUydu, 'vaziyet': kVaz}, 'pafta2': [PX0 + DX, PY0, PX1 + DX, PY1]}
+         'resim': {'uydu': kUydu, 'vaziyet': kVaz}}
 s = open(cikis, encoding='utf-8').read()
 open(cikis, 'w', encoding='utf-8').write('999\nBHP ' + json.dumps(bilgi) + '\n' + s)
 print(json.dumps(bilgi), 'antet ölçeği', round(s_ant, 4), 'şartname ölçeği', round(s2, 3))

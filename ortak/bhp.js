@@ -182,8 +182,8 @@
     const gucKullanim = /MESKEN|KONUT/.test(kullanim) ? 'KONUT' : kullanim;
     const sayac = i.sayac || '3x10';
     const satirlar = bbSayi === 1
-      ? [{ bb: '1', tablo: 'AT', kurulu: String(kuruluW), baglanti: String(talepW), sayac: '3FAZ', kullanim: gucKullanim, tesis: '' }]
-      : Array.from({ length: bbSayi }, (_, k) => ({ bb: String(k + 1), tablo: `D${k + 1}`, kurulu: '', baglanti: '', sayac: '3FAZ', kullanim: gucKullanim, tesis: '' }));
+      ? [{ bb: '1', tablo: 'AT', kurulu: String(kuruluW), baglanti: String(talepW), sayac: '3FAZ', kullanim: gucKullanim, tesis: '', onu: '' }]
+      : Array.from({ length: bbSayi }, (_, k) => ({ bb: String(k + 1), tablo: `D${k + 1}`, kurulu: '', baglanti: '', sayac: '3FAZ', kullanim: gucKullanim, tesis: '', onu: '' }));
     return {
       basvuruNo: g.basvuruNo || '',
       malSahibi: buyuk(ilk(i.malSahibi, g.sahibi) || ''),
@@ -213,6 +213,21 @@
     };
   }
 
+  // ---------- Sayaç grupları: aynı sayaç önü sigortası ve sayaç tipi olan bağımsız bölümler ----------
+  function sayacGruplari(b) {
+    const g = [];
+    for (const r of b.satirlar || []) {
+      const onu = temiz(r.onu || ''), tip = b.sayac || '3x10';
+      let x = g.find(q => q.onu === onu && q.tip === tip);
+      if (!x) g.push(x = { onu, tip, adet: 0, adlar: [] });
+      x.adet++; x.adlar.push(temiz(r.tablo || r.bb || ''));
+    }
+    for (const x of g) x.ad = x.adlar.length > 2 ? `${x.adlar[0]}…${x.adlar[x.adlar.length - 1]}` : x.adlar.join(', ');
+    return g;
+  }
+  // Çok bağımsız bölümlü projede her satırın sayaç önü sigortası girilmiş olmalı
+  function sayacOnuEksik(b) { return (b.satirlar || []).length > 1 && (b.satirlar || []).some(r => !temiz(r.onu || '')); }
+
   // ---------- Malzeme listesi önerisi (kullanıcı düzeltebilir) ----------
   function malzemeOner(b, kablo) {
     const L = Math.ceil(b.uzunluk || 0), direk = b.baglanti !== 'box';
@@ -231,6 +246,7 @@
     r.push({ ad: '1x16 mm² NYY topraklama iletkeni', birim: 'm', miktar: direk ? 3 : 6 });
     r.push({ ad: 'Sayaç panosu (TEDAŞ şartnamesine uygun)', birim: 'adet', miktar: 1 });
     r.push({ ad: `Elektronik sayaç ${b.sayac}A`, birim: 'adet', miktar: b.sayacAdet || 1 });
+    for (const g of sayacGruplari(b)) if (g.onu) r.push({ ad: `Sayaç önü sigorta ${g.onu}`, birim: 'adet', miktar: g.adet });
     const AD = { sigorta: 'Sigorta', kar: 'Kaçak akım rölesi', tms: 'TMŞ', tmsyks: 'TMŞ + YKŞ' };
     for (const k of b.korumalar || []) if (k.tur) r.push({ ad: `${AD[k.tur]} ${k.deger}`.trim(), birim: 'adet', miktar: 1 });
     return r;
@@ -240,21 +256,17 @@
   function notlarOner(b) {
     const box = b.baglanti === 'box';
     const n = [
-      `Bu proje GDZ Elektrik Dağıtım A.Ş.'nin ${b.tarih ? b.tarih + ' tarih ve ' : ''}${b.basvuruNo || '...'} sayılı bağlantı görüşüne göre hazırlanmıştır. Enerji, ${b.direk || '...'} ${box ? 'AG box çıkışından' : 'AG direğinden'} alınacaktır.`,
-      'Bağlantı hattı yeraltı kablosu ile tesis edilecektir. Kablo kanalı, kablo kanalı detayına uygun açılacak; kablonun altına ve üstüne 10\'ar cm elenmiş kum serilecek, kum üzerine koruma tuğlası dizilecek, tuğlanın 20 cm üzerine plastik ikaz şeridi serilecektir.',
-      'Kabloların demiryolu, su kanalı ve karayolu altından geçişinde kullanılacak muhafaza borusunun üst kısmı en az 1,5 m derinlikte; üzerinden taşıt geçen diğer yollarda kanal derinliği 1 m olacak, enine geçişlerde kablolar borulu tipte döşenecektir.',
-      box ? 'Kablo, AG box ile sayaç panosu arasında yeraltından çekilecek; box girişinde ve yapı girişlerinde kablo koruma borusu içine alınacaktır. Yeraltı kablolu dağıtım şebekelerinde "Cam Elyaf Takviyeli Polyester - Tip B" saha dağıtım kutusu kullanılacaktır.'
-        : 'Direkten iniş ve yeraltı geçişlerinde galvanizli çelik boru kullanılacak, kablolar tek boru içerisinden geçirilecektir. Direk tarafında kablo başlığı yapılacaktır.',
-      'Kazı çalışması esnasında farklı altyapı unsurları ile karşılaşılması durumunda mevzuatta belirtilen mesafeler boyunca belirlenen altyapı unsurundan uzaklaşılacaktır.',
-      'GEREKLİ GEÇİŞ İZİNLERİ (belediye, karayolları vb.) ALINMADAN KABLO ÇEKİLMEYECEKTİR. İzin belgeleri geçici kabul aşamasında sunulacaktır.',
-      'Sayaç panosu TEDAŞ teknik şartnamesine uygun, mühürlenebilir olacak; sayaç ve koruma elemanları mühürlenebilir bölümde bulunacaktır.',
-      'Pano ve bağlantı hattı topraklaması Elektrik Tesislerinde Topraklamalar Yönetmeliğine göre yapılacak; topraklama değerleri yetkili elektrik mühendisince ölçülerek kabul öncesinde Kabul Heyeti Başkanlığına imzalı iki nüsha olarak verilecektir.',
-      'Tesis bitiminde bağlantı hattının ve iç tesisatın muayene ve kontrolü GDZ Bölge Müdürlüğü yetkilileri tarafından yapılacaktır.',
-      'Tesislerin yapımı aşamasında tüm iş güvenliği mevzuatına uygun çalışılacak olup iş güvenliği sorumluluğu talepliye aittir.',
-      'Kullanılacak tüm malzemeler TSE belgeli ve TEDAŞ teknik şartnamelerine uygun olacaktır.',
-      'Proje ve tesis; Elektrik Piyasası Kanunu, Elektrik İç Tesisleri Yönetmeliği, Elektrik Kuvvetli Akım Tesisleri Yönetmeliği, Elektrik Proje Hazırlama Yönetmeliği, Elektrik Tesislerinde Topraklamalar Yönetmeliği, Bağlantı ve Sistem Kullanım Yönetmeliği ve TEDAŞ "Elektrik Dağıtım Şebekeleri Enerji Kabloları Uygulama Usul ve Esasları"na (projenin 2. paftası) uygun yapılacaktır.',
+      `Proje, GDZ Elektrik Dağıtım A.Ş.'nin ${b.tarih ? b.tarih + ' tarih ve ' : ''}${b.basvuruNo || '...'} sayılı bağlantı görüşüne göre hazırlanmıştır. Enerji, ${b.direk || '...'} ${box ? 'AG box çıkışından' : 'AG direğinden'} alınacaktır.`,
+      'Kablo kanalı, kablo kanalı detayına ve paftadaki "Enerji Kabloları Uygulama Usul ve Esasları"na uygun açılacak; kablo altına ve üstüne 10\'ar cm kum, üzerine koruma tuğlası, tuğlanın 20 cm üzerine ikaz şeridi serilecektir.',
+      'Demiryolu, su kanalı ve karayolu geçişlerinde muhafaza borusunun üstü en az 1,5 m derinlikte; taşıt geçen diğer yollarda kanal derinliği 1 m olacak, enine geçişler borulu yapılacaktır.',
+      box ? 'Box girişinde ve yapı girişlerinde kablo koruma borusu içine alınacak; yeraltı şebekesinde "Cam Elyaf Takviyeli Polyester - Tip B" saha dağıtım kutusu kullanılacaktır.'
+        : 'Direkten iniş ve yeraltı geçişlerinde galvanizli çelik boru kullanılacak, kablolar tek boru içinden geçirilecek; direk tarafında kablo başlığı yapılacaktır.',
+      'GEREKLİ GEÇİŞ İZİNLERİ ALINMADAN KABLO ÇEKİLMEYECEKTİR. Kazıda karşılaşılan altyapı unsurlarından mevzuattaki mesafeler kadar uzaklaşılacaktır.',
+      'Sayaç panosu TEDAŞ şartnamesine uygun ve mühürlenebilir olacak; her sayacın önünde tek hat şemasında gösterilen sayaç önü sigortası bulunacaktır.',
+      'Topraklama değerleri yetkili elektrik mühendisince ölçülüp kabul öncesi Kabul Heyetine imzalı iki nüsha verilecek; tesisin muayenesi GDZ Bölge Müdürlüğünce yapılacaktır.',
+      'Malzemeler TSE belgeli ve TEDAŞ şartnamelerine uygun olacak; iş güvenliği sorumluluğu talepliye aittir. Tesis ilgili kanun, yönetmelik ve TEDAŞ şartnamelerine uygun yapılacaktır.',
     ];
-    if (b.kaziIzni === 'Yok') n.splice(6, 0, 'GDZ bağlantı görüşüne göre kazı izni bulunmamaktadır; kazıya başlanmadan önce kazı izni alınacaktır.');
+    if (b.kaziIzni === 'Yok') n.splice(5, 0, 'GDZ bağlantı görüşüne göre kazı izni bulunmamaktadır; kazıya başlanmadan önce kazı izni alınacaktır.');
     return n;
   }
 
@@ -266,7 +278,7 @@
       korumalar: (b.korumalar || []).filter(k => k.tur),
       sayacAdet: b.sayacAdet || 1, sayacTip: b.sayac, sayacTur: b.reaktif ? 'Aktif-Reaktif (kombi)' : 'Aktif',
       satirlar: b.satirlar, kuruluToplam: b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0) || b.kuruluW,
-      malzeme: malzeme || malzemeOner(b, kablo), notlar: notlar || notlarOner(b),
+      malzeme: malzeme || malzemeOner(b, kablo), notlar: notlar || notlarOner(b), gruplar: sayacGruplari(b),
       ada: b.ada, parsel: b.parsel, vaziyet: b.vaziyet || null,
     };
   }
@@ -288,7 +300,7 @@
     return sablon.replace(/\{\{([A-Z_0-9]+)\}\}/g, (a, k) => temiz(d[k] === undefined ? '' : d[k]));
   }
 
-  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, cizimVerisi, degerler, doldur,
+  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
     virgul, baslikHarf, RESIM: { uydu: [2000, 1087], vaziyet: [2000, 1056] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);
