@@ -86,7 +86,7 @@ baglanti-hatti/sablon-olustur.py   Şablonu kurar: python3 baglanti-hatti/sablon
 baglanti-hatti/araclar/dwg-oku.mjs DWG → JSON (@mlightcad/libredwg-web; npm i ile, node_modules'ın olduğu klasörde çalıştırılır)
 baglanti-hatti/araclar/json-dxf.py JSON → DXF (ezdxf; dwg2dxf derlemeye izin verilmedi)
 baglanti-hatti/BHP-SABLON.dxf      Üretilmiş şablon; 1-2. satır `999 / BHP {json}` (model tutamacı, bölgeler, resim kutuları)
-baglanti-hatti/test/               dene.mjs (PDF → DXF), tarayici.js (eski), onizleme.sh (DXF → PNG; ezdxf+pymupdf+pdftoppm,
+baglanti-hatti/test/               dene.mjs (PDF → DXF), tarayici.js (eski), guc-tekrar-dene.js, onizleme.sh (DXF → PNG; ezdxf+pymupdf+pdftoppm,
                                    ~/.fonts/arial.ttf + arialbd.ttf = Liberation), resimden-oku-dene.js (sahte cevaplarla okuma akışı)
 ```
 Kaynak DWG'ler (kullanıcının GDZ'den onaylı boxlu ve direkli BHP'si) ve iç tesisat örnek PDF'leri depoda YOK (kişisel bilgi) — gerekince
@@ -130,6 +130,12 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    resim (OLE → EMF+ içinde PNG); çıkarılıp lacivert zemin + logo (gerçek oranında; kullanıcının AutoCAD'inde yatay gerilmişti) +
    iletişim bilgileri olarak `logo/agy-kapak.png` yazılır, DXF'e {{LOGO}} resmi olarak bağlanır; web aracı zip'e ekler (4 dosya).
    Kullanıcıya sorulacak: logo şeridi böyle uygun mu, kısaltılan kutular yeterli mi.
+1b. GÜÇ TABLOSU TEKRAR OKUMA — YAPILDI (7 Kasım 2026): kullanıcı gerçek işte "güç tablosunu çekemedi, tıkanıp kalmayalım" dedi.
+   4. bölümde (iç tesisat yüklenince, claude.ai'de) kutu: "Güç tablosunu tekrar oku" (yalnız tablo; bilinen yer varsa orası, yoksa yalnız
+   tablo aranır; diğer alanlara dokunmaz, sayaç önü sigortalar eski satırlardan korunur) ve "Tabloyu resimde ben göstereyim" (sayfa seç,
+   sürükleyerek alan seç, Yakınlaştır / Bütün sayfa, "Seçtiğim alanı oku"). Kod: bolumBul, gucTablosunuOku, gucYenidenOku (html).
+   Antet/pano okuma hatası artık bütün okumayı durdurmaz. Deneme: baglanti-hatti/test/guc-tekrar-dene.js (sahte cevaplar).
+   Kullanıcıya sorulacak: önceki denemede ekranda ne yazıyordu (neden okunamadığı bilinmiyor); yeni düğmelerle deneyip sonucu bildirsin.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
