@@ -68,72 +68,56 @@ Kullanıcı iç tesisat aracını henüz "tamam" demedi; son değişikliği (web
 Sonra sırayla: kompanzasyon, trafo gücü seçimi, aydınlatma; teklif hazırlayıcı, keşif/metraj, hakediş; proje takip,
 müşteri listesi, periyodik kontrol hatırlatıcı. Her yeni araçta önce kullanıcının kendi yöntemini/örneğini isteyin.
 
-## Bağlantı hattı projesi (BHP) aracı — ilk sürüm yayında, kullanıcının denemesi bekleniyor (7 Kasım 2026)
+## Bağlantı hattı projesi (BHP) aracı — 3. sürüm yayında, kullanıcı AutoCAD'de deniyor (son güncelleme 7 Kasım 2026)
 Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Araç bunu hızlandırır.
-- Web: `araclar/baglanti-hatti.html`. Yüklenenler: GDZ görüşü PDF + iç tesisat PDF + TKGM ekran görüntüsü.
-  Kullanıcı Bakır/Alüminyum seçer (kendi isteği), araç en küçük uygun kesiti önerir (en küçük kesit: Cu 6, Al 10 — kullanıcının kuralı, 7 Kasım 2026)
-  İndirilen .zip: BHP-<başvuruNo>.dxf + 2 resim (aynı klasörde durmalı).
-- Ortak kod: `ortak/bhp.js` (PDF yazılarından okuma, kablo seçimi, hesap, şablon doldurma). Tarayıcı ve Node aynı kodu kullanır.
-- Şablon: `baglanti-hatti/BHP-SABLON.dxf`, kullanıcının kendi çiziminden (harmandalı_BHP.dxf, depoda YOK: kişisel bilgi)
-  `baglanti-hatti/sablon-olustur.py` (ezdxf) ile üretilir. Değişen yazılar `{{ANAHTAR}}`; Excel/resim (OLE) nesneleri silindi,
-  yerine çizgi+yazı: gerilim düşümü hesabı, güç dağılım tablosu, sayaç panosu içi. Uydu ve vaziyet resmi IMAGE (.\dosya.jpg).
-  Resim boyutları sabit: uydu 2000x1087, vaziyet 2000x1056 (web aracı resmi kırpıp bu boyuta sığdırır).
-  Yayında şablon `baglanti-hatti/BHP-SABLON.txt` adıyla durur (dxf web türü değil).
-- Deneme: `node baglanti-hatti/test/dene.mjs <gdz.pdf> <ic.pdf> <klasör> al 16` (pdfjs-dist@4.10.38 gerekir, PDFJS ortam değişkeni).
-  Önizleme için ezdxf + pymupdf ile DXF→PDF çizdirildi.
-- Denenen: Faruk Erdoğan (20247913, geçici tesis/şantiye, 246/154, KARAALİ TR-1 C-23, 4 m, 8500 W) → 4x16 mm² NAYY, %0,04, 16,1 A < 78 A.
-  Semih Işık (20254622, eski GDZ düzeni) GDZ okuması doğru.
-- Okunamayanlar: iç tesisat PDF'inde sayaç tipi ve güç dağılım tablosu resim → varsayılan 3x10, "AT"; kullanıcı düzeltebilir.
-- Bilinen eksikler: vaziyet planındaki direk/kablo/ada-parsel yazıları eski yerinde kalır, kullanıcı taşır. Havai hat yok
-  (kullanıcı "yeraltı çiz" dedi). Tek bağımsız bölüm satırı. Monofaze bağlantı yok.
-- 2. SÜRÜM (7 Kasım 2026, kullanıcı isteğiyle "en iyisini çıkaralım"):
-  * Şablon iki kaynaktan: `python3 sablon-olustur.py <direkli harmandalı_BHP.dxf> <boxlu BHP.dxf> BHP-SABLON.dxf`.
-    Direk ve box detayı blok olarak (BHP_DETAY_DIREK / BHP_DETAY_BOX); web aracı kullanılmayanın yerleşimini siler.
-    Eski iç tesisat sembol listesi, eski tek hat şeması ve vaziyet lejantı silindi; bağlantı hattına özel 15 satırlık
-    SEMBOL LİSTESİ çizildi. Dosya başında `999 BHP {...}` açıklaması: model alanı tutamacı ve bölgeler.
-  * `ortak/bhp-cizim.js`: tek hat şeması (direk/box, korumalar sırayla, n sayaç), gerilim düşümü + akım hesabı (formül ve
-    katalog kaynağı notlu), çok satırlı güç dağılım tablosu, MALZEME LİSTESİ. Aynı çizim DXF varlıklarına ve SVG önizlemeye çevrilir.
-    HATCH yolunda 92=3 (dış sınır) olmalı, yoksa dolgu görünmez.
-  * GDZ "Bağlantı Şekli" (Direk Bağlantısı / Box Çıkışı) okunur. Uzunluk = parsel dışı + parsel içi.
-  * Başka mühendislerin iç tesisat PDF'lerinde yazılar çizgi olabilir → okunamaz; araç uyarır, kullanıcı elle girer.
-    Güç dağılım tablosu için "daire sayısı + güç + ortak" ile satır üretme var.
-  * Denenen: Ayşe Çelenk (20247911, box C-06, 15 BB, 57839 W, 12 m) → bakırda 3x25/16 mm² NYY (133 A), %0,34.
-- İNDİRME: claude.ai içinde sayfa kendi başına dosya indiremiyor. Bağlantı hattı aracı AYRI artifact olarak yayında:
-  https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (`downloads` izniyle; claude.use("downloads").save). Yayın kopyası
-  araclar/baglanti-hatti.html'den yollar düzeltilerek (../ → kök) üretilir; ana sitedeki kart bu adrese gider.
-- RESİMDEN OKUMA (kullanıcı: "GDZ'den her türlüsü gelebilir, hepsini okuyabilmeli"): yazısı çizgi olan PDF'lerde
-  "resimden oku" düğmesi → claude.use("sample") ile 2 adım: (1) küçük sayfa resimlerinde antet / güç dağılım tablosu /
-  sayaç panosu bölgelerini bul, (2) o bölgeleri yüksek çözünürlükte kesip değerleri JSON olarak oku. Resimden okunan kutular
-  turuncu kenarlı. GDZ yazısı için de aynı düğme var. Yayın: `python3 baglanti-hatti/yayin-hazirla.py <klasör>`;
-  capabilities {downloads: true, sample: {images: true}}. Gerçek claude.ai'de henüz denenmedi (burada sahte yardımcıyla denendi).
-- 3. SÜRÜM (7 Kasım 2026, kullanıcı "4/4'lük, düzenli, eksiksiz" istedi; kâğıt ve kapak yeri kendi örneğindeki gibi):
-  * Şablon YENİ BOŞ bir DXF'ten kurulur (ezdxf R2018): `python3 baglanti-hatti/sablon-olustur.py <harmandalı_BHP.dxf>
-    <boxlu BHP.dxf> baglanti-hatti/kapak.json baglanti-hatti/logo/agy-logo.png baglanti-hatti/BHP-SABLON.dxf`
-    (kaynak DXF'ler depoda yok, kişisel bilgi içerir; kapak.json kullanıcının KAPAK.dwg'si:
-    `node baglanti-hatti/araclar/dwg-oku.mjs KAPAK.dwg kapak.json`, @mlightcad/libredwg-web gerekir; dwg_write_dxf çöküyor,
-    convert() ile JSON alınıyor).
-  * Pafta 1/2 (954 x 900 mm, kullanıcının kâğıdı): 1 vaziyet planı (TKGM), 2 GDZ bağlantı krokisi, 3 bağlantı detayı
-    (direk/box blokları), 4 kablo kanalı detayı, 5 tek hat, 6 hesap, 7 güç dağılım, 8 malzeme, 9 sembol listesi (16),
-    10 genel notlar; antet = kullanıcının kapağı (sol alt), üst bölümde logo + iletişim; şerit: tarih/başvuru/ölçek/pafta.
-    Pafta 2/2: kullanıcının TEDAŞ "Enerji Kabloları Uygulama Usul ve Esasları" metni aynen, okuma sırasıyla 4 sütuna dağıtılmış.
-  * Kapakta düzeltmeler: ikinci "YAPININ" → "ARSA BİLGİLERİ", "ODA SICIL" → "ODA SİCİL", "BURO" → "BÜRO".
-    Kapaktaki küçük GDZ logosu (OLE) okunamadı, konmadı. Yeni alan: YAPI SINIFI.
-  * Tek yazı tipi (Arial: BHP / BHP-K), siyah baskı; içe alınan detaylar BYBLOCK renkte, taramalar gri (8).
-  * Notlar (10): kullanıcının kanal detayı + şartname metni + GDZ bağlantı görüşü EK maddelerinden derlendi; web'de düzenlenir.
-    İnternette GDZ'ye özel kaynak bulunamadı; değer uydurulmadı.
-  * Vaziyet: web'de TKGM resmine tıklayarak enerji noktası, sayaç panosu ve dönüş noktaları işaretlenir → paftaya sembol,
-    güzergâh ve etiketler çizilir. İşaretlenmezse resmin köşesine bilgi kutusu konur.
-  * Monofaze: c Cu 0,000074 / Al 0,000118, I = N/176, 3 damarlı kablolar. Trifaze: 16'ya kadar 4x, üstü 3x../..
-  * HATA DÜZELTİLDİ: katalogdaki "1.5", "2.5" kesitleri 15/25 okunuyordu (sayi() noktayı binlik sayıyor) → parseFloat.
-  * Yazı genişliği tahmini: AutoCAD'de yazı yüksekliği büyük harf yüksekliğidir; genislik() katsayıları buna göre (+%7 pay).
-  * Önizleme için ~/.fonts/arial.ttf = Liberation Sans (Arial ile aynı ölçü), `python3 -m ezdxf --fonts`.
-  * DÜZELTME (kullanıcı: "iniyor ama boş AutoCAD dosyası geliyor"): yeni boş DXF'te açılış görünümü 0,0'daydı; şablonda
-    msp.dxf.extmin/extmax, limits ve set_modelspace_vport ile paftalara ayarlandı (ezdxf $EXTMIN'i layout'tan yazar).
-  * Vaziyet işaretinde "ENERJİ" yerine GDZ'deki direk/box adı yazar (web ve pafta etiketi).
-  * AutoCAD ekran görüntülerinden sonra düzeltilenler: kanal detayındaki ölçüler (DIMENSION) kayboluyordu → içe almadan
-    önce explode(); Türkçe harfler (İKAZ ŞERİDİ, TUĞLA, BİTMİŞ ZEMİN KOTU); "NYY KABLO" → seçilen kablo; detay yazıları ×1,25;
-    vaziyet etiketleri çakışmasın diye boş yer arama; uzun direk/box adı tek hatta taşmasın; pano ilk cihaz yazısı.
-  * Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png (aynı klasörde olmalı).
-  * Kullanıcının bahsettiği "örnek" henüz gelmedi; gelirse düzen ona göre ayarlanır.
-- Sıradaki: kullanıcı yeni sürümü dener (indirme, resimden okuma, AutoCAD'de açılış). Havai hat hâlâ yok. (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
-  Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).
+
+**Yayın:** ayrı artifact https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (capabilities: `downloads: true`, `sample: {images: true}`).
+claude.ai içinde sayfa izinsiz dosya indiremez; indirme `claude.use("downloads").save` ile. Ana sitedeki kart bu adrese gider.
+Yayın klasörü: `python3 baglanti-hatti/yayin-hazirla.py <klasör>` (yolları ../ → kök yapar, şablonu .txt adıyla koyar), sonra publish.
+
+**Dosyalar**
+```
+araclar/baglanti-hatti.html         Web aracı (depodaki hali ../ yollu; yayın kopyası yayin-hazirla.py ile)
+ortak/bhp.js                        PDF yazılarından okuma (GDZ görüşü, iç tesisat), kablo seçimi, hesap, notlar, malzeme, yer tutucular
+ortak/bhp-cizim.js                  Her işte değişen çizimler → DXF varlıkları + SVG önizleme (tek hat, hesap, güç dağılım,
+                                    malzeme, notlar, vaziyet işaretleri); dxfeEkle() şablona ekler, kullanılmayan detayı siler
+baglanti-hatti/sablon-olustur.py    Şablonu kurar (ezdxf, yeni boş R2018 DXF)
+baglanti-hatti/BHP-SABLON.dxf       Üretilmiş şablon; başında `999 BHP {json}` (model tutamacı, bölgeler, resim kutuları)
+baglanti-hatti/kapak.json           Kullanıcının KAPAK.dwg'si (araclar/dwg-oku.mjs, @mlightcad/libredwg-web convert())
+baglanti-hatti/logo/agy-logo.png    Kullanıcının logosu (beyaz zeminli baskı hali; logo-lacivert.png asıl)
+baglanti-hatti/test/dene.mjs        Node denemesi: node dene.mjs <gdz.pdf> <ic.pdf> <klasör> cu|al <enküçük> [elle.json]
+```
+Şablon üretimi: `python3 baglanti-hatti/sablon-olustur.py <harmandalı_BHP.dxf> <boxlu BHP.dxf> baglanti-hatti/kapak.json baglanti-hatti/logo/agy-logo.png baglanti-hatti/BHP-SABLON.dxf`
+Kaynak DXF'ler (kullanıcının direkli ve boxlu projeleri) depoda YOK (kişisel bilgi); yeni oturumda gerekirse kullanıcıdan tekrar istenir.
+
+**Pafta:** kullanıcının kâğıdı 954 x 900 mm, antet (kapak) sol altta. Pafta 1/2: 1 vaziyet (TKGM), 2 GDZ krokisi (görüşün uydu
+sayfası), 3 bağlantı detayı (direk/box bloğu), 4 kablo kanalı detayı, 5 tek hat, 6 gerilim düşümü + akım, 7 güç dağılım,
+8 malzeme, 9 sembol listesi (16), 10 genel notlar (12, kaynaklı), şerit (tarih/başvuru/ölçek/pafta). Pafta 2/2: kullanıcının
+TEDAŞ "Enerji Kabloları Uygulama Usul ve Esasları" metni aynen, 4 sütun. Tek yazı tipi Arial (BHP / BHP-K), siyah baskı.
+Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png — kullanıcı zip'i AYIKLAYIP açmalı (içinden açınca salt okunur).
+
+**Kullanıcı kuralları:** bakır/alüminyumu kullanıcı seçer; en küçük kesit Cu 6, Al 10 mm²; trifaze 16'ya kadar 4x, üstü 3x../..;
+monofaze 3 damarlı, c 0,000074/0,000118, I = N/176; trifaze I = N/527. Iz: Öznur katalog, toprak. Hat şimdilik hep YERALTI.
+
+**Özellikler:** GDZ "Bağlantı Şekli" (Direk/Box Çıkışı) okunur; uzunluk = parsel dışı + içi; çok bağımsız bölüm (satır üretme);
+yazısı çizgi olan PDF'ler için "resimden oku" (claude.use("sample"), 2 adım: bölge bul → kesip oku; turuncu kutular;
+gerçek claude.ai'de HENÜZ DENENMEDİ); vaziyet planında TKGM resmine tıklayarak direk/box, sayaç panosu, dönüş noktaları →
+paftaya sembol + güzergâh + etiket (etiketlerde GDZ'deki direk/box adı; çakışmasın diye boş yer arar); notlar ve malzeme düzenlenebilir.
+
+**Teknik dersler:** HATCH yolu 92=3 olmalı; yeni DXF'te msp.dxf.extmin/extmax + set_modelspace_vport yoksa AutoCAD boş görünür;
+DIMENSION içe alınırken kaybolur → önce explode(); katalogda "1.5" sayi() ile 15 okunuyordu → parseFloat; yazı genişliği
+genislik() (AutoCAD yüksekliği büyük harf yüksekliği); önizleme için ~/.fonts/arial.ttf = Liberation Sans + `python3 -m ezdxf --fonts`.
+Tarayıcı denemesinde cdnjs erişilemiyor → playwright route ile node_modules'tan verilir.
+
+**Denenen işler:** Faruk Erdoğan (20247913, direk KARAALİ TR-1 C-23, 4 m, 8500 W) ; Ayşe Çelenk (20247911, box MURADİYE TR-5
+(BELEDİYE KABİN) C-06, 12 m, 15 BB, 57839 W, iç tesisatı Talha Kır çizmiş, yazıları çizgi) ; Semih Işık (20254622, eski düzen).
+Son gönderilen zip'ler: v5.
+
+**AÇIK KONULAR (sıradaki)**
+1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu
+   soruldu (resimden oku mu, satır üret mi). Cevaba göre resimden okumayı sağlamlaştır.
+2. Kullanıcı v5 zip'lerini AutoCAD'de kontrol edecek; geri bildirimlere göre düzelt.
+3. Kapaktaki küçük GDZ logosu okunamadı (OLE) — kullanıcı resim olarak gönderirse eklenecek.
+4. Havai hat çizimi yok (kullanıcıdan havai BHP örneği istenecek).
+5. Kullanıcının "örnek yapıp atacağım" dediği şey gelmedi.
+6. Dal (claude/laughing-dijkstra-5c7tbv) hâlâ main'e birleştirilmedi; kullanıcıya sade dille sorulacak.
