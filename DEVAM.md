@@ -86,7 +86,7 @@ baglanti-hatti/sablon-olustur.py   Şablonu kurar: python3 baglanti-hatti/sablon
 baglanti-hatti/araclar/dwg-oku.mjs DWG → JSON (@mlightcad/libredwg-web; npm i ile, node_modules'ın olduğu klasörde çalıştırılır)
 baglanti-hatti/araclar/json-dxf.py JSON → DXF (ezdxf; dwg2dxf derlemeye izin verilmedi)
 baglanti-hatti/BHP-SABLON.dxf      Üretilmiş şablon; 1-2. satır `999 / BHP {json}` (model tutamacı, bölgeler, resim kutuları)
-baglanti-hatti/test/               dene.mjs (PDF → DXF), tarayici.js (eski), guc-tekrar-dene.js, onizleme.sh (DXF → PNG; ezdxf+pymupdf+pdftoppm,
+baglanti-hatti/test/               dene.mjs (PDF → DXF), tarayici.js (eski), isaretle-dene.js + sahte-ic.py, onizleme.sh (DXF → PNG; ezdxf+pymupdf+pdftoppm,
                                    ~/.fonts/arial.ttf + arialbd.ttf = Liberation), resimden-oku-dene.js (sahte cevaplarla okuma akışı)
 ```
 Kaynak DWG'ler (kullanıcının GDZ'den onaylı boxlu ve direkli BHP'si) ve iç tesisat örnek PDF'leri depoda YOK (kişisel bilgi) — gerekince
@@ -143,6 +143,15 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    tutmayanlar kırmızı (k1..k2, sayaç; tabloda onu hücresi). 3. bölümde pano kutusu: panonun resmi + "karşılaştırdım, doğru" (panoOnay,
    işaretlenmeden indirilmez) + "Sigortaları tekrar oku" + "Panonun yerini resimde ben göstereyim" (güç tablosuyla ortak seçim alanı, GS.hedef).
    Kullanıcıdan istenecek: yanlış okunan bir projenin kolon şeması / sayaç panosu (ekran görüntüsü) — istemi gerçek örnekle ayarlamak için.
+1d. SIRAYLA İŞARETLEME — YAPILDI (7 Kasım 2026; 1b/1c'deki kendiliğinden bulma ve "ben göstereyim" düğmelerinin YERİNE geçti):
+   kullanıcı "projeyi yükleyeyim, sırayla kapak (antet), güç dağıtım tablosu ve kolon şemasını ben işaretleyeyim, o okusun; yaklaşıp
+   uzaklaşabileyim; güç tablosu olmayan projede elle gireyim" dedi. İç tesisat yüklenince (claude.ai'de) 1. bölümde gPanel: adım düğmeleri
+   (1. Antet / 2. Güç dağıtım tablosu / 3. Kolon şeması; ✓, (yok), !), sayfa seçimi, − / + / Sayfayı sığdır, ▭ Çerçevele / ✋ Kaydır;
+   iki parmakla yaklaş-kaydır, tekerlekle yaklaş; yakınlaşınca görünen yer keskin yeniden çizilir (gDetay). "Çerçevelediğim yeri okut ve
+   devam et" yalnız o yeri okur (antetOku, gucOkuUygula, panoOku) ve sıradaki adıma geçer; adıma geri dönülünce eski çerçeve görünür.
+   "Bu projede güç dağıtım tablosu yok, elle gireceğim": satırlar antetteki bağımsız bölüm sayısından boş açılır (sayaç önü korunur),
+   resim onayı istenmez. PDF yazısından okunanlar önceliklidir (D.icYazi). Otomatik bölüm arama (bolumBul) KALDIRILDI.
+   Deneme: test/sahte-ic.py (sahte PDF) + test/isaretle-dene.js (sahte cevaplar). Gerçek claude.ai'de kullanıcı henüz denemedi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

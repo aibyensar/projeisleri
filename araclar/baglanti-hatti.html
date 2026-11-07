@@ -51,6 +51,14 @@
   .uret { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; align-items: end; margin: 10px 0; }
   .uret label { font-size: .8rem; }
   .onizleme { background: #fff; color: #000; border: 1px solid var(--cizgi); border-radius: 8px; padding: 8px; margin-bottom: 10px; --kablo: #c0392b; }
+  #gKutu { position: relative; height: min(62vh, 560px); overflow: hidden; background: #dde1e6; border: 1px solid var(--cizgi); border-radius: 6px;
+    touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+  #gKutu[data-mod=kaydir] { cursor: grab; }
+  #gTaban, #gDetay { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #fff; pointer-events: none; }
+  #gCerceve { position: absolute; border: 3px solid #d00; background: rgba(221,0,0,.08); pointer-events: none; }
+  .arac { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 8px; }
+  .arac .kucuk-dugme { min-width: 44px; }
+  .arac .secim button { padding: 8px 6px; }
   .onizleme h4 { margin: 0 0 4px; font-size: .8rem; color: #555; }
 </style>
 </head>
@@ -72,8 +80,29 @@
       <label><b>Onaylı iç tesisat projesi (PDF)</b>
         <input type="file" id="f-ic" accept="application/pdf,.pdf">
         <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
-      <div class="resim-oku" id="ro-ic" hidden><button type="button" class="kucuk-dugme" id="b-ro-ic">İç tesisatı resimden oku</button>
-        <span class="durum" id="d-ro-ic">Pafta resmine bakılarak antet, güç dağılım tablosu ve sayaç panosu korumaları okunur (claude.ai izin ister, 1-2 dakika sürebilir).</span></div>
+      <div id="gPanel" hidden style="padding:10px;border:1px solid var(--cizgi);border-radius:8px">
+        <b>İç tesisat projesinde bölümleri sırayla işaretleyin</b>
+        <div class="secim" id="gAdimlar" style="margin:8px 0;flex-wrap:wrap"></div>
+        <p class="not" id="gTarif" style="margin:0 0 6px"></p>
+        <div class="arac">
+          <span class="durum" id="gSayfaKutu" style="margin:0">Sayfa <select id="gSayfa" style="width:auto"></select></span>
+          <button type="button" class="kucuk-dugme" id="gEksi" aria-label="Uzaklaş">−</button>
+          <button type="button" class="kucuk-dugme" id="gArti" aria-label="Yaklaş">+</button>
+          <button type="button" class="kucuk-dugme" id="gSigdir">Sayfayı sığdır</button>
+          <span class="secim" id="gMod" style="margin:0;flex:1;min-width:190px">
+            <button type="button" data-v="sec" aria-pressed="true">▭ Çerçevele</button>
+            <button type="button" data-v="kaydir" aria-pressed="false">✋ Kaydır</button>
+          </span>
+        </div>
+        <div id="gKutu" data-mod="sec">
+          <canvas id="gTaban"></canvas><canvas id="gDetay" hidden></canvas><div id="gCerceve" hidden></div>
+        </div>
+        <div style="display:grid;gap:8px;margin-top:8px">
+          <button type="button" class="ana-dugme" id="gOku" disabled>Çerçevelediğim yeri okut ve devam et</button>
+          <button type="button" class="kucuk-dugme" id="gYok">Bu projede güç dağıtım tablosu yok, elle gireceğim</button>
+        </div>
+        <span class="durum" id="d-g"></span>
+      </div>
       <label><b>TKGM parsel görüntüsü (resim), vaziyet planı için</b>
         <input type="file" id="f-tkgm" accept="image/*">
         <span class="durum" id="d-tkgm">Henüz yüklenmedi</span></label>
@@ -100,15 +129,10 @@
     <div class="alanlar" id="alanlar"></div>
     <div id="panoKutu" hidden style="margin:8px 0;padding:10px;border:1px solid var(--cizgi);border-radius:8px">
       <b style="font-size:.9rem">Sayaç panosu: ana kesici ve sayaç önü sigortalar</b>
-      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (4. bölümdeki tabloda "Sayaç önü sigorta" sütunu). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır.</p>
+      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (4. bölümdeki tabloda "Sayaç önü sigorta" sütunu). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır. Yanlışsa 1. bölümde "3. Kolon şeması" adımında çerçeveyi düzeltip yeniden okutun.</p>
       <img id="panoResim" hidden alt="İç tesisat sayaç panosu / kolon şeması" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
       <label id="panoOnayKutu" hidden style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="panoOnay"> Ana kesiciyi ve sayaç önü sigortalarını resimle karşılaştırdım, doğru.</label>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <button type="button" class="kucuk-dugme" id="b-pano-tekrar">Sigortaları tekrar oku</button>
-        <button type="button" class="kucuk-dugme" id="b-pano-goster">Panonun yerini resimde ben göstereyim</button>
-      </div>
-      <span class="durum" id="d-pano">Yalnız sigortalar yeniden okunur; diğer bilgilere dokunulmaz.</span>
-      <div id="panoSecYeri"></div>
+      <span class="durum" id="d-pano"></span>
     </div>
   </div>
 
@@ -130,27 +154,6 @@
       <p class="not" style="margin:0 0 4px"><b>İç tesisattaki tablonun kendisi</b> (resimden okundu). Aşağıdaki satırları bu resimle karşılaştırın; kırmızı kenarlı hücrelerde okumalar birbirini tutmadı.</p>
       <img id="gucResim" alt="İç tesisat güç dağıtım tablosu" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
       <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="gucOnay"> Tabloyu iç tesisatla karşılaştırdım, satırlar doğru.</label>
-    </div>
-    <div id="gucTekrar" hidden style="margin:8px 0;padding:10px;border:1px solid var(--cizgi);border-radius:8px">
-      <b style="font-size:.9rem">Güç tablosu okunamadı ya da yanlış mı okundu?</b>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <button type="button" class="kucuk-dugme" id="b-guc-tekrar">Güç tablosunu tekrar oku</button>
-        <button type="button" class="kucuk-dugme" id="b-guc-goster">Tabloyu resimde ben göstereyim</button>
-      </div>
-      <span class="durum" id="d-guc">Yalnız güç tablosu yeniden okunur; diğer bilgilere dokunulmaz.</span>
-      <div id="gucSec" hidden style="margin-top:8px">
-        <label class="durum">Sayfa <select id="gucSayfa" style="width:auto"></select></label>
-        <div id="gucSecKutu" style="position:relative;margin-top:6px;border:1px solid var(--cizgi);border-radius:6px;overflow:hidden;background:#fff;cursor:crosshair;touch-action:none;user-select:none">
-          <img id="gucSayfaResim" alt="İç tesisat sayfası" draggable="false" style="display:block;width:100%;pointer-events:none">
-          <div id="gucCerceve" hidden style="position:absolute;border:3px solid #d00;background:rgba(221,0,0,.08);pointer-events:none"></div>
-        </div>
-        <span class="durum" id="gucSecDurum"></span>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-          <button type="button" class="kucuk-dugme" id="b-guc-yakin" disabled>Yakınlaştır</button>
-          <button type="button" class="kucuk-dugme" id="b-guc-bastan">Bütün sayfa</button>
-          <button type="button" class="kucuk-dugme" id="b-guc-oku" disabled style="font-weight:700">Seçtiğim alanı oku</button>
-        </div>
-      </div>
     </div>
     <div class="tablo-kutu"><table class="duz" id="satirlar"></table></div>
     <button type="button" class="kucuk-dugme" id="satirEkle" style="margin-top:8px">+ Satır ekle</button>
@@ -297,20 +300,19 @@ $('f-ic').addEventListener('change', async e => {
     D.icDoc = await pdfAc(f);
     const s = await sayfaYazilari(D.icDoc);
     D.ic = BHP.icTesisatOku(s.flat());
+    D.icYazi = Object.assign({}, D.ic); D.gucElle = false;
     // güç dağıtım tablosu: PDF'teki gerçek yazılardan sütun sütun (kesin okuma; resimden okumaya gerek kalmaz)
     for (const sayfa of s) { const g = BHP.gucTablosuOku(sayfa); if (g) { D.ic.satirlar = g; D.ic.gucKaynak = 'yazı'; break; } }
     D.gucFark = false; D.supheli = {}; D.gucResimUrl = null; $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
     if (await ornekVar()) {
-      $('ro-ic').hidden = false; $('gucTekrar').hidden = false; $('gucSec').hidden = true; D.gucYer = null;
-      $('panoKutu').hidden = false; D.panoYer = null; D.panoKaynak = null; D.panoSupheli = {}; $('panoResim').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
-      // yazıdan okunamayan bilgi varsa resimden okuma kendiliğinden başlar (claude.ai izin ister)
-      const eksikYazi = ['malSahibi', 'ada', 'parsel', 'kuruluW', 'talepW'].some(k => !D.ic[k] || (typeof D.ic[k] === 'number' && isNaN(D.ic[k])));
-      if (eksikYazi || (!D.ic.satirlar && BHP.bbSayisi(D.ic.bagimsiz || (D.gdz && D.gdz.bagimsiz)) !== 1)) setTimeout(() => $('b-ro-ic').click(), 300);
+      $('panoKutu').hidden = false; D.panoKaynak = null; D.panoSupheli = {}; $('panoResim').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
+      durum('d-pano', 'Kolon şemasını 1. bölümde işaretleyip okutun.');
     }
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
     if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
-    else durum('d-ic', (await ornekVar()) ? 'Bu PDF\'teki yazılar çizgi olarak kaydedilmiş. Aşağıdaki "resimden oku" düğmesine basın.' : 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
+    else durum('d-ic', (await ornekVar()) ? 'Bu PDF\'teki yazılar çizgi olarak kaydedilmiş. Aşağıda antet, güç tablosu ve kolon şemasını işaretleyip okutun.' : 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
     alanlariDoldur();
+    if (await ornekVar()) await gPanelAc();
   } catch (x) { durum('d-ic', 'Okunamadı: ' + x.message, 'kotu'); }
 });
 $('f-tkgm').addEventListener('change', async e => {
@@ -419,7 +421,7 @@ function satirOzet() {
   const hata = k.hata.concat(D.gucFark ? ['okumalar bazı hücrelerde birbirini tutmadı (kırmızı hücreler): iç tesisatla karşılaştırıp düzeltin'] : [],
     kay === 'resim' && !$('gucOnay').checked ? ['resimle karşılaştırıp "doğru" kutusunu işaretleyin'] : []);
   durum('d-satir', `${D.satirlar.length} satır · toplam kurulu ${t} W · bağlantı gücü toplamı ${tb} W` +
-    (kay ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : '') +
+    (kay === 'yazı' || kay === 'resim' ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : kay === 'elle' ? ' · elle giriliyor' : '') +
     (hata.length ? ' — HATA: ' + hata.join(' · ') : k.uyari.length ? ' — dikkat: ' + k.uyari.join(' · ') : ' — kontrol: antetle uyumlu'), hata.length ? 'kotu' : 'iyi');
 }
 $('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; if (D.supheli) delete D.supheli[el.dataset.j + ':' + el.dataset.k]; el.style.border = ''; D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; satirOzet(); guncelle(); } });
@@ -621,7 +623,8 @@ async function bolgeResmi(doc, sayfa, [fx0, fy0, fx1, fy1] = [0, 0, 1, 1], hedef
   return new Promise(r => cv.toBlob(r, 'image/jpeg', 0.92));
 }
 const HATA_METNI = { not_granted: 'İzin verilmedi.', rate_limited: 'Çok sık istendi ya da kullanım sınırı doldu; biraz sonra tekrar deneyin.',
-  invalid_json: 'Cevap anlaşılamadı; tekrar deneyin.', image_rejected: 'Resim kabul edilmedi.', refused: 'Okuma reddedildi.', sampling_disabled: 'Bu hesapta kullanılamıyor.' };
+  invalid_json: 'Cevap anlaşılamadı; tekrar deneyin.', image_rejected: 'Resim kabul edilmedi.', refused: 'Okuma reddedildi.', sampling_disabled: 'Bu hesapta kullanılamıyor.',
+  satir_yok: 'Çerçevede tablo satırı okunamadı; tablonun tamamını başlığıyla birlikte çerçeveleyip tekrar okutun.' };
 const hataYaz = x => HATA_METNI[x && x.code] || ('Okunamadı (' + ((x && x.code) || 'bilinmeyen') + ').');
 
 // İç tesisatı resimden okuma — yakınlaştırarak, 3 adımda:
@@ -659,60 +662,6 @@ async function bantlariNumarala(blob) {
   }
   if (n === 0) { x1.fillText('1', M / 2, H / 2); n = 1; }
   return { blob: await new Promise(r => c1.toBlob(r, 'image/jpeg', 0.92)), bant: n };
-}
-function parcalaraBol(v1, enCok) {
-  const asp = v1.width / v1.height;
-  let nx = asp > 1.6 ? Math.ceil(asp / 1.4) : 1, ny = asp < 0.62 ? Math.ceil(1 / asp / 1.4) : 1;
-  while (nx * ny > enCok && nx > 1) nx--;
-  const ust = 0.05, l = [];
-  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++)
-    l.push([Math.max(0, i / nx - ust), Math.max(0, j / ny - ust), Math.min(1, (i + 1) / nx + ust), Math.min(1, (j + 1) / ny + ust)]);
-  return { l, nx, ny };
-}
-const icineAl = (k, [a, b, c, d]) => [k[0] + a * (k[2] - k[0]), k[1] + b * (k[3] - k[1]), k[0] + c * (k[2] - k[0]), k[1] + d * (k[3] - k[1])];
-const kutuMu = k => Array.isArray(k) && k.length === 4 && k.every(x => typeof x === 'number' && x >= -0.05 && x <= 1.05) && k[2] > k[0] && k[3] > k[1];
-const BOLUM_AD = { antet: 'ANTET (proje künyesi: mal sahibi, adres, il/ilçe/belediye/mahalle, pafta/ada/parsel, kurulu güç, talep gücü, bağımsız bölüm adedi, kat adedi, toplam alan)',
-  guc: 'GÜÇ DAĞILIM / DAĞITIM TABLOSU (her satırı bir BAĞIMSIZ BÖLÜM: bağımsız bölüm no, enerji aldığı tablo adı, kurulu güç, bağlantı gücü, sayaç tipi, kullanım amacı). DİKKAT: "TABLO YÜKLEME CETVELİ" / "YÜK DAĞILIMI" (satırları LİNYE, sorti, sigorta olan tablo) güç dağıtım tablosu DEĞİLDİR; projede güç dağıtım tablosu yoksa null',
-  pano: 'SAYAÇ PANOSU / ANA GİRİŞ TEK HAT veya KOLON ŞEMASI (binaya girişteki ana sigorta / TMŞ / YKŞ / kaçak akım rölesi ve sayaçların önündeki sigortalar)' };
-// Paftada istenen bölümlerin yerini bulur (1: parçalar, 2: yakınlaşıp kesin sınır). Dönen: { ad: { p: sayfa, k: [x0,y0,x1,y1] kesir } }
-async function bolumBul(sample, doc, istenen, yaz) {
-  const nS = Math.min(doc.numPages, 4), lim = await sample.limits(), enCok = Math.max(1, lim.images.maxCount || 5);
-  yaz('Paftada ' + (istenen.length === 1 ? 'güç tablosu' : 'bölümler') + ' aranıyor… (1/3)');
-  const parca = [];
-  for (let p = 1; p <= nS && parca.length < enCok; p++) {
-    const v1 = (await doc.getPage(p)).getViewport({ scale: 1 });
-    const { l, nx } = parcalaraBol(v1, Math.max(1, Math.floor(enCok / nS)));
-    l.forEach((k, i) => parca.push({ p, k, ad: `sayfa ${p}${l.length > 1 ? `, soldan ${i % nx + 1}. / yukarıdan ${Math.floor(i / nx) + 1}. parça (sayfanın ${Math.round(k[0] * 100)}–${Math.round(k[2] * 100)}% arası)` : ''}` }));
-  }
-  const resim1 = [];
-  for (const q of parca.slice(0, enCok)) resim1.push(await bolgeResmi(doc, q.p, q.k, 1500));
-  const yer = await sample.json(
-    `Ekteki ${resim1.length} resim bir elektrik iç tesisat projesi paftasının parçaları: ${parca.slice(0, enCok).map((q, i) => `${i + 1}. resim = ${q.ad}`).join('; ')}.
-Aşağıdaki bölümlerin hangi resimde ve o resmin neresinde olduğunu bul:
-${istenen.map(a => `- "${a}": ${BOLUM_AD[a]}`).join('\n')}
-Her biri için {"resim": resim no, "kutu": [x0, y0, x1, y1]} ver; kutu O RESMİN sol üstünden 0-1 arası kesir, bölümün tamamını kapsasın. Bir bölüm iki parçaya bölünmüşse büyük kısmının olduğu resmi seç. Bulamadığın için null.
-Yalnız şu JSON'u döndür: {${istenen.map(a => `"${a}": ...`).join(', ')}}`,
-    { images: resim1, modelTier: 'default' });
-  const bolge = {};
-  for (const k of istenen) {
-    const y = yer && yer[k], q = y && parca[(+y.resim || 0) - 1];
-    if (q && kutuMu(y.kutu)) bolge[k] = { p: q.p, k: icineAl(q.k, y.kutu) };
-  }
-  if (!Object.keys(bolge).length) return bolge;
-  yaz('Bölümlere yakınlaşılıyor… (2/3)');
-  const adlar = Object.keys(bolge), genis = {}, resim2 = [];
-  for (const a of adlar) {
-    const { k } = bolge[a], w = k[2] - k[0], h = k[3] - k[1], m = Math.max(w, h) * 0.35;
-    genis[a] = [k[0] - m, k[1] - m, k[2] + m, k[3] + m].map(x => Math.min(1, Math.max(0, x)));
-    resim2.push(await bolgeResmi(doc, bolge[a].p, genis[a], 1600));
-  }
-  try {
-    const ince = await sample.json(`Ekteki resimler bir iç tesisat paftasından yakın çekimler: ${adlar.map((a, i) => `${i + 1}. resimde ${BOLUM_AD[a]}`).join('; ')}.
-Her resimde o bölümün (çerçevesi ve başlığı dahil) tam sınırını ver: [x0, y0, x1, y1], resmin sol üstünden 0-1 kesir. Bölüm resimde yoksa null.
-Yalnız şu JSON'u döndür: {"kutular": [ ... resim sırasıyla ... ]}`, { images: resim2, modelTier: 'default' });
-    adlar.forEach((a, i) => { const kk = ince && ince.kutular && ince.kutular[i]; if (kutuMu(kk)) bolge[a].k = icineAl(genis[a], kk); });
-  } catch (x) { /* ilk bulunan kutuyla devam */ }
-  return bolge;
 }
 // bölgeyi %3 payla yüksek çözünürlükte keser
 const kesKutu = (doc, { p, k }) => { const pw = (k[2] - k[0]) * 0.03, ph = (k[3] - k[1]) * 0.03; return bolgeResmi(doc, p, [k[0] - pw, k[1] - ph, k[2] + pw, k[3] + ph], 2400); };
@@ -773,34 +722,6 @@ function gucResmiGoster(im) {
   D.gucResimUrl && URL.revokeObjectURL(D.gucResimUrl); D.gucResimUrl = URL.createObjectURL(im);
   $('gucResim').src = D.gucResimUrl; $('gucResimKutu').hidden = false; $('gucOnay').checked = false;
 }
-// Yalnız güç tablosunu (yeniden) okur; diğer bilgilere dokunmaz. yer: { p, k }
-async function gucYenidenOku(yer) {
-  const sample = await ornekVar(); if (!sample || !D.icDoc) return;
-  const dugmeler = ['b-guc-tekrar', 'b-guc-goster', 'b-guc-oku'].map($); dugmeler.forEach(b => b.disabled = true);
-  const yaz = (t, s) => durum('d-guc', t, s);
-  try {
-    if (!yer) {
-      const b = await bolumBul(sample, D.icDoc, ['guc'], yaz);
-      if (!b.guc) { yaz('Güç tablosu paftada bulunamadı. "Tabloyu resimde ben göstereyim" düğmesiyle yerini gösterin.', 'kotu'); return; }
-      yer = b.guc;
-    }
-    D.gucYer = yer;
-    const kuruluW = parseFloat($('a-kuruluW').value) || (D.ic && D.ic.kuruluW) || 0;
-    const { a, supheli, im } = await gucTablosunuOku(sample, await kesKutu(D.icDoc, yer), kuruluW, yaz);
-    gucResmiGoster(im);
-    if (!a.length) { yaz('Resimde tablo satırı okunamadı. Tekrar deneyin ya da tablonun yerini daha dar seçerek gösterin.', 'kotu'); return; }
-    const eski = D.satirlar || [];                            // sayaç önü sigortaları eski satırlardan korunur
-    a.forEach(r => { const o = eski.find(x => (r.tablo && x.tablo === r.tablo) || (r.bb && x.bb === r.bb)); if (o && o.onu) r.onu = o.onu; });
-    D.ic = D.ic || {}; D.ic.satirlar = a; D.ic.gucKaynak = 'resim';
-    D.satirlar = a; D.supheli = supheli; D.gucFark = Object.keys(supheli).length > 0;
-    $('a-sayacAdet').value = a.length;
-    satirlariCiz(); guncelle();
-    const k = BHP.gucKontrol(bilgiler());
-    yaz(`Güç tablosu okundu: ${a.length} satır` + (k.hata.length ? ` — KONTROL: ${k.hata.join(' · ')}` : D.gucFark ? ' — kırmızı hücreleri resimle karşılaştırın' : ' — antetle uyumlu') + '. Yukarıdaki resimle karşılaştırıp kutuyu işaretleyin.', k.hata.length || D.gucFark ? 'kotu' : 'iyi');
-  } catch (x) { yaz(hataYaz(x) + ' Tekrar deneyebilirsiniz.', 'kotu'); }
-  finally { dugmeler.forEach(b => b.disabled = false); $('b-guc-oku').disabled = !GS.secim; }
-}
-$('b-guc-tekrar').addEventListener('click', () => gucYenidenOku(D.gucYer || null));
 // ---- Sayaç panosu korumaları: ana kesici (branşman kablosunun girdiği) ve her sayacın önündeki kesici ----
 // 2 okuma (farklıysa 3), değer değer çoğunluk; tutmayan değer kırmızı işaretlenir, resim gösterilir, onay kutusu istenir.
 const PANO_ISTEM = `Ekteki resim bir elektrik iç tesisat projesinin SAYAÇ PANOSU / ANA GİRİŞ / KOLON ŞEMASI bölümü.
@@ -890,133 +811,229 @@ function panoOzet(v) {
   return `Ana kesici: ${v.ana.length ? v.ana.map(k => `${ad[k.tur] || k.tur} ${k.deger}`).join(' + ') : 'okunamadı'} · sayaç önü: ${[...new Set(v.onu.filter(Boolean))].join(', ') || 'okunamadı'}` +
     (sup ? ` — ${sup} değerde okumalar tutmadı (kırmızı)` : ' — okumalar birbirini tuttu') + '. Resimle karşılaştırıp kutuyu işaretleyin.';
 }
-async function panoYenidenOku(yer) {
-  const sample = await ornekVar(); if (!sample || !D.icDoc) return;
-  const dugmeler = ['b-pano-tekrar', 'b-pano-goster', 'b-guc-oku'].map($); dugmeler.forEach(b => b.disabled = true);
-  const yaz = (t, s) => durum('d-pano', t, s);
-  try {
-    if (!yer) {
-      const b = await bolumBul(sample, D.icDoc, ['pano'], yaz);
-      if (!b.pano) { yaz('Sayaç panosu paftada bulunamadı. "Panonun yerini resimde ben göstereyim" düğmesiyle gösterin.', 'kotu'); return; }
-      yer = b.pano;
-    }
-    D.panoYer = yer;
-    const ham = await kesKutu(D.icDoc, yer);
-    const v = await panoOku(sample, ham, D.satirlar, yaz);
-    panoResmiGoster(ham); panoUygula(v);
-    yaz(panoOzet(v), Object.keys(v.supheli).length || !v.ana.length ? 'kotu' : 'iyi');
-  } catch (x) { yaz(hataYaz(x) + ' Tekrar deneyebilirsiniz.', 'kotu'); }
-  finally { dugmeler.forEach(b => b.disabled = false); $('b-guc-oku').disabled = !GS.secim; }
-}
-$('b-pano-tekrar').addEventListener('click', () => panoYenidenOku(D.panoYer || null));
 $('panoOnay').addEventListener('change', () => guncelle());
-// ---- Tabloyu elle gösterme: sayfa resminde sürükleyerek alan seçilir; "yakınlaştır" ile seçilen alana girilir ----
-const GS = { p: 1, gorunum: [0, 0, 1, 1], secim: null, bas: null, hedef: 'guc' };
-async function gsCiz() {
-  $('gucSecDurum').textContent = 'Resim hazırlanıyor…';
-  const bl = await bolgeResmi(D.icDoc, GS.p, GS.gorunum, 1800);
-  const im = $('gucSayfaResim'); im.src && URL.revokeObjectURL(im.src); im.src = URL.createObjectURL(bl);
-  GS.secim = null; gsCerceve(); $('b-guc-oku').disabled = true; $('b-guc-yakin').disabled = true;
-  $('gucSecDurum').textContent = (GS.hedef === 'pano' ? 'Sayaç panosunun / kolon şemasının (ana kesici ve sayaçlar)' : 'Tablonun') + ' bir köşesinden karşı köşesine sürükleyin. Küçük görünüyorsa önce kabaca seçip "Yakınlaştır"a basın.';
-}
-function gsCerceve() {
-  const c = $('gucCerceve'), s = GS.secim;
-  c.hidden = !s; if (!s) return;
-  Object.assign(c.style, { left: s[0] * 100 + '%', top: s[1] * 100 + '%', width: (s[2] - s[0]) * 100 + '%', height: (s[3] - s[1]) * 100 + '%' });
-}
-const gsNokta = e => { const r = $('gucSayfaResim').getBoundingClientRect(); return [Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))]; };
-$('gucSecKutu').addEventListener('pointerdown', e => { e.preventDefault(); $('gucSecKutu').setPointerCapture(e.pointerId); GS.bas = gsNokta(e); GS.secim = null; gsCerceve(); });
-$('gucSecKutu').addEventListener('pointermove', e => {
-  if (!GS.bas) return; const q = gsNokta(e), b = GS.bas;
-  GS.secim = [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[0], q[0]), Math.max(b[1], q[1])]; gsCerceve();
-});
-$('gucSecKutu').addEventListener('pointerup', () => {
-  GS.bas = null;
-  if (GS.secim && (GS.secim[2] - GS.secim[0] < 0.02 || GS.secim[3] - GS.secim[1] < 0.02)) GS.secim = null;
-  gsCerceve(); $('b-guc-oku').disabled = !GS.secim; $('b-guc-yakin').disabled = !GS.secim;
-});
-const gsSayfaKesri = s => { const g = GS.gorunum, w = g[2] - g[0], h = g[3] - g[1]; return [g[0] + s[0] * w, g[1] + s[1] * h, g[0] + s[2] * w, g[1] + s[3] * h]; };
-async function secimAc(hedef) {
-  if (!D.icDoc) return;
-  GS.hedef = hedef;
-  (hedef === 'pano' ? $('panoSecYeri') : $('gucTekrar')).appendChild($('gucSec'));   // seçim alanı ilgili kutunun içinde açılır
-  $('gucSec').hidden = false;
-  $('gucSayfa').innerHTML = Array.from({ length: D.icDoc.numPages }, (_, i) => `<option value="${i + 1}">${i + 1}. sayfa</option>`).join('');
-  const yer = hedef === 'pano' ? D.panoYer : D.gucYer;
-  GS.p = (yer && yer.p) || 1; $('gucSayfa').value = GS.p; GS.gorunum = [0, 0, 1, 1];
-  await gsCiz(); $('gucSec').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-$('b-guc-goster').addEventListener('click', () => secimAc('guc'));
-$('b-pano-goster').addEventListener('click', () => secimAc('pano'));
-$('gucSayfa').addEventListener('change', () => { GS.p = +$('gucSayfa').value; GS.gorunum = [0, 0, 1, 1]; gsCiz(); });
-$('b-guc-yakin').addEventListener('click', () => { if (!GS.secim) return; const k = gsSayfaKesri(GS.secim), m = 0.04 * Math.max(k[2] - k[0], k[3] - k[1]);
-  GS.gorunum = [k[0] - m, k[1] - m, k[2] + m, k[3] + m].map(x => Math.min(1, Math.max(0, x))); gsCiz(); });
-$('b-guc-bastan').addEventListener('click', () => { GS.gorunum = [0, 0, 1, 1]; gsCiz(); });
-$('b-guc-oku').addEventListener('click', () => { if (!GS.secim) return; const yer = { p: GS.p, k: gsSayfaKesri(GS.secim) }; (GS.hedef === 'pano' ? panoYenidenOku : gucYenidenOku)(yer); });
-
-$('b-ro-ic').addEventListener('click', async () => {
-  const sample = await ornekVar(); if (!sample || !D.icDoc) return;
-  const btn = $('b-ro-ic'); btn.disabled = true;
-  try {
-    const doc = D.icDoc, yaz = t => durum('d-ro-ic', t);
-    const bolge = await bolumBul(sample, doc, ['antet', 'guc', 'pano'], yaz);
-    if (!Object.keys(bolge).length) throw { code: 'bos' };
-    if (bolge.guc) D.gucYer = bolge.guc;
-    // 3) okuma: her bölüm ayrı, yüksek çözünürlükte
-    yaz('Değerler okunuyor… (3/3)');
-    const kes = a => kesKutu(doc, bolge[a]);
-    const ic = D.ic || {}, resimden = {};
-    const bos = x => x == null || x === '' || (typeof x === 'number' && isNaN(x));
-    if (bolge.antet) {
-      try {
-        const v = await sample.json(`Ekteki resim bir elektrik iç tesisat projesinin ANTETİ (proje künyesi). Resimde YAZAN değerleri aynen oku; tahmin etme, göremediğini null bırak.
+// ---- İç tesisat projesinde işaretleme: proje ekranda açılır, yaklaşıp uzaklaşılır; antet, güç dağıtım tablosu ve
+// kolon şeması SIRAYLA kullanıcı tarafından çerçevelenir, yalnız çerçevelenen yer okunur ----
+const ADIMLAR = [
+  { ad: 'antet', baslik: 'Antet', tarif: 'Projenin <b>antedini</b> (mal sahibi, adres, ada/parsel, kurulu ve talep gücü, bağımsız bölüm, kat, alan yazan künye) çerçeve içine alın.' },
+  { ad: 'guc', baslik: 'Güç dağıtım tablosu', tarif: '<b>Güç dağıtım tablosunu</b> (her bağımsız bölümün kurulu ve bağlantı gücü yazan tablo) başlığıyla birlikte çerçeve içine alın. Projede yoksa alttaki "tablo yok" düğmesine basın.' },
+  { ad: 'pano', baslik: 'Kolon şeması', tarif: '<b>Kolon şemasını / sayaç panosunu</b> (branşmanın girdiği ana kesici, sayaçlar ve sayaç önü sigortalar) çerçeve içine alın.' },
+];
+const ANTET_ISTEM = `Ekteki resim bir elektrik iç tesisat projesinin ANTETİ (proje künyesi). Resimde YAZAN değerleri aynen oku; tahmin etme, göremediğini null bırak.
 Yalnız şu JSON'u döndür: {"malSahibi": str, "kullanim": str, "adres": str, "il": str, "ilce": str, "belediye": str, "mahalle": str, "pafta": str, "ada": str, "parsel": str,
- "kat": str (ör. "SIĞ+Z+3"), "alan": str (yalnız sayı), "bagimsiz": str (ör. "14+1" ya da "6"), "kuruluW": sayı (W), "talepW": sayı (W)}`, { images: [await kes('antet')], modelTier: 'default' });
-        for (const k of ['malSahibi', 'kullanim', 'adres', 'il', 'ilce', 'belediye', 'mahalle', 'pafta', 'ada', 'parsel', 'kat', 'alan', 'bagimsiz'])
-          if (bos(ic[k]) && v && v[k] != null && String(v[k]).trim()) { ic[k] = String(v[k]).trim(); resimden[k] = 1; }
-        for (const k of ['kuruluW', 'talepW']) {
-          const x = parseFloat(String(v && v[k] != null ? v[k] : '').replace(/\./g, '').replace(',', '.'));
-          if (bos(ic[k]) && !isNaN(x)) { ic[k] = x; resimden[k] = 1; }
-        }
-      } catch (x) { /* antet okunamazsa diğerleri yine okunur */ }
-    }
-    let gucNot = '';
-    if (bolge.guc && ic.gucKaynak !== 'yazı') {
-      try {
-        const { a, supheli, im } = await gucTablosunuOku(sample, await kes('guc'), ic.kuruluW, yaz);
-        D.supheli = supheli; D.gucFark = Object.keys(supheli).length > 0; gucResmiGoster(im);
-        // tek bağımsız bölümlü projede tablo okunmaz: satır antetten gelir (linye cetveli karışmasın)
-        if (a.length && !(BHP.bbSayisi(ic.bagimsiz) === 1 && a.length > 1)) { ic.satirlar = a; ic.gucKaynak = 'resim'; resimden.sayacAdet = 1; }
-        else if (!a.length) gucNot = 'güç tablosunun satırları okunamadı';
-      } catch (x) { gucNot = 'güç tablosu okunamadı (' + hataYaz(x) + ')'; }
-    } else if (!bolge.guc && ic.gucKaynak !== 'yazı' && BHP.bbSayisi(ic.bagimsiz || (D.gdz && D.gdz.bagimsiz)) !== 1) gucNot = 'güç tablosu paftada bulunamadı';
-    let panoSonuc = null;
-    if (bolge.pano) {
-      D.panoYer = bolge.pano;
-      try {
-        const ham = await kes('pano'), v = await panoOku(sample, ham, ic.satirlar || [{ bb: '1', tablo: 'AT' }], yaz);
-        panoSonuc = { v, ham };
-        if (v.ana.length) { ic.korumalar = v.ana; Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: v.ana.length > 1, k2deger: v.ana.length > 1 }); }
-        if (v.sayac) { ic.sayac = v.sayac; resimden.sayac = 1; }
-        if (v.reaktif !== null) { ic.reaktif = v.reaktif; resimden.sayacTur = 1; }
-        if (ic.satirlar) ic.satirlar.forEach((r, j) => { if (v.onu[j]) r.onu = v.onu[j]; });
-      } catch (x) { durum('d-pano', 'Sayaç panosu okunamadı (' + hataYaz(x) + '). Tekrar okutun ya da yerini gösterin.', 'kotu'); }
-    } else durum('d-pano', 'Sayaç panosu paftada bulunamadı. Tekrar okutun ya da yerini resimde gösterin.', 'kotu');
-    ic.resimden = resimden; D.ic = ic;
-    const k = ic.satirlar ? BHP.gucKontrol(Object.assign({}, ic, { satirlar: ic.satirlar, kuruluW: ic.kuruluW, bagimsiz: ic.bagimsiz, talepW: ic.talepW })) : null;
-    durum('d-ro-ic', `Resimden okundu: ${Object.keys(resimden).length} bilgi${ic.satirlar ? `, güç dağıtım tablosunda ${ic.satirlar.length} satır` : ''}` +
-      (gucNot ? ` — ${gucNot}: 4. bölümden tekrar okutun ya da tablonun yerini gösterin` : k && k.hata.length ? ` — KONTROL: ${k.hata.join(' · ')}` : D.gucFark ? ' — iki okuma farklı, tabloyu kontrol edin' : ic.satirlar ? ' — tablo antetle uyumlu' : '') + '. Turuncu kutuları kontrol edin.',
-      gucNot || (k && k.hata.length) || D.gucFark ? 'kotu' : 'iyi');
-    durum('d-ic', 'Resimden okundu.', 'iyi');
-    if (gucNot) durum('d-guc', 'Güç tablosu okunamadı. Aşağıdan tekrar okutun ya da tablonun yerini resimde gösterin.', 'kotu');
-    alanlariDoldur();
-    if (panoSonuc) { panoResmiGoster(panoSonuc.ham); panoUygula(panoSonuc.v); durum('d-pano', panoOzet(panoSonuc.v), Object.keys(panoSonuc.v.supheli).length || !panoSonuc.v.ana.length ? 'kotu' : 'iyi'); }
-  } catch (x) {
-    durum('d-ro-ic', x && x.code === 'bos' ? 'Paftada antet, güç tablosu ya da pano bulunamadı. Bilgileri elle doldurun; güç tablosunu 4. bölümden resimde gösterip okutabilirsiniz.' : hataYaz(x) + ' Düğmeye tekrar basabilirsiniz.', 'kotu');
-    durum('d-guc', 'Güç tablosu okunamadı. Tekrar okutun ya da tablonun yerini resimde gösterin.', 'kotu');
+ "kat": str (ör. "SIĞ+Z+3"), "alan": str (yalnız sayı), "bagimsiz": str (ör. "14+1" ya da "6"), "yapiSinifi": str (ör. "III-B"), "kuruluW": sayı (W), "talepW": sayı (W)}`;
+const G = { p: 1, pw: 1, ph: 1, s: 1, tx: 0, ty: 0, taban: 1, mod: 'sec', secim: null, adim: 0, durum: {}, isaret: {}, gorev: 0 };
+const bosMu = x => x == null || x === '' || (typeof x === 'number' && isNaN(x));
+
+async function gSayfaAc(p) {
+  G.p = p; $('gSayfa').value = p;
+  const pg = await D.icDoc.getPage(p), v = pg.getViewport({ scale: 1 });
+  G.pw = v.width; G.ph = v.height;
+  G.taban = Math.min(3, 4000 / Math.max(G.pw, G.ph));       // sayfanın tamamı bir kez; yakınlaşınca görünen yer ayrıca keskin çizilir
+  const cv = $('gTaban'); cv.width = Math.round(G.pw * G.taban); cv.height = Math.round(G.ph * G.taban);
+  const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+  gSigdir();
+  await pg.render({ canvasContext: cx, viewport: pg.getViewport({ scale: G.taban }) }).promise;
+  gCiz();
+}
+function gSigmaOlcek() { const r = $('gKutu').getBoundingClientRect(); return Math.min(r.width / G.pw, r.height / G.ph); }
+function gSigdir() {
+  const r = $('gKutu').getBoundingClientRect();
+  G.s = gSigmaOlcek(); G.tx = (r.width - G.pw * G.s) / 2; G.ty = (r.height - G.ph * G.s) / 2; gCiz();
+}
+function gCiz() {
+  const c = $('gTaban');
+  c.style.width = G.pw * G.s + 'px'; c.style.height = G.ph * G.s + 'px'; c.style.transform = `translate(${G.tx}px,${G.ty}px)`;
+  $('gDetay').hidden = true; G.gorev++; gCerceveCiz();
+  clearTimeout(G.zt); G.zt = setTimeout(gDetayCiz, 250);
+}
+async function gDetayCiz() {
+  const dpr = window.devicePixelRatio || 1, r = $('gKutu').getBoundingClientRect();
+  if (G.s * dpr <= G.taban * 1.1) return;                   // sayfa resmi yeterince keskin
+  const x0 = Math.max(0, -G.tx / G.s), y0 = Math.max(0, -G.ty / G.s);
+  const x1 = Math.min(G.pw, (r.width - G.tx) / G.s), y1 = Math.min(G.ph, (r.height - G.ty) / G.s);
+  if (x1 <= x0 || y1 <= y0) return;
+  const sc = G.s * dpr, no = G.gorev, pg = await D.icDoc.getPage(G.p);
+  const cv = document.createElement('canvas'); cv.width = Math.ceil((x1 - x0) * sc); cv.height = Math.ceil((y1 - y0) * sc);
+  const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height);
+  if (G.cizim) { try { G.cizim.cancel(); } catch (x) { } }
+  G.cizim = pg.render({ canvasContext: cx, viewport: pg.getViewport({ scale: sc, offsetX: -x0 * sc, offsetY: -y0 * sc }) });
+  try { await G.cizim.promise; } catch (x) { return; }
+  if (no !== G.gorev) return;
+  const d = $('gDetay'); d.width = cv.width; d.height = cv.height; d.getContext('2d').drawImage(cv, 0, 0);
+  Object.assign(d.style, { left: G.tx + x0 * G.s + 'px', top: G.ty + y0 * G.s + 'px', width: (x1 - x0) * G.s + 'px', height: (y1 - y0) * G.s + 'px' });
+  d.hidden = false;
+}
+function gYakinlas(k, [mx, my]) {
+  const s0 = G.s, fit = gSigmaOlcek(), s = Math.min(Math.max(fit * 0.5, 8), Math.max(fit * 0.5, s0 * k));
+  const px = (mx - G.tx) / s0, py = (my - G.ty) / s0;
+  G.s = s; G.tx = mx - px * s; G.ty = my - py * s; gCiz();
+}
+function gCerceveCiz() {
+  const c = $('gCerceve'), s = G.secim && G.secim.p === G.p ? G.secim.k : null;
+  c.hidden = !s; if (!s) return;
+  Object.assign(c.style, { left: G.tx + s[0] * G.pw * G.s + 'px', top: G.ty + s[1] * G.ph * G.s + 'px', width: (s[2] - s[0]) * G.pw * G.s + 'px', height: (s[3] - s[1]) * G.ph * G.s + 'px' });
+}
+const gKutuNokta = e => { const r = $('gKutu').getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+const gSayfaKesir = ([x, y]) => [Math.min(1, Math.max(0, (x - G.tx) / G.s / G.pw)), Math.min(1, Math.max(0, (y - G.ty) / G.s / G.ph))];
+const GP = new Map();
+$('gKutu').addEventListener('pointerdown', e => {
+  e.preventDefault(); $('gKutu').setPointerCapture(e.pointerId);
+  GP.set(e.pointerId, gKutuNokta(e));
+  if (GP.size === 1) {
+    const q = gKutuNokta(e);
+    if (G.mod === 'sec' && e.button !== 1 && e.button !== 2) { G.bas = gSayfaKesir(q); G.kay = null; }
+    else { G.kay = { q, tx: G.tx, ty: G.ty }; G.bas = null; }
+  } else if (GP.size === 2) {                              // iki parmak: yaklaş / uzaklaş ve kaydır
+    const [a, b] = [...GP.values()];
+    G.bas = null; G.kay = null;
+    G.cimdik = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, m: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], s: G.s, tx: G.tx, ty: G.ty };
   }
-  finally { btn.disabled = false; }
 });
+$('gKutu').addEventListener('pointermove', e => {
+  if (!GP.has(e.pointerId)) return;
+  GP.set(e.pointerId, gKutuNokta(e));
+  if (G.cimdik && GP.size >= 2) {
+    const [a, b] = [...GP.values()], c = G.cimdik;
+    const d = Math.hypot(a[0] - b[0], a[1] - b[1]) || 1, m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const fit = gSigmaOlcek(), s = Math.min(Math.max(fit * 0.5, 8), Math.max(fit * 0.5, c.s * d / c.d));
+    const px = (c.m[0] - c.tx) / c.s, py = (c.m[1] - c.ty) / c.s;
+    G.s = s; G.tx = m[0] - px * s; G.ty = m[1] - py * s; gCiz();
+  } else if (G.kay) {
+    const q = gKutuNokta(e); G.tx = G.kay.tx + q[0] - G.kay.q[0]; G.ty = G.kay.ty + q[1] - G.kay.q[1]; gCiz();
+  } else if (G.bas) {
+    const q = gSayfaKesir(gKutuNokta(e)), b = G.bas;
+    G.secim = { p: G.p, k: [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[0], q[0]), Math.max(b[1], q[1])] }; gCerceveCiz();
+  }
+});
+const gBirak = e => {
+  GP.delete(e.pointerId);
+  if (GP.size < 2) G.cimdik = null;
+  if (GP.size === 0) {
+    if (G.bas && G.secim) {
+      const k = G.secim.k;
+      if ((k[2] - k[0]) * G.pw * G.s < 12 || (k[3] - k[1]) * G.ph * G.s < 12) G.secim = null;   // kazara dokunma
+    }
+    G.bas = null; G.kay = null; gCerceveCiz(); gDugmeler();
+  }
+};
+$('gKutu').addEventListener('pointerup', gBirak);
+$('gKutu').addEventListener('pointercancel', gBirak);
+$('gKutu').addEventListener('wheel', e => { e.preventDefault(); gYakinlas(Math.exp(-e.deltaY * 0.0015), gKutuNokta(e)); }, { passive: false });
+$('gKutu').addEventListener('contextmenu', e => e.preventDefault());
+const gOrta = () => { const r = $('gKutu').getBoundingClientRect(); return [r.width / 2, r.height / 2]; };
+$('gArti').addEventListener('click', () => gYakinlas(1.6, gOrta()));
+$('gEksi').addEventListener('click', () => gYakinlas(1 / 1.6, gOrta()));
+$('gSigdir').addEventListener('click', gSigdir);
+$('gMod').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  G.mod = btn.dataset.v; $('gKutu').dataset.mod = G.mod;
+  for (const x of $('gMod').children) x.setAttribute('aria-pressed', x === btn);
+});
+$('gSayfa').addEventListener('change', () => gSayfaAc(+$('gSayfa').value));
+window.addEventListener('resize', () => { if (!$('gPanel').hidden && Math.abs(G.s - gSigmaOlcek()) < 1e-6) gSigdir(); });
+
+function gAdimCiz() {
+  $('gAdimlar').innerHTML = ADIMLAR.map((a, i) => {
+    const d = G.durum[a.ad], im = d === 'okundu' ? ' ✓' : d === 'yok' ? ' (yok)' : d === 'yazi' ? ' ✓' : d === 'hata' ? ' !' : '';
+    return `<button type="button" data-i="${i}" aria-pressed="${i === G.adim}">${i + 1}. ${a.baslik}${im}</button>`;
+  }).join('');
+  $('gTarif').innerHTML = `<b>${G.adim + 1}/3 · ${ADIMLAR[G.adim].baslik}:</b> ` + ADIMLAR[G.adim].tarif;
+  $('gYok').hidden = ADIMLAR[G.adim].ad !== 'guc';
+  gDugmeler();
+}
+function gDugmeler() { $('gOku').disabled = !G.secim || G.mesgul; $('gYok').disabled = !!G.mesgul; }
+async function gAdimaGit(i) {
+  G.adim = i; const yer = G.isaret[ADIMLAR[i].ad];
+  G.secim = yer ? { p: yer.p, k: yer.k.slice() } : null;
+  if (yer && yer.p !== G.p) await gSayfaAc(yer.p); else gCerceveCiz();
+  gAdimCiz();
+}
+$('gAdimlar').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !G.mesgul) gAdimaGit(+b.dataset.i); });
+function gSonraki() {
+  const i = ADIMLAR.findIndex((a, j) => j > G.adim && !G.durum[a.ad]);
+  const j = i >= 0 ? i : ADIMLAR.findIndex(a => !G.durum[a.ad]);
+  if (j >= 0) { gAdimaGit(j); return true; }
+  gAdimCiz(); return false;
+}
+
+// Antet: yalnız PDF yazısından okunamayan bilgiler alınır (yazıdan okunan öncelikli); okunanlar kutularına yazılır
+async function antetOku(sample, ham, yaz) {
+  yaz('Antet okunuyor…');
+  const v = await sample.json(ANTET_ISTEM, { images: [ham], modelTier: 'default' });
+  if (!v || typeof v !== 'object') throw { code: 'invalid_json' };
+  const ic = D.ic = D.ic || {}; ic.resimden = ic.resimden || {};
+  const yazili = D.icYazi || {}, alinan = [];
+  for (const k of ['malSahibi', 'kullanim', 'adres', 'il', 'ilce', 'belediye', 'mahalle', 'pafta', 'ada', 'parsel', 'kat', 'alan', 'bagimsiz', 'yapiSinifi'])
+    if (v[k] != null && String(v[k]).trim() && bosMu(yazili[k])) { ic[k] = String(v[k]).trim(); ic.resimden[k] = 1; alinan.push(k); }
+  for (const k of ['kuruluW', 'talepW']) {
+    const x = parseFloat(String(v[k] != null ? v[k] : '').replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(x) && bosMu(yazili[k])) { ic[k] = x; ic.resimden[k] = 1; alinan.push(k); }
+  }
+  const b = BHP.birlestir(D.gdz || {}, ic);
+  for (const k of alinan) { const el = $('a-' + k); if (el) { el.value = bosMu(b[k]) ? ic[k] : b[k]; el.classList.add('resimden'); el.classList.remove('okundu'); } }
+  if (!ic.satirlar && !D.gucElle) { D.satirlar = b.satirlar; $('a-sayacAdet').value = b.sayacAdet; satirlariCiz(); }   // tablo okunana kadar bağımsız bölüm sayısı kadar satır
+  guncelle();
+  return `Antet okundu: ${alinan.length} bilgi (turuncu kenarlı kutular, 3. bölüm)${$('a-malSahibi').value ? ' · ' + $('a-malSahibi').value : ''}.`;
+}
+async function gucOkuUygula(sample, ham, yaz) {
+  const kuruluW = parseFloat($('a-kuruluW').value) || (D.ic && D.ic.kuruluW) || 0;
+  const { a, supheli, im } = await gucTablosunuOku(sample, ham, kuruluW, yaz);
+  gucResmiGoster(im);
+  if (!a.length) throw { code: 'satir_yok' };
+  const eski = D.satirlar || [];                            // sayaç önü sigortalar eski satırlardan korunur
+  a.forEach(r => { const o = eski.find(x => (r.tablo && x.tablo === r.tablo) || (r.bb && x.bb === r.bb)); if (o && o.onu) r.onu = o.onu; });
+  D.ic = D.ic || {}; D.ic.satirlar = a; D.ic.gucKaynak = 'resim'; D.gucElle = false;
+  D.satirlar = a; D.supheli = supheli; D.gucFark = Object.keys(supheli).length > 0;
+  $('a-sayacAdet').value = a.length;
+  satirlariCiz(); guncelle();
+  const k = BHP.gucKontrol(bilgiler());
+  return [`Güç tablosu okundu: ${a.length} satır` + (k.hata.length ? ` — KONTROL: ${k.hata.join(' · ')}` : D.gucFark ? ' — kırmızı hücreleri resimle karşılaştırın' : ' — antetle uyumlu') + ' (4. bölüm).', k.hata.length || D.gucFark];
+}
+$('gOku').addEventListener('click', async () => {
+  const sample = await ornekVar(), adim = ADIMLAR[G.adim];
+  if (!sample || !D.icDoc || !G.secim) return;
+  const yer = { p: G.secim.p, k: G.secim.k.slice() }, yaz = (t, s) => durum('d-g', t, s);
+  G.isaret[adim.ad] = yer; G.mesgul = true; gDugmeler();
+  try {
+    const ham = await kesKutu(D.icDoc, yer);
+    let msg, kotu = false;
+    if (adim.ad === 'antet') msg = await antetOku(sample, ham, yaz);
+    else if (adim.ad === 'guc') [msg, kotu] = await gucOkuUygula(sample, ham, yaz);
+    else {
+      const v = await panoOku(sample, ham, D.satirlar, yaz);
+      panoResmiGoster(ham); panoUygula(v); msg = panoOzet(v) + ' (3. bölüm)'; kotu = Object.keys(v.supheli).length > 0 || !v.ana.length;
+      durum('d-pano', panoOzet(v), kotu ? 'kotu' : 'iyi');
+    }
+    G.durum[adim.ad] = 'okundu';
+    const devam = gSonraki();
+    yaz(msg + (devam ? ` Şimdi ${G.adim + 1}. adım: ${ADIMLAR[G.adim].baslik}.` : ' Üç bölüm de tamam; aşağıdaki bilgileri ve resimleri kontrol edin.'), kotu ? 'kotu' : 'iyi');
+  } catch (x) {
+    G.durum[adim.ad] = 'hata'; gAdimCiz();
+    yaz(hataYaz(x) + ' Çerçeveyi düzeltip tekrar okutabilirsiniz.', 'kotu');
+  } finally { G.mesgul = false; gDugmeler(); }
+});
+$('gYok').addEventListener('click', () => {
+  D.gucElle = true; D.ic = D.ic || {}; D.ic.satirlar = null; D.ic.gucKaynak = 'elle';
+  $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
+  const b = BHP.birlestir(D.gdz || {}, D.ic), eski = D.satirlar || [];
+  b.satirlar.forEach((r, j) => { const o = eski[j]; if (o && o.onu) r.onu = o.onu; });   // okunan sayaç önü sigortalar korunur
+  D.satirlar = b.satirlar; D.supheli = {}; D.gucFark = false; $('a-sayacAdet').value = b.sayacAdet;
+  satirlariCiz(); guncelle();
+  G.durum.guc = 'yok'; delete G.isaret.guc;
+  const devam = gSonraki();
+  durum('d-g', 'Güç dağıtım tablosunu 4. bölümde elle girin (aynı daireler için "Satırları üret" kullanılabilir).' + (devam ? ` Şimdi ${G.adim + 1}. adım: ${ADIMLAR[G.adim].baslik}.` : ''), 'iyi');
+});
+async function gPanelAc() {
+  $('gPanel').hidden = false;
+  G.durum = {}; G.isaret = {}; G.secim = null; G.adim = 0;
+  if (D.ic && D.ic.gucKaynak === 'yazı') G.durum.guc = 'yazi';
+  $('gSayfa').innerHTML = Array.from({ length: D.icDoc.numPages }, (_, i) => `<option value="${i + 1}">${i + 1}. sayfa</option>`).join('');
+  $('gSayfaKutu').style.display = D.icDoc.numPages < 2 ? 'none' : '';
+  gAdimCiz();
+  durum('d-g', 'Çerçeve çizmek için tutup sürükleyin. İki parmakla (fareyle tekerlekle) yaklaşıp uzaklaşın; kaydırmak için iki parmakla sürükleyin ya da "Kaydır"ı seçin.');
+  await gSayfaAc(1);
+}
 
 $('b-ro-gdz').addEventListener('click', async () => {
   const sample = await ornekVar(); if (!sample || !D.gdzDoc) return;
