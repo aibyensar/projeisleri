@@ -172,7 +172,7 @@
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <p class="durum" id="d-indir"></p>
     <ol class="adimlar">
-      <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>3 dosya aynı yerde</b> kalsın: çizim ve 2 resim.</li>
+      <li>İnen .zip dosyasına <b>sağ tıklayıp "Tümünü ayıkla"</b> deyin (zip'in içinden doğrudan açmayın; AutoCAD "salt okunur" uyarısı verir ve resimler görünmez). Çıkan klasördeki <b>4 dosya aynı yerde</b> kalsın: çizim, 2 resim ve kapaktaki logo şeridi.</li>
       <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
       <li>Pafta, GDZ'den onaylı iki projenizin düzenindedir (açıklamalar, boru çapı tablosu, sembol tabloları, kablo kanalı ve montaj detayı, TEDAŞ metni sizin çiziminizden).</li>
       <li>Resim görünmezse: <code>XREF</code> yazıp Enter, resmin yolunu zip'i açtığınız klasör olarak gösterin.</li>
@@ -534,6 +534,7 @@ $('indir').addEventListener('click', async () => {
   klasor.file(`BHP-${ad}.dxf`, dxf);
   if (D.uydu) klasor.file(uyduAd, D.uydu);
   if (D.vaziyet) klasor.file(vazAd, D.vaziyet);
+  try { klasor.file(BHP.LOGO_DOSYA, await logoAl()); } catch (x) { /* logo alınamazsa çizim yine iner, şerit boş görünür */ }
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const dosyaAdi = `BHP-${ad}.zip`;
   // claude.ai içinde sayfa kendisi indiremez; platformun "dosya kaydet" izniyle verilir
@@ -552,7 +553,7 @@ $('indir').addEventListener('click', async () => {
   durum('d-indir', `İndirme başlatıldı: ${dosyaAdi}. İnmediyse sayfayı ana sayfadan değil doğrudan açmayı deneyin.`, 'iyi');
 });
 let _logo;
-async function logoAl() { if (!_logo) _logo = await fetch('../baglanti-hatti/logo/agy-logo.png').then(r => r.blob()); return _logo; }
+async function logoAl() { if (!_logo) _logo = await fetch('../baglanti-hatti/logo/agy-kapak.png').then(r => r.ok ? r.blob() : Promise.reject(r.status)); return _logo; }
 let _dl;
 function indirmeAraci() {
   if (_dl !== undefined) return Promise.resolve(_dl);

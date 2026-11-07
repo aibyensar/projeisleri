@@ -44,5 +44,5 @@ fs.mkdirSync(cikis, { recursive: true });
 const bilgi = BHPCizim.bilgiOku(sablon);
 const cz = BHPCizim.hepsi(BHP.cizimVerisi(b, k), bilgi);
 fs.writeFileSync(path.join(cikis, `BHP-${ad}.dxf`), BHPCizim.dxfeEkle(BHP.doldur(sablon, d), cz, b.baglanti));
-fs.copyFileSync(new URL('../logo/agy-logo.png', import.meta.url), path.join(cikis, 'agy-logo.png'));
+fs.copyFileSync(new URL('../logo/agy-kapak.png', import.meta.url), path.join(cikis, 'agy-kapak.png'));
 console.log('yazıldı', path.join(cikis, `BHP-${ad}.dxf`));

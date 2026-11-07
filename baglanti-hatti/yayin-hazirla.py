@@ -5,7 +5,7 @@
 import os, re, shutil, sys
 c = sys.argv[1]
 for d in ('ortak', 'veri', 'baglanti-hatti/logo'): os.makedirs(os.path.join(c, d), exist_ok=True)
-shutil.copy('baglanti-hatti/logo/agy-logo.png', os.path.join(c, 'baglanti-hatti/logo/agy-logo.png'))
+shutil.copy('baglanti-hatti/logo/agy-kapak.png', os.path.join(c, 'baglanti-hatti/logo/agy-kapak.png'))
 for f in ('ortak/bhp.js', 'ortak/bhp-cizim.js', 'ortak/stil.css', 'veri/katalog.js'): shutil.copy(f, os.path.join(c, f))
 shutil.copy('baglanti-hatti/BHP-SABLON.dxf', os.path.join(c, 'baglanti-hatti/BHP-SABLON.txt'))
 s = open('araclar/baglanti-hatti.html', encoding='utf-8').read()

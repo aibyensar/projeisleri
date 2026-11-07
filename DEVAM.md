@@ -74,7 +74,7 @@ Kullanıcı artık aracı **gerçek işlerde kullanıp eksikleri zamanla bildire
 
 **Yayın:** https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK (capabilities `downloads`, `sample: {images: true}`; claude.ai içinde indirme
 `claude.use("downloads").save`, resimden okuma `claude.use("sample")`). Yayın: `python3 baglanti-hatti/yayin-hazirla.py <klasör>` →
-Artifact publish (url aynı; değişen dosyalar `files` ile: ortak/bhp.js, ortak/bhp-cizim.js, baglanti-hatti/BHP-SABLON.txt). Yayında
+Artifact publish (url aynı; değişen dosyalar `files` ile: ortak/bhp.js, ortak/bhp-cizim.js, baglanti-hatti/BHP-SABLON.txt, baglanti-hatti/logo/agy-kapak.png). Yayında
 okunmamış dosyayı değiştirirken önce `read` + `path` gerekir.
 
 **Dosyalar**
@@ -121,14 +121,19 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
 - Gerçek claude.ai'de (sample) kullanıcı HENÜZ DENEMEDİ; dene.mjs/ resimden-oku-dene.js yalnız akışı sahte cevaplarla dener.
 
 **AÇIK KONULAR (sıradaki)**
-1. KAPAK: kullanıcı projelerde kullanılacak kapak olarak KAPAK.dwg gönderdi (AC1021). libredwg-web bu dosyada 0 nesne okudu (hata 64).
-   Kullanıcıdan DXF (AutoCAD 2018 DXF) olarak kaydedip göndermesi istendi. Gelince: json-dxf/ezdxf ile oku, şablondaki antetin (sol alt,
-   x -269.5..-30, y 5393.6..5670 civarı; AGY başlığı, proje müellifi, yapının bilgileri, arsa, güç bilgileri, onay kutuları) yerine koy,
-   değer yerlerine yer tutucular ({{MALSAHIBI}} … {{ALAN}}) yerleştir; sablon-olustur.py'ye ekle; önizle, yayınla.
+1. KAPAK — YAPILDI (7 Kasım 2026, kullanıcı henüz "tamam" demedi): kullanıcı KAPAK.dxf'i (DXF AC1021, 61 MB, rar içinde) gönderdi.
+   `baglanti-hatti/kapak-ekle.py KAPAK.dxf BHP-SABLON.dxf` antetin yerine koyar (sablon-olustur.py'den sonra; KAPAK.dxf depoda YOK,
+   gerekirse kullanıcıdan istenir). Kapak 1/5 ölçekle antet kutusuna (-267.83..-78.14 x 5394.67..5670.91) oturur; sığsın diye yalnız boş
+   yerler kısaltıldı (imza/EMO kutusu, alttaki 3 onay kutusu, arsa satırı ile güç tablosu arasındaki boş şerit). Yazılar Arial, hücre
+   ortalı (mühendis/yapı tablosunda sola dayalı), ODA SİCİL / BÜRO düzeltildi. Yer tutucular: MALSAHIBI KULLANIM ADRES IL ILCE BELEDIYE
+   MAHALLE PAFTA ADA PARSEL KURULUW TALEPW (yalnız sayı, başlıkta (W) var) BB KAT ALAN YAPISINIFI. Üstteki logo şeridi DWG'de gömülü
+   resim (OLE → EMF+ içinde PNG); çıkarılıp lacivert zemin + logo (gerçek oranında; kullanıcının AutoCAD'inde yatay gerilmişti) +
+   iletişim bilgileri olarak `logo/agy-kapak.png` yazılır, DXF'e {{LOGO}} resmi olarak bağlanır; web aracı zip'e ekler (4 dosya).
+   Kullanıcıya sorulacak: logo şeridi böyle uygun mu, kısaltılan kutular yeterli mi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
 
-**Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; KAPAK DXF'i geldiyse 1. maddeyi yapın, gelmediyse isteyin.
+**Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; kapak için kullanıcının görüşünü alın (1. madde).
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
 yayin-hazirla.py → publish → commit/push → DEVAM.md güncelle → kullanıcıya önizleme + örnek zip.

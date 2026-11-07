@@ -363,16 +363,17 @@
   }
 
   // ---------- Şablondaki yazılar ----------
+  const LOGO_DOSYA = 'agy-kapak.png';               // kapaktaki logo şeridi (DXF ile aynı klasörde)
   function degerler(b, kablo, uyduDosya, vaziyetDosya) {
     const L = b.uzunluk;
     return {
       MALSAHIBI: b.malSahibi, KULLANIM: b.kullanim, ADRES: b.adres, IL: b.il, ILCE: b.ilce, BELEDIYE: b.belediye,
       MAHALLE: b.mahalle, PAFTA: b.pafta, ADA: b.ada, PARSEL: b.parsel,
-      KURULU: `${b.kuruluW} W`, TALEP: `${b.talepW} W`, BB: b.bagimsiz, KAT: b.kat, ALAN: b.alan === '-' ? '-' : `${b.alan} m²`,
+      KURULU: `${b.kuruluW} W`, TALEP: `${b.talepW} W`, KURULUW: String(b.kuruluW), TALEPW: String(b.talepW), BB: b.bagimsiz, KAT: b.kat, ALAN: b.alan === '-' ? '-' : `${b.alan} m²`,
       KABLO: kablo.yazi, UZUNLUK: `${String(L).replace('.', ',')} m`, HATTIPI: 'YERALTI', DIREK: b.direk,
       ADAPARSEL: `${b.ada}/${b.parsel}`, YAPISINIFI: b.yapiSinifi || '-',
       TARIH: b.projeTarihi || new Date().toLocaleDateString('tr-TR'), BASVURU: b.basvuruNo || '',
-      UYDU: '.\\' + uyduDosya, VAZIYET: '.\\' + vaziyetDosya,
+      UYDU: '.\\' + uyduDosya, VAZIYET: '.\\' + vaziyetDosya, LOGO: '.\\' + LOGO_DOSYA,
     };
   }
   function doldur(sablon, d) {
@@ -380,6 +381,6 @@
   }
 
   const BHP = { gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
-    virgul, baslikHarf, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
+    virgul, baslikHarf, LOGO_DOSYA, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);
