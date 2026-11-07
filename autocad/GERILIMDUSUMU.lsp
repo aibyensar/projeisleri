@@ -493,7 +493,8 @@
   (if v v def))
 (defun ict:sor-real (msg def / v)
   (initget 4)
-  (setq v (getreal (strcat "\n" msg " <" (ict:ns def) ">: ")))
+  ;; varsayılan nokta ile gösterilir: AutoCAD sayı girişinde virgül kabul etmez
+  (setq v (getreal (strcat "\n" msg " <" (ict:trim0 (rtos def 2 8)) ">: ")))
   (if v v def))
 (defun ict:sor-int (msg def / v)
   (initget 6)
@@ -508,11 +509,11 @@
 (defun ict:kablo (tip) (assoc tip *ict-kablolar*))
 (defun ict:normal (s)
   (ict:rep (ict:rep (ict:rep (strcase s T) " " "") "," ".") "*" ""))
-(defun ict:sor-satir (tip def / satirlar e r)
+(defun ict:sor-satir (kim tip def / satirlar e r)
   (setq satirlar (cadddr (ict:kablo tip)))
   (if (not (assoc def satirlar)) (setq def (car (car satirlar))))
   (while (not r)
-    (setq e (ict:normal (ict:sor-str (strcat tip " kesit (örnek 4x6, 3x25/16, 2.5)") def))
+    (setq e (ict:normal (ict:sor-str (strcat kim " kesiti, " tip " (örnek 4x6, 3x25/16, 2.5)") def))
           r (assoc e satirlar))
     (if (not r)
       (progn
@@ -528,6 +529,13 @@
 (defun ict:doseme-kw (d) (cond ((= d "toprak") "Yeralti") ((= d "hava") "Havai") (T "Boru")))
 (defun ict:doseme-kod (k) (cond ((= k "Yeralti") "toprak") ((= k "Havai") "hava") (T "boru")))
 
+;;; Komut satırında bölüm başlığı
+(defun ict:grup (str) (princ (strcat "\n\n────────  " str "  ────────")))
+;;; Sorularda kullanılan hat adı: Kolon hattı / Kolon hattı 2 / Linye hattı
+(defun ict:hat-adi (i n)
+  (cond ((= i (1- n)) "Linye hattı")
+        ((> n 2) (strcat "Kolon hattı " (itoa (1+ i))))
+        (T "Kolon hattı")))
 ;;; İç hat adı: son hat linye, öncekiler kolon hattı
 (defun ict:hat-ismi (i n)
   (cond ((= i (1- n)) "LİNYE HATTI")
@@ -628,7 +636,7 @@
 (defun ict:parca-genislik (ad h) (max (* 17.0 h) (+ (* (+ (strlen ad) 5) h 0.58) (* 5.0 h))))
 
 ;;; ---------------------------------------------------------------- komut
-(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u y0 m g kurulu-s kurulu talep-s nt
+(defun c:GERILIMDUSUMU (/ *error* eski-dz eski-ce mevcut bfaz bfk u y0 m g kim kurulu-s kurulu talep-s nt
                       btip bk bsatir bdos bdos-kw bL n i hat hatlar faz tip satir L P ad
                       h pt x0 y u3 cosfi limit bolen In Iz akim-ok liste no c e eY toplam
                       adlar degerler px seg ilk-pano son hat-ad)
@@ -646,58 +654,63 @@
   (setvar "CMDECHO" 0)
 
   ;; --- sorular
+  (ict:grup "GENEL BİLGİLER")
   (setq mevcut (= (setq *ict-mod* (ict:sor-kw "Branşman mevcut mu?" "Evet Hayir" (if *ict-mod* *ict-mod* "Evet"))) "Evet"))
 
   (setq kurulu nil)
   (while (progn
-           (setq kurulu-s (ict:sor-str "Kurulu güç (W) - sayı veya işlem, yazılmayacaksa ." (if *ict-kurulu* *ict-kurulu* "")))
+           (setq kurulu-s (ict:sor-str "Kurulu güç (W) - yazılmayacaksa ." (if *ict-kurulu* *ict-kurulu* "")))
            (and (/= kurulu-s "") (not (setq kurulu (ict:coz kurulu-s)))))
     (princ "\nOkunamadı. Sayı veya + - * / ( ) ile işlem yazın."))
   (setq *ict-kurulu* kurulu-s)
 
   (while (progn
-           (setq talep-s (ict:sor-str "Talep güç (W) - sayı veya işlem, örnek (16220*0,45)+5000" (if *ict-talep* *ict-talep* "")))
+           (setq talep-s (ict:sor-str "Talep güç Nt (W) - sayı veya işlem, örnek (16220*0,45)+5000" (if *ict-talep* *ict-talep* "")))
            (not (setq nt (ict:coz talep-s))))
     (princ "\nOkunamadı. Sayı veya + - * / ( ) ile işlem yazın."))
   (setq *ict-talep* talep-s)
 
   (if mevcut
     (progn
+      (setq *ict-adim* "branşman soruları")
+      (ict:grup "BRANŞMAN HATTI (%e1)")
       (setq btip (ict:sor-kw "Branşman kablo tipi" (ict:tip-kw) (if *ict-btip* *ict-btip* "NYY"))
             *ict-btip* btip
             bk (ict:kablo btip)
-            bsatir (ict:sor-satir btip (if *ict-bsatir* *ict-bsatir* "4x6"))
+            bsatir (ict:sor-satir "Branşman" btip (if *ict-bsatir* *ict-bsatir* "4x6"))
             *ict-bsatir* (car bsatir)
-            bdos-kw (vl-string-trim " " (apply 'strcat (mapcar '(lambda (d) (strcat (ict:doseme-kw d) " ")) (caddr bk))))
-            bdos (ict:sor-kw "Branşman döşeme" bdos-kw (if (and *ict-bdos* (vl-string-search *ict-bdos* bdos-kw)) *ict-bdos* (if (vl-string-search "Havai" bdos-kw) "Havai" (ict:doseme-kw (car (caddr bk))))))
-            *ict-bdos* bdos
-            bdos (vl-position (ict:doseme-kod bdos) (caddr bk))
+            ;; branşman taşıma akımı katalogdaki havai değerden alınır
+            bdos (if (vl-position "hava" (caddr bk)) (vl-position "hava" (caddr bk)) 0)
             bL (ict:sor-real "Branşman uzunluğu (m)" (if *ict-bL* *ict-bL* 15.0))
             *ict-bL* bL
-            bfaz (ict:sor-kw (strcat "Branşman " (strcase (ict:rep (car bsatir) "." ",")) " " btip " faz") "Trifaze Monofaze" (ict:faz-tahmin (car bsatir)))))
-    (setq bfaz (ict:sor-kw "Bağlantı faz" "Trifaze Monofaze" (if *ict-sfaz* *ict-sfaz* "Trifaze"))
-          *ict-sfaz* bfaz))
+            bfaz (ict:sor-kw "Branşman fazı" "Trifaze Monofaze" (ict:faz-tahmin (car bsatir)))))
+    (progn
+      (ict:grup "BAĞLANTI")
+      (setq bfaz (ict:sor-kw "Bağlantı fazı" "Trifaze Monofaze" (if *ict-sfaz* *ict-sfaz* "Trifaze"))
+            *ict-sfaz* bfaz)))
   (setq bfk (if (= bfaz "Trifaze") "3" "1"))
 
-  (setq *ict-adim* "iç hat sayısı")
-  (setq n (ict:sor-int "İç hat sayısı (kolon + linye)" (if *ict-n* *ict-n* 2)) *ict-n* n
+  (setq *ict-adim* "hat sayısı")
+  (ict:grup "İÇ HATLAR")
+  (setq n (ict:sor-int "Kolon + linye hat sayısı" (if *ict-n* *ict-n* 2)) *ict-n* n
         hatlar '() i 0)
   (while (< i n)
     (setq *ict-adim* (strcat (ict:hat-ismi i n) " soruları")
-          hat (if (and (eq (type *ict-hatlar*) 'LIST) (< i (length *ict-hatlar*))) (nth i *ict-hatlar*)))
+          hat (if (and (eq (type *ict-hatlar*) 'LIST) (< i (length *ict-hatlar*))) (nth i *ict-hatlar*))
+          kim (ict:hat-adi i n))
     (if (not (eq (type hat) 'LIST)) (setq hat nil))
-    (princ (strcat "\n--- " (ict:hat-ismi i n) " (%e" (itoa (+ i 2)) ") ---"))
-    (setq faz (ict:sor-kw "Faz" "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
-          tip (ict:sor-kw "Kablo tipi" (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
-          satir (ict:sor-satir tip (if hat (nth 2 hat) (if (= tip "NYA") "2.5" "5x6")))
-          L (ict:sor-real "Uzunluk (m)" (if hat (nth 3 hat) 5.0))
-          P (ict:sor-real "Güç (W)" (if hat (nth 4 hat) 2500.0))
-          ad (ict:sor-str "Açıklama (yoksa Enter, silmek için .)" (if hat (nth 5 hat) "")))
-    (setq hatlar (append hatlar (list (list faz tip satir L P ad))))
+    (ict:grup (strcat (ict:hat-ismi i n) " (%e" (itoa (+ i 2)) ")"))
+    (setq faz (ict:sor-kw (strcat kim " fazı") "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
+          tip (ict:sor-kw (strcat kim " kablo tipi") (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
+          satir (ict:sor-satir kim tip (if hat (nth 2 hat) (if (= tip "NYA") "2.5" "5x6")))
+          L (ict:sor-real (strcat kim " uzunluğu (m)") (if hat (nth 3 hat) 5.0))
+          P (ict:sor-real (strcat kim " gücü N (W)") (if hat (nth 4 hat) 2500.0)))
+    (setq hatlar (append hatlar (list (list faz tip satir L P ""))))
     (setq i (1+ i)))
   (setq *ict-hatlar* (mapcar '(lambda (x) (list (nth 0 x) (nth 1 x) (car (nth 2 x)) (nth 3 x) (nth 4 x) (nth 5 x))) hatlar))
 
   (setq *ict-adim* "yazı yüksekliği ve nokta")
+  (ict:grup "ÇİZİM")
   (setq h (ict:sor-real "Yazı yüksekliği (çizim birimi)" (if *ict-h* *ict-h* (getvar "TEXTSIZE"))) *ict-h* h)
   (setq pt (getpoint "\nHesabın yerleşeceği nokta (sol üst köşe): "))
   (if (not pt) (exit))
@@ -767,7 +780,6 @@
   (ict:bilgi "Talep güç (Nt)"
              (strcat (if (ict:sadece-sayi-mi talep-s) "" (strcat (ict:islem-yaz talep-s) " = "))
                      (ict:kalin (strcat (ict:n0 nt) " W"))))
-  (ict:bilgi "Sistem" (strcat (if (= bfk "3") "Trifaze " "Monofaze ") (ict:ns u) " V · cos φ " (ict:ns cosfi)))
 
   ;; akım
   (if mevcut

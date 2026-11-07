@@ -25,11 +25,14 @@ Komut satırına **`GERILIMDUSUMU`** yazın. Sırayla şunlar sorulur. Köşeli 
 1. Branşman mevcut mu? `Evet / Hayir`
 2. Kurulu güç (W). Yazılmayacaksa `.` girin.
 3. Talep güç (W). Sayı veya işlem yazabilirsiniz, örnek `(16220*0,45)+5000`.
-4. Branşman mevcutsa: kablo tipi, kesit (örnek `4x6`), döşeme (`Yeralti / Havai`), uzunluk, faz.
+4. Branşman mevcutsa: kablo tipi, kesit (örnek `4x6`), uzunluk, faz. Taşıma akımı katalogdaki havai değerden alınır.
    Faz kablodan tahmin edilir (2x, 3x → monofaze; 4x, 5x, 3x25/16 → trifaze), Enter ile kabul edin.
    Branşman yoksa bağlantının fazı sorulur.
 5. İç hat sayısı (genelde 2: kolon hattı + linye hattı)
-6. Her hat için: faz, kablo tipi, kesit, uzunluk, güç, açıklama
+6. Her hat için (kolon hattı, linye hattı): faz, kablo tipi, kesit, uzunluk, güç
+
+Sorular gruplar halinde gelir; her grubun başında `──── KOLON HATTI (%e2) ────` gibi bir başlık yazar.
+Sayıları nokta ile yazın (örnek `2.5`); AutoCAD sayı girişinde virgül kabul etmez.
 
 Hesapta %e1 branşman hattı, %e2 kolon hattı, %e3 linye hattıdır.
 7. Yazı yüksekliği

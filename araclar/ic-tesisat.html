@@ -69,10 +69,10 @@
     <div class="izgara2">
       <label>Kablo tipi<select id="b-tip"></select></label>
       <label>Kablo<select id="b-satir"></select></label>
-      <label>Döşeme<select id="b-doseme"></select></label>
+      <label hidden>Döşeme<select id="b-doseme"></select></label>
       <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
     </div>
-    <p class="not">Gerilim düşümünde talep güç (Nt) kullanılır. Faz, seçilen kabloya göre kendiliğinden ayarlanır: 2x ve 3x → monofaze, 4x, 5x ve 3x25/16 gibi → trifaze. Gerekirse üstten değiştirin.</p>
+    <p class="not">Taşıma akımı katalogdaki havai değerden alınır. Gerilim düşümünde talep güç (Nt) kullanılır. Faz, seçilen kabloya göre kendiliğinden ayarlanır: 2x ve 3x → monofaze, 4x, 5x ve 3x25/16 gibi → trifaze. Gerekirse üstten değiştirin.</p>
   </div>
 
   <div class="kart">
@@ -211,7 +211,8 @@ function bransmanSecenekleri() {
   const s = KABLOLAR[tip].sutunlar;
   const eski = $('b-doseme').value;
   $('b-doseme').innerHTML = s.map((x, i) => `<option value="${i}">${DOSEME_ADI[x]}</option>`).join('');
-  $('b-doseme').value = eski && s[+eski] ? eski : String(Math.max(0, s.indexOf('hava')));
+  // Branşman taşıma akımı katalogdaki havai değerden alınır
+  $('b-doseme').value = String(Math.max(0, s.indexOf('hava')));
 }
 tipSecenekleri($('b-tip'), 'NYY');
 bransmanSecenekleri();

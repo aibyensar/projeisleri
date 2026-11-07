@@ -9,21 +9,21 @@ L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8')
 const senaryolar = {
   'Branşman mevcut (proje örneği 1)': [
     'Evet', '32200', '(16220x0,45)+5000=',
-    'NYY', '4x6', 'Havai', '15', '',          // branşman: tip, kesit, döşeme, uzunluk, faz (Enter)
+    'NYY', '4x6', '15', '',                  // branşman: tip, kesit, uzunluk, faz (Enter)
     '2',                                     // iç hat sayısı
-    'Trifaze', 'NYM', '5x6', '9', '5000', '',
-    'Monofaze', 'NYA', '2.5', '4', '2500', 'TN3 Panosu ... NOLU Nolu Linye İçin',
+    'Trifaze', 'NYM', '5x6', '9', '5000',
+    'Monofaze', 'NYA', '2.5', '4', '2500',
     '2.5', '0,0'
   ],
   'Monofaze branşman 2x6': [
-    'Evet', '', '8000', 'NYY', '2x6', '', '15', '', '2',
-    '', '', '', '', '', '', '', '', '', '', '', '', '', '0,0'
+    'Evet', '', '8000', 'NYY', '2x6', '15', '', '2',
+    '', '', '', '', '', '', '', '', '', '', '', '0,0'
   ],
   'Branşman yok (proje örneği 2)': [
     'Hayir', '36140', '13136+4380', '',      // kurulu, talep, bağlantı faz (Enter)
     '2',
-    'Trifaze', 'NYM', '4x10', '4', '13136', '',
-    'Monofaze', 'NYA', '2.5', '6', '2500', '.',
+    'Trifaze', 'NYM', '4x10', '4', '13136',
+    'Monofaze', 'NYA', '2.5', '6', '2500',
     '', '0,0'
   ],
 };
