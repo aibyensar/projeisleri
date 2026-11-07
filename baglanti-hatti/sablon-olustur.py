@@ -307,6 +307,11 @@ for i, (et, yt) in enumerate((('PROJE', 'ELEKTRİK BAĞLANTI HATTI PROJESİ'), (
     yazi(yt, xx + w / 2, y0 + 4.4, 3.0, 'BHP-K', A.MIDDLE_CENTER)
 
 # ---------- Kaydet; web aracının ihtiyaç duyduğu bilgileri başa yaz ----------
+# AutoCAD açılışta çizimin tamamını göstersin: sınırlar ve aktif görünüm (yoksa boş bir yere bakar)
+TX0, TY0, TX1, TY1 = PX0 - 10, PY0 - 10, PX1 + DX + 10, PY1 + 10
+m.dxf.extmin = (TX0, TY0, 0); m.dxf.extmax = (TX1, TY1, 0)          # ezdxf kayıtta başlığa bunları yazar
+m.dxf.limmin = (TX0, TY0); m.dxf.limmax = (TX1, TY1)
+d.set_modelspace_vport(height=(TY1 - TY0) * 1.05, center=((TX0 + TX1) / 2, (TY0 + TY1) / 2))
 d.audit()
 d.saveas(cikis, encoding='utf-8')
 ic = lambda k: [BOLUM[k][0] + 3, BOLUM[k][1] + 3, BOLUM[k][2] - 3, BOLUM[k][3] - BAS - 3]

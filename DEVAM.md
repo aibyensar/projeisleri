@@ -127,6 +127,9 @@ Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" 
   * HATA DÜZELTİLDİ: katalogdaki "1.5", "2.5" kesitleri 15/25 okunuyordu (sayi() noktayı binlik sayıyor) → parseFloat.
   * Yazı genişliği tahmini: AutoCAD'de yazı yüksekliği büyük harf yüksekliğidir; genislik() katsayıları buna göre (+%7 pay).
   * Önizleme için ~/.fonts/arial.ttf = Liberation Sans (Arial ile aynı ölçü), `python3 -m ezdxf --fonts`.
+  * DÜZELTME (kullanıcı: "iniyor ama boş AutoCAD dosyası geliyor"): yeni boş DXF'te açılış görünümü 0,0'daydı; şablonda
+    msp.dxf.extmin/extmax, limits ve set_modelspace_vport ile paftalara ayarlandı (ezdxf $EXTMIN'i layout'tan yazar).
+  * Vaziyet işaretinde "ENERJİ" yerine GDZ'deki direk/box adı yazar (web ve pafta etiketi).
   * Zip: BHP-<no>.dxf + <no>-uydu.jpg + <no>-vaziyet.jpg + agy-logo.png (aynı klasörde olmalı).
   * Kullanıcının bahsettiği "örnek" henüz gelmedi; gelirse düzen ona göre ayarlanır.
 - Sıradaki: kullanıcı yeni sürümü dener (indirme, resimden okuma, AutoCAD'de açılış). Havai hat hâlâ yok. (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.

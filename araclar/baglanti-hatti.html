@@ -142,7 +142,7 @@
     <h2 style="margin-top:0">8. Vaziyet planı ve resimler</h2>
     <p class="not">TKGM resminin üzerinde önce <b>enerji alınacak direği / box'ı</b>, sonra <b>sayaç panosunun yerini</b> tıklayın. Kablo güzergâhı kıvrılıyorsa aradaki dönüş noktalarını da ekleyin. Paftada bu noktalara sembol, güzergâh ve yazılar çizilir.</p>
     <div class="secim" id="isaretMod">
-      <button type="button" data-v="nokta" aria-pressed="true">1. Enerji noktası</button>
+      <button type="button" data-v="nokta" aria-pressed="true" id="b-nokta">1. Direk / box</button>
       <button type="button" data-v="bina" aria-pressed="false">2. Sayaç panosu</button>
       <button type="button" data-v="ara" aria-pressed="false">Dönüş noktası ekle</button>
     </div>
@@ -300,7 +300,7 @@ const ALANLAR = [
     }
   }
   $('alanlar').innerHTML = h;
-  $('alanlar').addEventListener('input', guncelle);
+  $('alanlar').addEventListener('input', () => { guncelle(); if (typeof isaretCiz === 'function') isaretCiz(); });
 })();
 function alanlariDoldur() {
   const g = D.gdz || {}, i = D.ic || {};
@@ -331,7 +331,7 @@ function alanlariDoldur() {
   if (g.kaziIzni === 'Yok') not.push('GDZ yazısına göre <b>kazı izni yok</b>.');
   if (b.sayacAdet > 1) not.push(`<b>${b.sayacAdet} bağımsız bölüm</b> var. Güç dağılım tablosunu (4. bölüm) ve sayaç panosu korumalarını kontrol edin.`);
   $('hatNotu').innerHTML = not.map(t => `<div class="uyari">${t}</div>`).join('');
-  guncelle();
+  guncelle(); isaretCiz();
 }
 function bilgiler() {
   const b = {};
@@ -408,16 +408,18 @@ $('vazKutu').addEventListener('click', e => {
 });
 $('isaretSil').addEventListener('click', () => { D.isaret = { nokta: null, bina: null, ara: [] }; isaretMod = 'nokta';
   for (const x of $('isaretMod').children) x.setAttribute('aria-pressed', x.dataset.v === 'nokta'); isaretCiz(); guncelle(); });
+function kaynakAdi() { const v = ($('a-direk') && $('a-direk').value.trim()) || (D.gdz && D.gdz.direk) || ''; return v || ($('a-baglanti') && $('a-baglanti').value === 'box' ? 'AG BOX' : 'AG DİREĞİ'); }
 function isaretCiz() {
   const i = D.isaret, P = p => [p[0] * 1000, p[1] * 528];
   let o = '';
   const yol = [i.nokta, ...i.ara, i.bina].filter(Boolean).map(P);
   if (yol.length > 1) o += `<polyline points="${yol.map(p => p.join(',')).join(' ')}" fill="none" stroke="#c0392b" stroke-width="4" stroke-dasharray="14 8"/>`;
-  if (i.nokta) { const [x, y] = P(i.nokta); o += `<circle cx="${x}" cy="${y}" r="12" fill="#fff" stroke="#c0392b" stroke-width="4"/><text x="${x}" y="${y - 18}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700">ENERJİ</text>`; }
+  if (i.nokta) { const [x, y] = P(i.nokta); o += `<circle cx="${x}" cy="${y}" r="12" fill="#fff" stroke="#c0392b" stroke-width="4"/><text x="${x}" y="${y - 18}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700" stroke="#fff" stroke-width="5" paint-order="stroke">${kac(kaynakAdi())}</text>`; }
   i.ara.forEach(p => { const [x, y] = P(p); o += `<circle cx="${x}" cy="${y}" r="6" fill="#c0392b"/>`; });
-  if (i.bina) { const [x, y] = P(i.bina); o += `<rect x="${x - 14}" y="${y - 9}" width="28" height="18" fill="#c0392b"/><text x="${x}" y="${y - 16}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700">PANO</text>`; }
+  if (i.bina) { const [x, y] = P(i.bina); o += `<rect x="${x - 14}" y="${y - 9}" width="28" height="18" fill="#c0392b"/><text x="${x}" y="${y - 16}" font-size="22" text-anchor="middle" fill="#c0392b" font-weight="700" stroke="#fff" stroke-width="5" paint-order="stroke">SAYAÇ PANOSU</text>`; }
   $('vazIsaret').innerHTML = o;
-  durum('d-isaret', !i.nokta ? 'Resimde enerji alınacak direği / box\'ı tıklayın.' : !i.bina ? 'Şimdi sayaç panosunun yerini tıklayın.' : `İşaretlendi${i.ara.length ? ' (' + i.ara.length + ' dönüş noktası)' : ''}. Paftada bu güzergâh çizilecek.`, i.nokta && i.bina ? 'iyi' : '');
+  $('b-nokta').textContent = '1. ' + kaynakAdi();
+  durum('d-isaret', !i.nokta ? `Resimde ${kaynakAdi()} noktasını tıklayın.` : !i.bina ? 'Şimdi sayaç panosunun yerini tıklayın.' : `İşaretlendi${i.ara.length ? ' (' + i.ara.length + ' dönüş noktası)' : ''}. Paftada bu güzergâh çizilecek.`, i.nokta && i.bina ? 'iyi' : '');
 }
 
 // ---- Kablo seçimi ----

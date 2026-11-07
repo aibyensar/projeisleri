@@ -245,14 +245,14 @@
         c.cizgi(p[0], p[1], yon > 0 ? ex : ex + w, ey, K);
       };
       const sol = a[0] < b[0];
-      etiket(a, [v.baglanti === 'box' ? 'ENERJİ ALINACAK AG BOX' : 'ENERJİ ALINACAK AG DİREĞİ', v.kaynakAd || ''], sol ? -1 : 1);
+      etiket(a, [v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Bağlantı noktası: AG box (GDZ)' : 'Bağlantı noktası: AG direği (GDZ)'], sol ? -1 : 1);
       etiket(b, ['SAYAÇ PANOSU', `Ada ${v.ada} / Parsel ${v.parsel}`], sol ? 1 : -1);
       const ort = yol[Math.floor(yol.length / 2) - (yol.length % 2 ? 0 : 1)], son = yol[Math.floor(yol.length / 2)];
       const mx = (ort[0] + son[0]) / 2, my = (ort[1] + son[1]) / 2;
       etiket([mx, my], [`${v.kablo.yazi}`, `L = ${sayiYaz(v.L)} m, YERALTI`], sol ? 1 : -1);
     } else {
       // işaretlenmediyse: resmin köşesine bilgi kutusu
-      const h = 2.6, s = [v.baglanti === 'box' ? 'Enerji alınacak AG box:' : 'Enerji alınacak AG direği:', v.kaynakAd || '',
+      const h = 2.6, s = [v.baglanti === 'box' ? 'Bağlantı noktası (AG box):' : 'Bağlantı noktası (AG direği):', v.kaynakAd || '',
         `Kablo: ${v.kablo.yazi}, L = ${sayiYaz(v.L)} m yeraltı`, `Ada ${v.ada} / Parsel ${v.parsel}`];
       const w = Math.max(...s.map(t => genislik(t, h))) + 4, hh = s.length * h * 1.45 + 3;
       c.dolgu([[x0 + 2, y0 + 2], [x0 + 2 + w, y0 + 2], [x0 + 2 + w, y0 + 2 + hh], [x0 + 2, y0 + 2 + hh]], { katman: 'BHP-VAZIYET', renk: 255, beyaz: true });
