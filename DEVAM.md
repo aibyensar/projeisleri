@@ -5,7 +5,7 @@
 - **Sade Türkçe**, teknik yazılım terimi yok. Adım adım; **bir iş tamamen bitmeden diğerine geçilmez.**
 - Karmaşıklık istemez: sadece gerekli alanlar, kendi hesap yöntemi, kendi katsayıları.
 - Değerlerin **doğru ve kaynaklı** olmasını ister (firma katalogları). Çizimlerin **mühendise yakışır, teknik** görünmesini ister.
-- AutoCAD 2022 (tam sürüm) kullanır. Telefondan da bakar.
+- AutoCAD 2022 (tam sürüm) kullanır. Proje işlerini (BHP aracı) yalnız bilgisayardan yapar; telefon düzeni gerekmez.
 
 ## Nerede ne var
 - Depo: `aibyensar/projeisleri` (eski adı deneme). Bütün iş **`claude/laughing-dijkstra-5c7tbv`** dalında, **main'e henüz birleştirilmedi**.
