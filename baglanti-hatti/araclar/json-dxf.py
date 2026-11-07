@@ -123,11 +123,14 @@ def cevir(kaynak, cikis, bolge=None):
                                             angle=math.degrees(e.get('patternAngle') or 0), color=a.get('color', 256))
                     except Exception: h.set_pattern_fill('ANSI31', scale=e.get('patternScale') or 1, color=a.get('color', 256))
                 for yol in e.get('boundaryPaths', []):
-                    f = yol.get('boundaryPathTypeFlag', 1)
-                    if f & 2:
+                    f0 = yol.get('boundaryPathTypeFlag', 1)
+                    # yalnız "dış" ve "çoklu çizgi" bitleri kalır: "türetilmiş" (4) vb. bitler AutoCAD'de
+                    # 47 kodunu (piksel boyu) bekletir ve çizim "drawing discarded" ile açılmaz
+                    f = (f0 & 2) | 1
+                    if f0 & 2:
                         h.paths.add_polyline_path([(v['x'], v['y'], v.get('bulge', 0) or 0) for v in yol['vertices']], is_closed=True, flags=f)
                     else:
-                        ep = h.paths.add_edge_path(flags=f)
+                        ep = h.paths.add_edge_path(flags=1)
                         for k in yol.get('edges', []):
                             if k['type'] == 1: ep.add_line(p(k['start']), p(k['end']))
                             elif k['type'] == 2:

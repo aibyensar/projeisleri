@@ -56,7 +56,7 @@
       c.kutu(kx - 13, yh - 8.5, kx + 13, yh + 8.5, S); c.cizgi(kx - 13, yh - 8.5, kx + 13, yh + 8.5, S); c.cizgi(kx - 13, yh + 8.5, kx + 13, yh - 8.5, S);
     } else c.daire(kx, yh, r, S);
     const ad = v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)');
-    const ah = Math.min(4.2, 190 / Math.max(1, genislik(ad, 1)));
+    const ah = Math.min(3.2, 190 / Math.max(1, genislik(ad, 1)));
     c.yazi(ad, Math.max(X0 + 2 + genislik(ad, ah) / 2, kx), yh - r - 7, ah, { hiza: 'orta' });
     c.yazi(v.baglanti === 'box' ? 'AG BOX (GDZ ŞEBEKESİ)' : 'MEVCUT AG DİREĞİ (GDZ)', kx, yh + r + 4, 2.6, { hiza: 'orta' });
     const px1 = X0 + 268, px2 = X1 - 4, py1 = Y0 + 9, py2 = Y1 - 7;
@@ -64,13 +64,14 @@
     c.cizgi(xs, yh, px1, yh, K);
     const ox = (xs + px1) / 2;
     c.dolgu([[ox + 6, yh], [ox - 6, yh + 4.3], [ox - 6, yh - 4.3]], S);
-    c.yazi(v.kablo.yazi, ox, yh + 9, 4.6, { hiza: 'orta' });
-    c.yazi(`${sayiYaz(v.L)} m`, ox, yh - 8, 4.2, { hiza: 'orta' });
-    c.yazi(`YERALTI · ${mono ? 'MONOFAZE 220 V' : 'TRİFAZE 380 V'}`, ox, yh - 14, 3.6, { hiza: 'orta' });
+    c.yazi(v.kablo.yazi, ox, yh + 8, 3.8, { stil: KALIN, hiza: 'orta' });
+    c.yazi(`L = ${sayiYaz(v.L)} m`, ox, yh - 8, 3.4, { hiza: 'orta' });
+    c.yazi(`YERALTI · ${mono ? 'MONOFAZE 220 V' : 'TRİFAZE 380 V'}`, ox, yh - 13.5, 3.0, { hiza: 'orta' });
     c.yazi(`(parsel dışı ${sayiYaz(v.Ldis)} m + parsel içi ${sayiYaz(v.Lic)} m)`, ox, yh - 19.5, 2.4, { hiza: 'orta' });
     // sayaç panosu
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', lt: 'BHP-KESIK', kalin: true });
-    c.yazi('mühürlenebilir alan', (px1 + px2) / 2, py2 + 3.6, 4.0, { hiza: 'orta' });
+    c.yazi('mühürlenebilir alan', (px1 + px2) / 2, py2 + 3.4, 3.2, { hiza: 'orta' });
+    c.yazi('TEK HAT ŞEMASI', X0 + 48, Y1 - 3, 3.0, { stil: KALIN }); c.cizgi(X0 + 48, Y1 - 5.2, X0 + 48 + genislik('TEK HAT ŞEMASI', 3.0), Y1 - 5.2, { katman: 'BHP-TABLO' });
     c.yazi('SAYAÇ PANOSU', px1 + 2, py2 - 3.5, 2.4, { stil: KALIN });
     let x = px1;
     c.cizgi(x, yh, x + 8, yh, S); x += 8;
@@ -113,42 +114,77 @@
     c.yazi('1x16 mm² NYY pano topraklaması', px2 - 7, py1 - 4.5, 2.2, { hiza: 'sag' });
   }
 
-  // ---------- 6. Gerilim düşümü ve akım hesabı (kendi koordinatlarında: x 43..361, y 5812..5958) ----------
-  const HESAP_KAYNAK = [40, 5806, 362, 5960];
-  function hesap(c, v) {
-    const X = 43, Y = 5963, h = v.h, vg = virgul, mono = v.faz === 1;
-    const sari = (t, x1, x2, y, hh = 3.4) => { c.dolgu([[x1, y - 2.6], [x2, y - 2.6], [x2, y + 2.6], [x1, y + 2.6]], { katman: 'BHP-DOLGU', renk: 254 }); c.yazi(t, (x1 + x2) / 2, y, hh, { stil: KALIN, hiza: 'orta' }); };
-    const y = (t, x, yy, hh = 3.4, o = {}) => c.yazi(t, X + x, Y - yy, hh, o);
-    const U = mono ? 220 : 380, k = v.kablo.iletken === 'al' ? 35 : 56;
-    y(v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)', 33, 18, 2.6, { stil: KALIN, hiza: 'sag' });
-    c.dolgu([[X + 36, Y - 21], [X + 44, Y - 21], [X + 44, Y - 15], [X + 36, Y - 15]], { katman: 'BHP-SEMBOL' });
-    c.cizgi(X + 44, Y - 18, X + 186, Y - 18);
-    sari(v.kablo.yazi, X + 70, X + 160, Y - 11);
-    sari(sayiYaz(v.L), X + 103, X + 117, Y - 25); y('m', 119, 25, 3.4);
-    c.kutu(X + 186, Y - 32, X + 194, Y - 4); c.cizgi(X + 186, Y - 4, X + 194, Y - 32);
-    y('SAYAÇ PANOSU', 198, 10, 2.8, { stil: KALIN });
-    y('BAĞLANTI GÜCÜ', 198, 18, 2.8); sari(String(v.N), X + 238, X + 258, Y - 18); y('W', 260, 18, 3.0);
-    y(mono ? 'Monofaze, 220 V' : 'Trifaze, 380 V', 198, 26, 2.8);
-    y('ANA BESLEME HATTI (BAĞLANTI HATTI)', 50, 45, 3.4, { stil: KALIN });
-    y('% e =', 30, 58, 3.4, { stil: KALIN, hiza: 'sag' }); sari(vg(h.c, 7), X + 31, X + 59, Y - 58);
-    for (const [t, x] of [['x', 66], [String(v.N), 82], ['x', 100], [sayiYaz(v.L), 114], ['/', 128]]) y(t, x, 58, 3.4, { hiza: 'orta' });
-    sari(sayiYaz(v.kablo.kesit), X + 134, X + 148, Y - 58);
-    y('=', 154, 58, 3.4, { hiza: 'orta' }); y(vg(h.e, 5), 159, 58, 3.4);
-    y(`%e = c · N · L / S ;  c = ${mono ? 200 : 100} / (κ · U²) = ${mono ? 200 : 100} / (${k} · ${U}²) ;  κ = ${k} m/Ω·mm² (${v.kablo.iletken === 'al' ? 'alüminyum' : 'bakır'})`, 31, 65, 2.2);
-    y('TOPLAM GERİLİM DÜŞÜMÜ', 50, 79, 3.4, { stil: KALIN });
-    y('% e =', 30, 91, 3.4, { stil: KALIN, hiza: 'sag' }); y(vg(h.e, 6), 82, 91, 3.4, { hiza: 'orta' });
-    for (const [t, x] of [['=', 154], [vg(h.e, 2), 166], [h.eUygun ? '<' : '>', 180], ['1,5', 192]]) y(t, x, 91, 3.4, { hiza: 'orta' });
-    y(h.eUygun ? 'GERİLİM DÜŞÜMÜ UYGUNDUR' : 'GERİLİM DÜŞÜMÜ UYGUN DEĞİL', 202, 91, 3.0, { stil: KALIN });
-    c.cizgi(X + 201, Y - 94.5, X + 300, Y - 94.5);
-    y('AKIM KONTROLÜ', 50, 108, 3.4, { stil: KALIN });
-    y('I =', 30, 120, 3.4, { stil: KALIN, hiza: 'sag' });
-    for (const [t, x] of [[String(v.N), 44], ['/', 66], [String(v.bolen), 82], ['=', 100], [vg(h.I, 2), 118], [h.iUygun ? '<' : '>', 134]]) y(t, x, 120, 3.4, { hiza: 'orta' });
-    sari(String(v.kablo.iz), X + 140, X + 156, Y - 120); y('A', 159, 120, 3.4);
-    y(h.iUygun ? 'AKIM YÖNÜNDEN UYGUNDUR' : 'AKIM YÖNÜNDEN UYGUN DEĞİL', 202, 120, 3.0, { stil: KALIN });
-    c.cizgi(X + 201, Y - 123.5, X + 300, Y - 123.5);
-    y(mono ? 'I = N / (U · cos φ) ;  176 = 220 · 0,8' : 'I = N / (√3 · U · cos φ) ;  527 = √3 · 380 · 0,8', 31, 127, 2.2);
-    y(`Akım taşıma kapasitesi: ${v.kablo.yazi} toprakta ${v.kablo.iz} A (Öznur Kablo kataloğu, toprak sıcaklığı 20 °C)`, 31, 132, 2.2);
-    y(`SONUÇ: ${v.kablo.yazi} ${h.uygun ? 'kablo kullanılması uygundur.' : 'kablo UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`, 31, 143, 3.2, { stil: KALIN });
+  // ---------- Gerilim düşümü ve akım hesabı: solda hesapta kullanılan değerler, sağda hesap adımları ----------
+  function hesap(c, v, [x0, ya, x1, yu]) {
+    const T = { katman: 'BHP-TABLO' }, h = v.h, vg = virgul, mono = v.faz === 1;
+    const U = mono ? 220 : 380, k = v.kablo.iletken === 'al' ? 35 : 56, sabit = mono ? 200 : 100;
+    const bas = 7;
+    c.kutu(x0, ya, x1, yu, T);
+    c.dolgu([[x0, yu - bas], [x1, yu - bas], [x1, yu], [x0, yu]], { katman: 'BHP-DOLGU', renk: 254 });
+    c.cizgi(x0, yu - bas, x1, yu - bas, T);
+    c.yazi('GERİLİM DÜŞÜMÜ VE AKIM HESABI', (x0 + x1) / 2, yu - bas / 2, 3.0, { stil: KALIN, hiza: 'orta' });
+    // sol: değerler tablosu
+    const xa = x0, xb = x0 + 80, xc = x0 + 152, ust = yu - bas;
+    const satir = [
+      ['Bağlantı gücü (eş zamanlı)', 'N', `${v.N} W`],
+      ['Hat uzunluğu', 'L', `${sayiYaz(v.L)} m (${sayiYaz(v.Ldis)} + ${sayiYaz(v.Lic)})`],
+      ['Kablo', '', v.kablo.yazi],
+      ['Faz iletkeni kesiti', 'S', `${sayiYaz(v.kablo.kesit)} mm²`],
+      ['İletkenlik', 'κ', `${k} m/Ω·mm² (${v.kablo.iletken === 'al' ? 'alüminyum' : 'bakır'})`],
+      ['İşletme gerilimi', 'U', `${U} V (${mono ? 'monofaze' : 'trifaze'})`],
+      ['Güç katsayısı', 'cos φ', '0,8'],
+      ['Gerilim düşümü katsayısı', 'c', vg(h.c, 7)],
+      ['Akım taşıma kapasitesi (toprak)', 'Iz', `${v.kablo.iz} A`],
+    ];
+    const sh = Math.min(9, (ust - ya - 16) / (satir.length + 1));
+    c.cizgi(xc, ya, xc, ust, T);
+    c.yazi('HESAPTA KULLANILAN DEĞERLER', (xa + xc) / 2, ust - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
+    c.cizgi(xa, ust - sh, xc, ust - sh, T);
+    satir.forEach(([ad, sm, d], i) => {
+      const yy = ust - sh * (i + 1.5);
+      c.cizgi(xa, ust - sh * (i + 2), xc, ust - sh * (i + 2), T);
+      c.yazi(ad, xa + 2, yy, 2.2);
+      if (sm) c.yazi(sm, xb - 7, yy, 2.4, { stil: KALIN, hiza: 'orta' });
+      c.yazi(d, xb, yy, 2.3, { stil: KALIN });
+    });
+    c.cizgi(xb - 14, ust - sh, xb - 14, ust - sh * (satir.length + 1), T);
+    const yn = ust - sh * (satir.length + 1);
+    c.yazi('Iz: Öznur Kablo kataloğu, toprakta döşeme, 20 °C toprak sıcaklığı.', xa + 2, yn - 4.5, 2.0);
+    c.yazi('Bağlantı hattında izin verilen gerilim düşümü: %1,5.', xa + 2, yn - 9, 2.0);
+    // sağ üst: hat şeması (kullanıcının hesap çizelgesindeki gibi)
+    const X = xc + 6;
+    const ys = ust - 13, sx0 = X + 32, sx1 = x1 - 66;
+    c.yazi(v.baglanti === 'box' ? 'AG BOX (GDZ)' : 'AG DİREĞİ (GDZ)', sx0 - 3, ys, 2.4, { stil: KALIN, hiza: 'sag' });
+    c.dolgu([[sx0, ys - 2.5], [sx0 + 5, ys - 2.5], [sx0 + 5, ys + 2.5], [sx0, ys + 2.5]], { katman: 'BHP-SEMBOL' });
+    c.cizgi(sx0 + 5, ys, sx1, ys, S);
+    c.yazi(v.kablo.yazi, (sx0 + sx1) / 2, ys + 3.5, 2.5, { stil: KALIN, hiza: 'orta' });
+    c.yazi(`L = ${sayiYaz(v.L)} m`, (sx0 + sx1) / 2, ys - 3.5, 2.5, { hiza: 'orta' });
+    c.kutu(sx1, ys - 6, sx1 + 5, ys + 6, S); c.cizgi(sx1, ys + 6, sx1 + 5, ys - 6, S);
+    c.yazi('SAYAÇ PANOSU', sx1 + 8, ys + 3, 2.4, { stil: KALIN });
+    c.yazi(`N = ${v.N} W · ${mono ? 'monofaze 220 V' : 'trifaze 380 V'}`, sx1 + 8, ys - 2, 2.3);
+    c.cizgi(xc, ys - 10, x1, ys - 10, T);
+    // sağ: hesap adımları
+    let y = ys - 17;
+    const baslik = t => { c.yazi(t, X, y, 2.7, { stil: KALIN }); c.cizgi(X, y - 2.2, X + genislik(t, 2.7), y - 2.2, T); y -= 7; };
+    const satirY = (t, hh = 2.6, o = {}) => { c.yazi(t, X + 4, y, hh, o); y -= hh * 2.2; };
+    const sonuc = (iyi, t, yy) => {
+      const bx = x1 - 4 - 62;
+      c.kutu(bx, yy - 3.5, x1 - 4, yy + 3.5, T);
+      c.yazi(iyi ? t + ' UYGUNDUR' : t + ' UYGUN DEĞİL', (bx + x1 - 4) / 2, yy, 2.4, { stil: KALIN, hiza: 'orta' });
+    };
+    baslik('1. GERİLİM DÜŞÜMÜ');
+    satirY(`c = ${sabit} / (κ · U²) = ${sabit} / (${k} · ${U}²) = ${vg(h.c, 7)}`);
+    satirY(`%e = c · N · L / S = ${vg(h.c, 7)} · ${v.N} · ${sayiYaz(v.L)} / ${sayiYaz(v.kablo.kesit)} = ${vg(h.e, 4)}`);
+    sonuc(h.eUygun, 'GERİLİM DÜŞÜMÜ', y);
+    satirY(`%e = ${vg(h.e, 2)}  ${h.eUygun ? '<' : '>'}  %1,5`, 2.9, { stil: KALIN });
+    y -= 4;
+    baslik('2. AKIM KONTROLÜ');
+    satirY(mono ? `I = N / (U · cos φ) = ${v.N} / (220 · 0,8) = ${v.N} / ${v.bolen}` : `I = N / (√3 · U · cos φ) = ${v.N} / (√3 · 380 · 0,8) = ${v.N} / ${v.bolen}`);
+    sonuc(h.iUygun, 'AKIM YÖNÜNDEN', y);
+    satirY(`I = ${vg(h.I, 2)} A  ${h.iUygun ? '<' : '>'}  Iz = ${v.kablo.iz} A`, 2.9, { stil: KALIN });
+    // sonuç satırı (alt kenarda)
+    c.cizgi(xc, ya + 11, x1, ya + 11, T);
+    c.yazi(`SONUÇ: ${v.kablo.yazi} kablo ${h.uygun ? 'gerilim düşümü ve akım taşıma yönünden uygundur.' : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`, X, ya + 5.5, 2.8, { stil: KALIN });
   }
 
   // ---------- Güç dağıtım tablosu (kullanıcının onaylı projelerindeki sütunlar) ----------
@@ -355,8 +391,7 @@
   function hepsi(v, bilgi) {
     const B = bilgi.bolgeler, c = new Cizim();
     tekHat(c, v, B.tekhat);
-    c.donustur(HESAP_KAYNAK, B.hesap, 1.4); hesap(c, v);
-    c.donustur(null);
+    hesap(c, v, B.hesap);
     cetvel(c, v, B.cetvel);
     gucTablosu(c, v, B.guc);
     vaziyet(c, v, bilgi.resim.vaziyet);

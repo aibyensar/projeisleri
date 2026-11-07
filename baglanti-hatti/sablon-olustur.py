@@ -266,6 +266,13 @@ for e in m.query('TEXT'):
         e.dxf.width = round(max(0.5, (xr - 0.8 - k[0]) / (k[2] - k[0])), 3); daralan += 1
 print('daraltılan yazı', daralan)
 for ad in ('BHP_DETAY_BOX', 'BHP_DETAY_DIREK'): duzenle(d.blocks.get(ad))
+# taramalar: ilişkisiz, sınır bayrakları yalnız dış/çoklu çizgi (AutoCAD "expected group code 47" hatası vermesin)
+for yer in [m] + [d.blocks.get(a) for a in ('BHP_DETAY_BOX', 'BHP_DETAY_DIREK')]:
+    for h in yer.query('HATCH'):
+        h.dxf.associative = 0
+        for p in h.paths:
+            p.path_type_flags = (p.path_type_flags & 2) | 1
+            if hasattr(p, 'source_boundary_objects'): p.source_boundary_objects = []
 # katmanlar: siyah/beyaz, düz çizgi (renk 7); kullanıcının "uyarı" katmanları da tek renk
 for k in d.layers:
     if k.dxf.name.startswith('BHP') or k.dxf.name in ('0', 'DEFPOINTS', 'Defpoints'): continue

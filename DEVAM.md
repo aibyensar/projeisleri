@@ -142,7 +142,11 @@ gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullan�
 - v7.1: kullanıcı "açınca PC donuyor, içerik yok, yazı boyutu/şekli toparla" dedi. Şablonda sadeleştirme: bloklar ve ölçüler çizgiye
   açıldı, elips → çoklu çizgi, nokta/boş yazı silindi, bütün yazılar Arial (BHP/BHP-K), MTEXT biçim kodları temizlendi, renkler katmandan
   (hepsi 7), çizgi tipleri yalnız BHP-KESIK/BHP-GIZLI, kullanılmayan blok/çizgi tipi/stil silindi, taşan tablo yazıları daraltıldı.
-  Donmanın asıl nedeni AutoCAD'de doğrulanamadı; kullanıcıdan sonuç ve hata yazısı istendi.
+  Asıl neden bulundu (kullanıcının F2 ekranı): "HATCH ... expected group code 47 — drawing discarded". Kullanıcının DWG'sindeki taramaların
+  sınır bayrağında "türetilmiş" (4) biti vardı; AutoCAD o zaman 47 kodunu bekliyor. json-dxf.py ve sablon-olustur.py bayrağı (f & 2) | 1 yapar.
+  AutoCAD hatası olursa: kullanıcıdan F2 ekranı iste (satır no + kod verir).
+- v7.2: hesap bölümü yeniden: solda "hesapta kullanılan değerler" tablosu, sağda hat şeması + 1. gerilim düşümü, 2. akım kontrolü (uygunluk
+  kutuları) + sonuç satırı. Tek hatta "TEK HAT ŞEMASI" başlığı, yazı boyları sadeleştirildi.
 - Eşzamanlılık katsayısı satırı konmadı (onaylı projedeki 0,43 hesapla tutmuyor); kullanıcıya sorulacak.
 
 **AÇIK KONULAR (sıradaki)**
