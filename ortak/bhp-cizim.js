@@ -45,16 +45,35 @@
       c.cokgen([T(-4.5, -1.8), T(4.5, -1.8), T(4.5, 1.8), T(-4.5, 1.8)], { ...S, kapali: true });
       [-0.7, 0, 0.7].forEach(d => L(d, -1.8, d, 1.8));
     },
-    // şalter gövdesi (açık kontak); tms: sabit kontakta ×, kar: kaçak akım kutusu, ikisi: TMŞ+YKŞ
+    // YKŞ / kaçak akım rölesi (kullanıcının sembolü): kutu içinde iki bağlantı ucu, açık bıçak, açma işareti (dolu üçgen
+    // ve ×) ve basamaklı mandal; hat soldan girer, sağdaki uçtan çıkar (genişlik 16, merkez x,y)
+    ykş(c, x, y) {
+      const L = (a, b, d, e) => c.cizgi(x + a, y + b, x + d, y + e, S);
+      c.kutu(x - 7, y - 4, x + 7, y + 7.5, S);
+      L(-8, -1.5, -7, -1.5); c.daire(x - 4.6, y - 1.5, 1.5, S); L(-7, -1.5, -6.1, -1.5);
+      c.daire(x + 4.6, y - 1.5, 1.5, S); L(6.1, -1.5, 8, -1.5);
+      L(-3.5, -0.4, 3.6, 4.0);                                             // bıçak
+      c.dolgu([[x - 0.6, y + 1.6], [x - 3.4, y + 1.9], [x - 1.9, y + 4.3]], S);   // açma üçgeni
+      L(-4.2, 2.2, -2.2, 4.6); L(-4.2, 4.0, -2.0, 2.6);                     // ×
+      L(1.2, 2.6, 1.2, 4.6); L(1.2, 4.6, 2.9, 4.6); L(2.9, 4.6, 2.9, 6.3); L(2.9, 6.3, 1.4, 6.3);   // mandal
+    },
+    // sigorta (kullanıcının sembolü): hat üzerinde kutu, kutup sayısı kadar dikey çizgi, çapraz ok
+    sigorta(c, x, y, kutup = 4) {
+      const L = (a, b, d, e) => c.cizgi(x + a, y + b, x + d, y + e, S);
+      L(-8, 0, -5, 0); L(5, 0, 8, 0);
+      c.kutu(x - 5, y - 2.2, x + 5, y + 2.2, S);
+      for (let i = 0; i < kutup; i++) { const u = (i - (kutup - 1) / 2) * 1.7; L(u, -3.2, u, 3.2); }
+      L(-5.8, -3.8, 5.4, 3.6);
+      c.dolgu([[x + 6.4, y + 4.2], [x + 4.2, y + 3.9], [x + 5.3, y + 2.3]], S);
+    },
+    // TMŞ (IEC 60617 devre kesici): açık kontak, sabit kontakta ×
     salter(c, x, y, tur, dikey = false) {
       const T = yerel(x, y, dikey), L = (a, b, d, e, o = S) => c.cizgi(...T(a, b), ...T(d, e), o);
-      L(-8, 0, -4, 0); L(-4, 0, 3.6, 3.6); L(4.5, 0, 8, 0);
-      if (tur === 'tms' || tur === 'tmsyks') { L(3.5, -1, 5.5, 1); L(3.5, 1, 5.5, -1); }
-      if (tur === 'kar' || tur === 'tmsyks') {
-        c.cokgen([T(-1.6, -6.4), T(1.6, -6.4), T(1.6, -3.8), T(-1.6, -3.8)], { ...S, kapali: true });
-        L(0, -3.8, 0, 1.8, { ...S, lt: 'BHP-GIZLI' });
-      }
+      L(-8, 0, -4, 0); L(-4, 0, 3.8, 3.4); L(4.5, 0, 8, 0);
+      L(3.4, -1.1, 5.6, 1.1); L(3.4, 1.1, 5.6, -1.1);
     },
+    // iletken sayısı: hat üzerinde eğik kısa çizgiler (kullanıcının "kuvvetli akım besleme iletkeni" sembolü)
+    iletken(c, x, y, n) { for (let i = 0; i < n; i++) { const u = x + (i - (n - 1) / 2) * 1.6; c.cizgi(u - 1, y - 1.8, u + 1, y + 1.8, S); } },
     // 3 ~ sayaç: dikdörtgen, üstte üç çizgi, altta kWh (merkez x,y; 9 x 11)
     sayac3(c, x, y, tur = 'Aktif') {
       c.kutu(x - 4.5, y - 5.5, x + 4.5, y + 5.5, S);
@@ -65,7 +84,22 @@
     toprak(c, x, y) { c.cizgi(x, y, x, y - 3, S); [3.6, 2.4, 1.2].forEach((w, i) => c.cizgi(x - w, y - 3 - i * 1.2, x + w, y - 3 - i * 1.2, S)); },
     okYukari(c, x, y) { c.dolgu([[x, y], [x - 1.6, y - 4], [x + 1.6, y - 4]], S); },
   };
-  const CIHAZ_AD = { sigorta: 'SİGORTA', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'TMŞ + YKŞ' };
+  // Standart bölüm: kalın çerçeve + üstte 7 birim başlık şeridi (şablondaki bütün bölümlerle aynı biçim); iç kutuyu döndürür
+  function blok(c, [x0, y0, x1, y1], baslik) {
+    const T = { katman: 'BHP-TABLO' };
+    c.kutu(x0, y0, x1, y1, { ...T, kalin: true });
+    c.cizgi(x0, y1 - 7, x1, y1 - 7, T);
+    c.yazi(baslik, (x0 + x1) / 2, y1 - 3.5, 3.0, { stil: KALIN, hiza: 'orta' });
+    return [x0 + 3, y0 + 3, x1 - 3, y1 - 10];
+  }
+  const CIHAZ_AD = { sigorta: '', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'YKŞ' };
+  // Kesici etiketi (kullanıcının kuralı): akım "4x63A" biçiminde (x her zaman küçük); YKŞ ve K.A.R altında her zaman 300 mA, kesicilerde her zaman 10kA
+  function kesiciEtiket(k) {
+    const d = String(k.deger || ''), m = d.match(/(\d+)\s*[xX×*]\s*(\d+(?:[.,]\d+)?)\s*A(?![a-zA-Z])/), a = d.match(/(\d+(?:[.,]\d+)?)\s*A(?![a-zA-Z])/);
+    const akim = m ? `${m[1]}x${m[2]}A` : a ? `${a[1]}A` : d.trim();
+    const kutup = m ? +m[1] : 4, kacak = k.tur === 'kar' || k.tur === 'tmsyks';
+    return { akim, ek: kacak ? '300 mA' : '10kA', kutup, kacak };
+  }
   // Pano topraklama iletkeni: faz kesiti 35 mm²'ye kadar 16 mm²; üstünde faz kesitinin en az yarısı (standart kesit)
   const STD = [16, 25, 35, 50, 70, 95, 120, 150, 185, 240];
   function topraklamaKesit(S_) { return S_ <= 35 ? 16 : STD.find(s => s >= S_ / 2) || 240; }
@@ -73,73 +107,77 @@
   // ---------- Tek hat şeması ----------
   // Solda enerji noktası, kesikli yeraltı kablosu ve enerji oku; sağda kesikli "mühürlenebilir alan":
   // ana koruma(lar) → bara → her sayaç grubu YUKARI: sayaç önü otomat sigorta → 3~ sayaç → iç tesisat.
-  function tekHat(c, v, [X0, Y0, X1, Y1]) {
-    const T = { katman: 'BHP-TABLO' }, K = { katman: 'BHP-KABLO', lt: 'BHP-KESIK' }, mono = v.faz === 1;
-    c.yazi('TEK HAT ŞEMASI', X0 + 2, Y1 - 3.5, 3.0, { stil: KALIN });
-    c.cizgi(X0 + 2, Y1 - 5.6, X0 + 2 + genislik('TEK HAT ŞEMASI', 3.0), Y1 - 5.6, T);
-    const yh = Y0 + 34, kx = X0 + 26, r = 9;
+  // Bölge: standart çerçeve içinde; çizim 300 x 118 birimlik sanal kutuda yapılıp kutuyu dolduracak kadar büyütülür.
+  // Yeraltı kablosu kesik çizgi; ana kesiciler kullanıcının sembolleriyle (YKŞ / K.A.R kutulu, sigorta kutup çizgili).
+  function tekHat(c, v, B) {
+    const ic = blok(c, B, 'TEK HAT ŞEMASI');
+    const X0 = 0, Y0 = 0, X1 = 300, Y1 = 118;
+    c.donustur([X0, Y0, X1, Y1], ic, 1.6);
+    const K = { katman: 'BHP-KABLO', lt: 'BHP-KESIK' }, TP = S;            // kullanıcının kuralı: yeraltı kablosu kesik çizgi
+    const yh = Y0 + 50, kx = X0 + 18, r = 8;
     if (v.baglanti === 'box') c.kutu(kx - r, yh - r, kx + r, yh + r, S); else c.daire(kx, yh, r, S);   // box kare, direk çember
-    c.yazi(v.baglanti === 'box' ? 'AG BOX' : 'AG DİREK', kx, yh, 2.2, { stil: KALIN, hiza: 'orta' });
+    c.yazi(v.baglanti === 'box' ? 'AG BOX' : 'AG DİREK', kx, yh, 2.1, { stil: KALIN, hiza: 'orta' });
     const ad = v.kaynakAd || (v.baglanti === 'box' ? 'AG SAHA DAĞITIM KUTUSU' : 'AG DİREĞİ');
-    const ah = Math.min(2.8, 120 / Math.max(1, genislik(ad, 1)));
-    c.yazi(ad, X0 + 2, yh - r - 5, ah, { stil: KALIN });
-    c.yazi(v.baglanti === 'box' ? 'GDZ AG saha dağıtım kutusu' : 'GDZ mevcut AG direği', X0 + 2, yh - r - 9.5, 2.2);
-    const px1 = X0 + 150, py1 = Y0 + 12, py2 = Y1 - 12;
-    const nGrup = (v.gruplar && v.gruplar.length) || 1, nKor = v.korumalar.length;
-    const px2 = Math.min(X1 - 4, px1 + 4 + nKor * 22 + 6 + Math.min(nGrup, 6) * 38 + 22);
-    c.cizgi(kx + r, yh, px1, yh, K);
+    const ah = Math.min(2.8, 95 / Math.max(1, genislik(ad, 1)));
+    c.yazi(ad, kx - r, yh - r - 5, ah, { stil: KALIN });
+    c.yazi(v.baglanti === 'box' ? 'GDZ AG saha dağıtım kutusu' : 'GDZ mevcut AG direği', kx - r, yh - r - 9.5, 2.2);
+    const nGrup = Math.min(((v.gruplar && v.gruplar.length) || 1), 5), nKor = v.korumalar.length;
+    const pw = 8 + nKor * 24 + 8 + nGrup * 34 + 12, px2 = X1 - 2, px1 = Math.max(X0 + 120, px2 - pw), py1 = Y0 + 16, py2 = Y1 - 6;
+    // bağlantı kablosu
+    c.cizgi(kx + r, yh, px1, yh, { ...K, kalin: true });
     const ox = (kx + r + px1) / 2;
-    c.dolgu([[ox + 5, yh], [ox - 5, yh + 3.4], [ox - 5, yh - 3.4]], S);
-    c.yazi(v.kablo.yazi, ox, yh + 10.5, 3.2, { stil: KALIN, hiza: 'orta' });
-    c.yazi(`L = ${sayiYaz(v.L)} m · YERALTI`, ox, yh + 5.5, 2.6, { hiza: 'orta' });
-    c.yazi(`N = ${v.N} W`, ox, yh - 5.5, 2.4, { hiza: 'orta' });
-    // pano
-    c.kutu(px1, py1, px2, py2, { katman: 'BHP', lt: 'BHP-KESIK', kalin: true });
-    c.yazi('mühürlenebilir alan', (px1 + px2) / 2, py2 + 3, 3.0, { hiza: 'orta' });
-    c.yazi('SAYAÇ PANOSU', px1 + 2, py2 - 3.5, 2.5, { stil: KALIN });
+    c.yazi(v.kablo.yazi, ox, yh + 9, 3.2, { stil: KALIN, hiza: 'orta' });
+    c.yazi(`L = ${sayiYaz(v.L)} m  ·  YERALTI`, ox, yh + 4.6, 2.5, { hiza: 'orta' });
+    c.yazi(`N = ${v.N} W`, ox, yh - 5.5, 2.5, { hiza: 'orta' });
+    // sayaç panosu (mühürlenebilir)
+    c.kutu(px1, py1, px2, py2, { katman: 'BHP', kalin: true });
+    c.yazi('SAYAÇ PANOSU', px1 + 2.5, py2 - 4, 2.6, { stil: KALIN });
+    c.yazi('(mühürlenebilir)', px1 + 2.5, py2 - 8, 2.1);
     let x = px1;
     c.cizgi(x, yh, x + 4, yh, S); x += 4;
     for (const k of v.korumalar) {
       const cx = x + 8;
-      if (k.tur === 'sigorta') sembol.buson3(c, cx, yh); else sembol.salter(c, cx, yh, k.tur);
-      const [a, b] = String(k.deger || '').split(/\s+(?=\d+\s*m?A$|\d+\s*kA$)/);
-      c.yazi(CIHAZ_AD[k.tur], cx, yh + 15.5, 2.3, { hiza: 'orta' });
-      c.yazi(a || '', cx, yh + 11.5, 2.4, { stil: KALIN, hiza: 'orta' });
-      if (b) c.yazi(b, cx, yh + 7.7, 2.4, { stil: KALIN, hiza: 'orta' });
-      x += 16; c.cizgi(x, yh, x + 6, yh, S); x += 6;
+      const et = kesiciEtiket(k);
+      if (et.kacak) sembol.ykş(c, cx, yh); else if (k.tur === 'sigorta') sembol.sigorta(c, cx, yh, et.kutup); else sembol.salter(c, cx, yh, k.tur);
+      // etiket: YKŞ / K.A.R → ad, akım, 300 mA; kesici → (ad), 10kA, akım (kullanıcının örnekleri)
+      const sat = et.kacak ? [CIHAZ_AD[k.tur], et.akim, et.ek] : [CIHAZ_AD[k.tur], et.ek, et.akim].filter(Boolean);
+      const y0 = yh + (et.kacak ? 9.5 : 6.8);
+      sat.slice().reverse().forEach((t, i) => c.yazi(t, cx, y0 + i * 4, 2.5, { stil: i === sat.length - 1 && CIHAZ_AD[k.tur] ? INCE : KALIN, hiza: 'orta' }));
+      x += 16; c.cizgi(x, yh, x + 8, yh, S); x += 8;
     }
     const gruplar = v.gruplar && v.gruplar.length ? v.gruplar : [{ onu: '', adet: v.sayacAdet || 1, ad: '', tip: v.sayacTip }];
-    const adim = 38, xg0 = x + 6, sigar = Math.max(1, Math.floor((px2 - 30 - xg0) / adim) + 1);
-    const goster = gruplar.slice(0, sigar), artan = gruplar.length - goster.length;
+    const adim = 34, xg0 = x + 8, goster = gruplar.slice(0, 5), artan = gruplar.length - goster.length;
     const xgSon = xg0 + (goster.length - 1) * adim;
-    c.cizgi(x, yh, Math.max(xgSon, xg0), yh, { ...S, kalin: true });
-    c.yazi('BARA', Math.max(xgSon, xg0) - 2, yh - 3.5, 2.0, { hiza: 'sag' });
+    c.cizgi(x, yh, xgSon + 6, yh, { ...S, kalin: true });                 // bara
+    c.yazi('BARA', xgSon + 6, yh - 3.6, 2.0, { hiza: 'sag' });
     goster.forEach((g, i) => {
       const gx = xg0 + i * adim;
       c.daire(gx, yh, 0.8, S);
       let y = yh;
       if (g.onu) {
-        sembol.otomat3(c, gx, yh + 15, true);
-        c.cizgi(gx, yh, gx, yh + 7, S);
-        const [a, b] = g.onu.split(/\s+(?=\d+\s*kA$)/);
-        c.yazi(a, gx + 4, yh + 16, 2.3, { stil: KALIN }); if (b) c.yazi(b, gx + 4, yh + 12.3, 2.3, { stil: KALIN });
-        y = yh + 23;
+        sembol.otomat3(c, gx, yh + 14, true);
+        c.cizgi(gx, yh, gx, yh + 6, S);
+        const et = kesiciEtiket({ tur: 'sigorta', deger: g.onu });          // kesicilerde her zaman 10kA
+        c.yazi(et.ek, gx + 4, yh + 15, 2.3, { stil: KALIN }); c.yazi(et.akim, gx + 4, yh + 11.3, 2.3, { stil: KALIN });
+        y = yh + 22;
       }
-      const sy = yh + 38;
+      const sy = yh + 35;
       c.cizgi(gx, y, gx, sy - 5.5, S);
       sembol.sayac3(c, gx, sy, v.sayacTur);
-      c.yazi(`${g.tip}A`, gx + 6, sy + 2, 2.3, { stil: KALIN });
-      c.yazi(`${g.adet} adet`, gx + 6, sy - 2, 2.2);
-      c.cizgi(gx, sy + 5.5, gx, py2 - 11, S); sembol.okYukari(c, gx, py2 - 7);
-      c.yazi('İÇ TESİSAT', gx + 2.5, py2 - 9.5, 2.0);
-      if (g.ad) c.yazi(g.ad, gx + 2.5, py2 - 13, 2.0);
+      c.yazi(`${g.tip}A`, gx + 6, sy + 1.5, 2.3, { stil: KALIN });
+      c.yazi(`${g.adet} adet`, gx + 6, sy - 2.5, 2.2);
+      c.cizgi(gx, sy + 5.5, gx, py2 - 13, S); sembol.okYukari(c, gx, py2 - 9);
+      c.yazi('İÇ TESİSAT', gx + 2.5, py2 - 11.5, 2.0);
+      if (g.ad) c.yazi(g.ad, gx + 2.5, py2 - 14.8, 2.0);
     });
-    if (artan > 0) c.yazi(`+ ${artan} grup (güç dağıtım tablosuna bakınız)`, px2 - 2, yh - 7, 2.0, { hiza: 'sag' });
+    if (artan > 0) c.yazi(`+ ${artan} grup (güç dağıtım tablosuna bakınız)`, px2 - 2, yh - 8, 2.0, { hiza: 'sag' });
     c.yazi(`Toplam ${v.sayacAdet} adet elektronik sayaç`, px2 - 2, py1 + 3, 2.2, { hiza: 'sag' });
-    // pano topraklaması: pano gövdesinin sağ alt köşesinden topraklama barasına / kazığa (baradan değil)
-    const tk = topraklamaKesit(v.kablo.kesit), gxT = px2;
-    c.cizgi(gxT, py1, gxT, Y0 + 7, S); c.daire(gxT, py1, 0.8, S); sembol.toprak(c, gxT, Y0 + 7);
-    c.yazi(`1x${tk} mm² NYY`, gxT - 6, Y0 + 7.5, 2.2, { stil: KALIN, hiza: 'sag' }); c.yazi('pano topraklaması', gxT - 6, Y0 + 4, 2.1, { hiza: 'sag' });
+    // pano topraklaması: pano gövdesinin sağ alt köşesinden topraklama kazığına
+    const tk = topraklamaKesit(v.kablo.kesit), gxT = px2 - 10;
+    c.cizgi(gxT, py1, gxT, Y0 + 6, TP); c.daire(gxT, py1, 0.8, S); sembol.toprak(c, gxT, Y0 + 6);
+    c.yazi(`1x${tk} mm² NYY`, gxT - 6, Y0 + 6.5, 2.2, { stil: KALIN, hiza: 'sag' }); c.yazi('pano topraklaması', gxT - 6, Y0 + 3, 2.1, { hiza: 'sag' });
+    // açıklama
+    c.donustur(null);
   }
 
   // ---------- Bağlantı hattı tesis / montaj detayı (ölçeksiz; box ve direk için ayrı) ----------
@@ -159,11 +197,13 @@
     c.cizgi(x0, ty, x0 + w, ty, T);
     satirlar.forEach((s, i) => c.yazi(s, x0 + 0.5, ty + 1.6 + (satirlar.length - 1 - i) * h * 1.5, h, { stil: i === 0 ? KALIN : INCE }));
   }
-  function detay(c, v, [x0, y0, x1, y1]) {
+  function detay(c, v, [x0, y0, x1, y1], cerceveYok) {
     const T = { katman: 'BHP-TABLO' }, K = { katman: 'BHP-KABLO', lt: 'BHP-KESIK', kalin: true };
-    c.kutu(x0, y0, x1, y1, T);
-    c.cizgi(x0, y0 + 9, x1, y0 + 9, T);
-    c.yazi('BAĞLANTI HATTI TESİS / MONTAJ DETAYI (ÖLÇEKSİZ)', (x0 + x1) / 2, y0 + 4.5, 3.0, { stil: KALIN, hiza: 'orta' });
+    if (!cerceveYok) {
+      c.kutu(x0, y0, x1, y1, T);
+      c.cizgi(x0, y0 + 9, x1, y0 + 9, T);
+      c.yazi('BAĞLANTI HATTI TESİS / MONTAJ DETAYI (ÖLÇEKSİZ)', (x0 + x1) / 2, y0 + 4.5, 3.0, { stil: KALIN, hiza: 'orta' });
+    }
     const yg = y0 + 58, yc = yg - 30, M = 30;           // zemin, kablo kotu (1 m ≈ 30 birim)
     // zemin çizgisi ve toprak işareti
     c.cizgi(x0 + 2, yg, x1 - 2, yg, { katman: 'BHP-TABLO', kalin: true });
@@ -492,7 +532,12 @@
     const B = bilgi.bolgeler, c = new Cizim();
     tekHat(c, v, B.tekhat);
     hesap(c, v, B.hesap);
-    if (B.detay) detay(c, v, B.detay);
+    if (B.detay) {
+      if (bilgi.duzen) {                                       // düzenlenmiş pafta: ortak çerçeve, eski çizim kutuya büyütülür
+        const ic = blok(c, B.detay, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI (ÖLÇEKSİZ)');
+        c.donustur([0, 9, 318, 149], ic, 1.3); detay(c, v, [0, 0, 318, 149], true); c.donustur(null);
+      } else detay(c, v, B.detay);
+    }
     gucTablosu(c, v, B.guc);
     vaziyet(c, v, bilgi.resim.vaziyet);
     return c;

@@ -187,6 +187,16 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    isaretle-dene.js <tmp> <ic.pdf> <gdz.pdf> [havai-gdz.pdf] → indirme ve zip içeriği dahil.
    AÇIK (kullanıcının 7 Kasım listesi): 1) tasarım daha iyi olabilir, 3) semboller özellikle tek hatta istediği gibi değil, 4) pafta düzeni
    iyileştirilmeli — üçü için kullanıcıdan ayrıntı / örnek istendi.
+1k. TEK HAT SEMBOLLERİ (kullanıcının fotoğrafları, 7 Kasım 2026): YKŞ ve K.A.R → kutu içinde iki uç, açık bıçak, açma üçgeni + ×,
+   basamaklı mandal (sembol.ykş); sigorta → hat üzerinde kutu, kutup sayısı kadar dikey çizgi, çapraz ok (sembol.sigorta); TMŞ → IEC
+   devre kesici (×). Kurallar: YERALTI KABLOSU KESİK ÇİZGİ; YKŞ/K.A.R etiketi "YKŞ / 4x63A / 300 mA" (her zaman 300 mA); kesiciler ve
+   sayaç önleri "10kA / 4x40A" (her zaman 10kA); KABLO, SİGORTA vb. YAZILARDA x HER ZAMAN KÜÇÜK (kesiciEtiket()). Bazı işlerde YKŞ yerine
+   kesici + K.A.R gelir (iki koruma sırayla çizilir). Tek hat standart çerçevede, 300x118 sanal kutuda çizilip büyütülür.
+1l. PAFTA DÜZENİ: baglanti-hatti/pafta-duzen.py (kapak-ekle.py'den sonra, bir kez; 999 json'a "duzen": 1). Sol sütun (x -267.8..13):
+   açıklamalar / uydu / vaziyet (+ geçiş uyarısı) / güç tablosu + vaziyet sembolleri / kapak + PVC tablosu; orta (18..388): montaj detayı /
+   kablo kanalı / tek hat / hesap / semboller (0,824 ölçek); sağ: TEDAŞ metni. Her bölüm aynı çerçeve (kalın) + 7 birim başlık şeridi
+   (blok() hem python'da hem bhp-cizim.js'te). Montaj detayı eski çizimi donustur ile çerçeveye büyütülür.
+   AÇIK: 1) web aracının tasarımı (kullanıcı: "kalabalık, renkler cansız, daha modern, proje sayfası gibi, beni etkile").
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
