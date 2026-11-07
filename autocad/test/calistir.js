@@ -8,7 +8,7 @@ L.yukle(fs.readFileSync(path.join(__dirname, '..', 'GERILIMDUSUMU.lsp'), 'utf8')
 
 const senaryolar = {
   'Branşman mevcut (proje örneği 1)': [
-    'Evet', '32200', '(16220*0,45)+5000',
+    'Evet', '32200', '(16220x0,45)+5000=',
     'NYY', '4x6', 'Havai', '15', '',          // branşman: tip, kesit, döşeme, uzunluk, faz (Enter)
     '2',                                     // iç hat sayısı
     'Trifaze', 'NYM', '5x6', '9', '5000', '',

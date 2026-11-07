@@ -458,6 +458,7 @@
           v (if w (if (= c "+") (+ v w) (- v w)) nil)))
   v)
 (defun ict:coz (s / v)
+  (setq s (vl-string-right-trim " =" s))
   (setq *ict-s* (ict:rep s "," ".") *ict-p* 1 v (ict:ifade))
   (ict:bosluk)
   (if (and v (> *ict-p* (strlen *ict-s*))) (float v) nil))
@@ -465,14 +466,15 @@
   (setq i 1 ok (> (strlen s) 0))
   (while (and ok (<= i (strlen s)))
     (setq c (substr s i 1)
-          ok (or (wcmatch c "#") (member c '("." "," " ")))
+          ok (or (wcmatch c "#") (member c '("." "," " " "=")))
           i (1+ i)))
   ok)
 ;;; Yazılan işlemi projedeki gibi biçimler: (16220 * 0,45) + 5000
 (defun ict:islem-yaz (s / i c r)
-  (setq i 1 r "")
+  (setq s (vl-string-right-trim " =" s) i 1 r "")
   (while (<= i (strlen s))
     (setq c (substr s i 1))
+    (if (member c '("x" "X")) (setq c "*"))
     (cond ((member c '("+" "-" "*" "/")) (setq r (strcat (vl-string-right-trim " " r) " " c " ")))
           ((= c " "))
           (T (setq r (strcat r c))))
@@ -607,12 +609,13 @@
   (defun *error* (m)
     (if eski-dz (setvar "DIMZIN" eski-dz))
     (if eski-ce (setvar "CMDECHO" eski-ce))
-    (command-s "_.UNDO" "_E")
+    (if *ict-undo* (command-s "_.UNDO" "_E"))
+    (setq *ict-undo* nil)
     (if (not (member m '("Function cancelled" "quit / exit abort" "İşlev iptal edildi")))
       (princ (strcat "\nHATA (" (if *ict-adim* *ict-adim* "?") "): " m
                      "\nBu satırı Proje İşleri'ne iletin.")))
     (princ))
-  (setq eski-dz (getvar "DIMZIN") eski-ce (getvar "CMDECHO") *ict-adim* "başlangıç")
+  (setq eski-dz (getvar "DIMZIN") eski-ce (getvar "CMDECHO") *ict-adim* "başlangıç" *ict-undo* nil)
   (setvar "DIMZIN" 0)
   (setvar "CMDECHO" 0)
 
@@ -655,8 +658,8 @@
         hatlar '() i 0)
   (while (< i n)
     (setq *ict-adim* (strcat (ict:hat-ismi i n) " soruları")
-          hat (nth i *ict-hatlar*))
-    (if (/= (type hat) 'LIST) (setq hat nil))
+          hat (if (and (eq (type *ict-hatlar*) 'LIST) (< i (length *ict-hatlar*))) (nth i *ict-hatlar*)))
+    (if (not (eq (type hat) 'LIST)) (setq hat nil))
     (princ (strcat "\n--- " (ict:hat-ismi i n) " (%e" (itoa (+ i 2)) ") ---"))
     (setq faz (ict:sor-kw "Faz" "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
           tip (ict:sor-kw "Kablo tipi" (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
@@ -685,6 +688,7 @@
   ;; --- çizim
   (setq *ict-adim* "çizim")
   (command "_.UNDO" "_BE")
+  (setq *ict-undo* T)
   (ict:sinir-sifirla)
   (ict:stil)
   (setq x0 (car pt) y (cadr pt))
@@ -788,6 +792,7 @@
     (ict:satir (strcat "%et: " (ict:n2 toplam) " < " (ict:ns limit) " olduğundan kullanılan tüm kesitler uygundur.") 7))
 
   (command "_.UNDO" "_E")
+  (setq *ict-undo* nil)
   ;; çizilen alana yakınlaştır
   (if *ict-sinir*
     (command "_.ZOOM" "_W"

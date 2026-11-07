@@ -187,7 +187,7 @@ B('CAAR', v => car(car(v)));
 B('CONS', cons); B('LIST', (...a) => a.length ? a : NIL);
 B('APPEND', (...a) => { const r = a.flatMap(lst); return r.length ? r : NIL; });
 B('LENGTH', v => lst(v).length);
-B('NTH', (n, l) => { if (typeof n !== 'number') throw new LispError('bad argument type: fixnump: ' + yaz(n)); return lst(l)[n] ?? NIL; });
+B('NTH', (n, l) => { if (typeof n !== 'number') throw new LispError('bad argument type: fixnump: ' + yaz(n)); if (l === NIL) throw new LispError('bad argument type: consp nil'); return lst(l)[n] ?? NIL; });
 B('LAST', l => { const a = lst(l); return a[a.length - 1] ?? NIL; });
 B('REVERSE', l => { const a = [...lst(l)].reverse(); return a.length ? a : NIL; });
 B('ASSOC', (k, l) => lst(l).find(x => x !== NIL && esit(car(x), k)) ?? NIL);
