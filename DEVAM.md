@@ -112,8 +112,7 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
 **İç tesisat okuma (EN ÖNEMLİ KONU; kullanıcı "yanlışsız olmalı" dedi; DWG yolu REDDEDİLDİ, yalnız PDF):**
 - Kullanıcının örneklerinde güç tablosu PDF'te yazı DEĞİL (çizgi/OLE), bazı PDF'lerde hiç yazı yok, sayfalar çok geniş (8300x1644 pt).
 - Yazı varsa: icTesisatOku (sagindaki ilk yazı öbeğinde durur), gucTablosuOku (sütun başlıklarının ortası; ı/i için büyük harf).
-- Resimden okuma (b-ro-ic, yazıdan okunamayan bilgi varsa kendiliğinden başlar): 1) sayfa en/boy oranına göre parçalar → antet / güç / pano
-  yeri; 2) %35 pay ile yakınlaşıp kesin sınır; 3) her bölüm 2400 px ayrı okunur. Güç tablosu: bantlariNumarala() yatay çizgileri piksel
+- Resimden okuma: kullanıcı bölümleri sırayla işaretler (1d); işaretlenen yer 2400 px okunur. Güç tablosu: bantlariNumarala() yatay çizgileri piksel
   taramasıyla bulur, bantlara kırmızı numara yazar; 2 okuma (farklıysa 3), bant numarasıyla eşleşip hücre çoğunluğu; şüpheli hücre kırmızı;
   W/kW kararı antet kurulu güçle; "tablo yükleme cetveli / yük dağılımı" güç tablosu sayılmaz; tek BB'de satır antetten.
 - gucKontrol: Σkurulu = antet, satır sayısı = BB, bağlantı ≤ kurulu → hata varsa İNDİR kapalı; resimden okunduysa tablonun numaralı resmi
