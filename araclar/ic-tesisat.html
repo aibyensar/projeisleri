@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>İç Tesisat Hesabı</title>
+<link rel="stylesheet" href="../ortak/stil.css">
+<style>
+  .secim { display: flex; gap: 8px; margin-bottom: 12px; }
+  .secim button {
+    flex: 1; min-width: 0; font: inherit; font-size: .9rem; padding: 10px 6px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); line-height: 1.25;
+  }
+  .secim button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); }
+  button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .izgara2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .izgara2 label { min-width: 0; }
+  .izgara2 input, .izgara2 select { width: 100%; min-width: 0; }
+  .genis { grid-column: 1 / -1; }
+  .hat { border-top: 1px solid var(--cizgi); padding-top: 12px; margin-top: 12px; }
+  .hat:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+  .hat-bas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .hat-bas strong { font-size: .95rem; }
+  .kucuk-btn {
+    font: inherit; font-size: .85rem; padding: 6px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi);
+  }
+  .ana-btn { background: var(--baslik); color: #fff; border-color: var(--baslik); }
+  .kart h2 { margin: 0 0 12px; }
+  pre#cikti {
+    margin: 0; padding: 12px; border-radius: 8px; background: #111; color: #f2f2f2;
+    font: .85rem/1.5 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  .cikti-bas { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .durum { font-weight: 700; }
+  .durum.iyi { color: var(--iyi); }
+  .durum.kotu { color: var(--kotu); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Proje İşleri</a>
+  <h1>İç tesisat hesabı</h1>
+</header>
+<main>
+  <div class="kart">
+    <div class="secim" id="mod">
+      <button type="button" data-v="mevcut" aria-pressed="true">Branşman mevcut</button>
+      <button type="button" data-v="yok" aria-pressed="false">Branşman yok</button>
+    </div>
+    <div class="izgara2">
+      <label>Kurulu güç (W)
+        <input id="kurulu" type="text" inputmode="decimal" value="32200">
+      </label>
+      <label class="genis">Talep güç (W) — sayı veya işlem yazın
+        <input id="talep" type="text" value="(16220 * 0,45) + 5000">
+      </label>
+    </div>
+    <p class="not" id="talepSonuc"></p>
+  </div>
+
+  <div class="kart" id="bransmanKart">
+    <h2>Mevcut branşman</h2>
+    <div class="izgara2">
+      <label>Kablo tipi<select id="b-tip"></select></label>
+      <label>Kablo<select id="b-satir"></select></label>
+      <label>Döşeme<select id="b-doseme"></select></label>
+      <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
+    </div>
+    <p class="not">Gerilim düşümünde talep güç (Nt) kullanılır.</p>
+  </div>
+
+  <div class="kart">
+    <h2>İç hatlar</h2>
+    <div id="hatlar"></div>
+    <button type="button" class="kucuk-btn" id="hatEkle" style="margin-top:12px">+ Hat ekle</button>
+  </div>
+
+  <div class="kart">
+    <div class="cikti-bas">
+      <span class="durum" id="durum"></span>
+      <button type="button" class="kucuk-btn ana-btn" id="kopyala">AutoCAD için kopyala</button>
+    </div>
+    <pre id="cikti"></pre>
+    <p class="not">Kopyaladığınız yazıyı AutoCAD'de çok satırlı yazıya (MTEXT) yapıştırın.</p>
+  </div>
+
+  <div class="kart">
+    <details>
+      <summary>Ayarlar</summary>
+      <div class="izgara2" style="margin-top:12px">
+        <label>Trifaze gerilim (V)<input id="u-3" type="number" step="any"></label>
+        <label>Monofaze gerilim (V)<input id="u-1" type="number" step="any"></label>
+        <label>Bakır k<input id="k-cu" type="number" step="any"></label>
+        <label>Alüminyum k<input id="k-al" type="number" step="any"></label>
+        <label>cos φ<input id="cosfi" type="number" step="0.01"></label>
+        <label>Toplam düşüm sınırı (%)<input id="limit" type="number" step="0.1"></label>
+      </div>
+      <p class="not" id="katsayilar"></p>
+      <button type="button" class="kucuk-btn" id="sifirla">Varsayılan değerlere dön</button>
+    </details>
+  </div>
+</main>
+<script src="../veri/kablolar.js"></script>
+<script src="../veri/katalog.js"></script>
+<script>
+const VARSAYILAN = { 'u-3': 380, 'u-1': 220, 'k-cu': 56, 'k-al': 35, cosfi: 0.8, limit: 1.5 };
+const ANAHTAR = 'ic-tesisat-ayarlar';
+const DOSEME_ADI = { toprak: 'Toprakta', hava: 'Havada', boru: 'Boruda' };
+const $ = id => document.getElementById(id);
+const ayar = id => +$(id).value;
+const tr = (x, b = 2) => x.toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b, useGrouping: false });
+const trSerbest = x => x.toLocaleString('tr-TR', { maximumFractionDigits: 8, useGrouping: false });
+
+// Katsayı = 100/(k·U²) trifaze, 200/(k·U²) monofaze.
+// 10⁻⁴ biriminde elle hesaptaki gibi yuvarlanır: 0,1237 → 0,124 ; 0,7379 → 0,74 ; 1,1806 → 1,18
+function katsayi(faz, il) {
+  const ham = (faz === '3' ? 100 : 200) / (ayar('k-' + il) * ayar('u-' + faz) ** 2) * 1e4;
+  const basamak = ham >= 0.5 ? 2 : 3;
+  return +(ham.toFixed(basamak)) / 1e4;
+}
+
+// ---- Katalog yardımcıları
+const sayiMi = v => /^[\d.,]+$/.test(v) ? +v.replace(',', '.') : null;
+const satirEtiketi = r => r[0].replace(/^\*/, '').replace(/r[em](?=\/)/, '').split(' ')[0];
+function satirlar(tip) {
+  return KATALOG.filter(t => t.kablo === tip).flatMap(t => t.satirlar.map(r => {
+    const et = satirEtiketi(r);
+    const m = et.match(/^(?:(\d+)x)?([\d.]+)(?:\/([\d.]+))?$/);
+    return { etiket: et, damar: m[1] || null, S: +m[2], akim: r.slice(t.akimSutun).map(sayiMi) };
+  }));
+}
+// Projede yazılan kablo adı: 4X6 mm² NYY, 3X2,5 mm² NYA, 3X25/16 mm² NYY
+function kabloAdi(tip, etiket, faz) {
+  let et = etiket.replace(/\./g, ',').toUpperCase();
+  if (!/X/.test(et)) et = (faz === '3' ? '5X' : '3X') + et;
+  return `${et} mm² ${tip}`;
+}
+function tipSecenekleri(sel, secili) {
+  sel.innerHTML = Object.keys(KABLOLAR).map(k => `<option value="${k}">${k}</option>`).join('');
+  sel.value = secili;
+}
+function satirSecenekleri(sel, tip, secili) {
+  const liste = satirlar(tip);
+  sel.innerHTML = liste.map(x => `<option value="${x.etiket}">${x.etiket.replace(/\./g, ',')} mm²</option>`).join('');
+  sel.value = liste.some(x => x.etiket === secili) ? secili : liste[0].etiket;
+}
+
+// ---- Talep güç: sayı veya basit işlem (+ - * / parantez)
+function islem(metin) {
+  const t = String(metin).replace(/\s/g, '').replace(/,/g, '.').replace(/[x×]/gi, '*');
+  if (!t || !/^[\d.+\-*/()]+$/.test(t)) return NaN;
+  try { const v = Function('"use strict";return (' + t + ')')(); return typeof v === 'number' && isFinite(v) ? v : NaN; }
+  catch (e) { return NaN; }
+}
+const yazilanIslem = metin => String(metin).trim().replace(/\s*([+\-*/])\s*/g, ' $1 ').replace(/\.(?=\d)/g, ',');
+
+// ---- Hatlar
+let hatlar = [
+  { ad: '', faz: '3', tip: 'NYM', satir: '5x6', L: 9, P: 5000 },
+  { ad: 'TN3 Panosu ... NOLU Nolu Linye İçin', faz: '1', tip: 'NYA', satir: '2.5', L: 4, P: 2500 }
+];
+
+function hatlariCiz() {
+  $('hatlar').innerHTML = hatlar.map((h, i) => `
+    <div class="hat" data-i="${i}">
+      <div class="hat-bas"><strong id="hb-${i}"></strong>
+        ${hatlar.length > 1 ? `<button type="button" class="kucuk-btn" data-sil="${i}">Sil</button>` : ''}</div>
+      <div class="izgara2">
+        <label class="genis">Açıklama (isteğe bağlı)<input data-k="ad" value="${h.ad.replace(/"/g, '&quot;')}"></label>
+        <label>Faz<select data-k="faz"><option value="3">Trifaze</option><option value="1">Monofaze</option></select></label>
+        <label>Kablo tipi<select data-k="tip"></select></label>
+        <label>Kablo<select data-k="satir"></select></label>
+        <label>Uzunluk (m)<input data-k="L" type="number" inputmode="decimal" min="0" step="any" value="${h.L}"></label>
+        <label>Güç (W)<input data-k="P" type="number" inputmode="decimal" min="0" step="any" value="${h.P}"></label>
+      </div>
+    </div>`).join('');
+  hatlar.forEach((h, i) => {
+    const kutu = $('hatlar').querySelector(`[data-i="${i}"]`);
+    kutu.querySelector('[data-k="faz"]').value = h.faz;
+    tipSecenekleri(kutu.querySelector('[data-k="tip"]'), h.tip);
+    satirSecenekleri(kutu.querySelector('[data-k="satir"]'), h.tip, h.satir);
+    h.satir = kutu.querySelector('[data-k="satir"]').value;
+  });
+}
+$('hatlar').addEventListener('input', ev => {
+  const kutu = ev.target.closest('.hat'); if (!kutu) return;
+  const h = hatlar[+kutu.dataset.i], k = ev.target.dataset.k;
+  h[k] = ['L', 'P'].includes(k) ? +ev.target.value : ev.target.value;
+  if (k === 'tip') { satirSecenekleri(kutu.querySelector('[data-k="satir"]'), h.tip, h.satir); h.satir = kutu.querySelector('[data-k="satir"]').value; }
+  hesapla();
+});
+$('hatlar').addEventListener('click', ev => {
+  const sil = ev.target.closest('[data-sil]'); if (!sil) return;
+  hatlar.splice(+sil.dataset.sil, 1); hatlariCiz(); hesapla();
+});
+$('hatEkle').addEventListener('click', () => {
+  hatlar.splice(hatlar.length - 1, 0, { ad: '', faz: '3', tip: 'NYM', satir: '5x6', L: 0, P: 0 });
+  hatlariCiz(); hesapla();
+});
+
+// ---- Branşman seçimleri
+function bransmanSecenekleri() {
+  const tip = $('b-tip').value;
+  satirSecenekleri($('b-satir'), tip, $('b-satir').value || '4x6');
+  const s = KABLOLAR[tip].sutunlar;
+  const eski = $('b-doseme').value;
+  $('b-doseme').innerHTML = s.map((x, i) => `<option value="${i}">${DOSEME_ADI[x]}</option>`).join('');
+  $('b-doseme').value = eski && s[+eski] ? eski : String(Math.max(0, s.indexOf('hava')));
+}
+tipSecenekleri($('b-tip'), 'NYY');
+bransmanSecenekleri();
+$('b-tip').addEventListener('change', () => { bransmanSecenekleri(); hesapla(); });
+['b-satir', 'b-doseme', 'b-L', 'kurulu', 'talep'].forEach(id => $(id).addEventListener('input', hesapla));
+
+// ---- Mod
+$('mod').addEventListener('click', ev => {
+  const btn = ev.target.closest('button'); if (!btn) return;
+  $('mod').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+  hesapla();
+});
+
+// ---- Ayarlar
+function ayarlariYukle() {
+  let k = {}; try { k = JSON.parse(localStorage.getItem(ANAHTAR)) || {}; } catch (e) {}
+  for (const [id, v] of Object.entries(VARSAYILAN)) $(id).value = k[id] ?? v;
+}
+function ayarlariKaydet() {
+  const o = {}; for (const id of Object.keys(VARSAYILAN)) o[id] = +$(id).value;
+  try { localStorage.setItem(ANAHTAR, JSON.stringify(o)); } catch (e) {}
+}
+for (const id of Object.keys(VARSAYILAN)) $(id).addEventListener('input', () => { ayarlariKaydet(); hesapla(); });
+$('sifirla').addEventListener('click', () => { for (const [id, v] of Object.entries(VARSAYILAN)) $(id).value = v; ayarlariKaydet(); hesapla(); });
+
+// ---- Hesap ve çıktı
+function hesapla() {
+  const mevcut = $('mod').querySelector('[aria-pressed="true"]').dataset.v === 'mevcut';
+  $('bransmanKart').hidden = !mevcut;
+  const U3 = ayar('u-3'), cosfi = ayar('cosfi'), limit = ayar('limit');
+  const kurulu = islem($('kurulu').value);
+  const Nt = islem($('talep').value);
+  const talepIslemMi = isFinite(Nt) && !/^\s*[\d.,]+\s*$/.test($('talep').value);
+  $('talepSonuc').textContent = isFinite(Nt) ? `Talep güç = ${tr(Nt, 0)} W` : 'Talep gücü okunamadı. Sayı veya + - * / ( ) ile işlem yazın.';
+
+  const satirlarCikti = [];
+  if (isFinite(kurulu)) satirlarCikti.push(`KURULU GÜÇ = ${tr(kurulu, 0)} W`);
+  if (isFinite(Nt)) satirlarCikti.push(`TALEP GÜÇ = ${talepIslemMi ? yazilanIslem($('talep').value) + ' = ' : ''}${tr(Nt, 0)} W`);
+  satirlarCikti.push('');
+
+  const bolen = Math.sqrt(3) * U3 * cosfi;
+  const In = Nt / bolen;
+  let akimUygun = true;
+  if (mevcut) {
+    const tip = $('b-tip').value, sutun = +$('b-doseme').value;
+    const b = satirlar(tip).find(x => x.etiket === $('b-satir').value);
+    const Iz = b.akim[sutun];
+    const ad = kabloAdi(tip, b.etiket, '3');
+    akimUygun = Iz != null && In <= Iz;
+    satirlarCikti.push('AKIM YÖNÜNDEN KONTROL');
+    satirlarCikti.push(`In = Nt / (√3 x U x CosQ) = ${tr(Nt, 0)} W / ${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A ${akimUygun ? '<' : '>'} ${Iz ?? '-'} A`);
+    satirlarCikti.push(`MEVCUT BRANŞMAN ${ad} ${akimUygun ? 'UYGUNDUR.' : 'UYGUN DEĞİLDİR.'}`);
+  } else {
+    satirlarCikti.push('AKIM YOĞUNLUĞU HESABI');
+    satirlarCikti.push(`In = Nk / (√3 x U x CosQ) = ${talepIslemMi ? (/[+\-]/.test($('talep').value) && !/^\s*\(.*\)\s*$/.test($('talep').value) ? '(' + yazilanIslem($('talep').value) + ')' : yazilanIslem($('talep').value)) + ' / ' : tr(Nt, 0) + ' / '}${trSerbest(+bolen.toFixed(3))} = ${tr(In)} A`);
+    satirlarCikti.push('BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR.');
+  }
+  satirlarCikti.push('', 'GERİLİM DÜŞÜMÜ HESABI', '');
+
+  // Hat listesi: mevcutta önce branşman (%e1), değilse iç hatlar %e2'den başlar
+  const liste = [];
+  if (mevcut) {
+    const tip = $('b-tip').value;
+    const b = satirlar(tip).find(x => x.etiket === $('b-satir').value);
+    liste.push({ ad: `Branşman ${kabloAdi(tip, b.etiket, '3')}`, faz: '3', il: KABLOLAR[tip].iletken, S: b.S, L: ayar('b-L'), P: Nt, nt: true });
+  }
+  hatlar.forEach((h, i) => {
+    const x = satirlar(h.tip).find(r => r.etiket === h.satir);
+    liste.push({ ad: h.ad, kablo: kabloAdi(h.tip, h.satir, h.faz), faz: h.faz, il: KABLOLAR[h.tip].iletken, S: x.S, L: +h.L, P: +h.P, hatNo: i });
+  });
+
+  let toplam = 0; const adlar = [], degerler = [];
+  liste.forEach((h, j) => {
+    const no = j + (mevcut ? 1 : 2);
+    const c = katsayi(h.faz, h.il);
+    const e = c * h.P * h.L / h.S;
+    const eY = +e.toFixed(2);
+    toplam += eY; adlar.push(`%e${no}`); degerler.push(tr(eY));
+    if (h.hatNo != null) $('hb-' + h.hatNo).textContent = `%e${no} · ${h.kablo} · ${h.faz === '3' ? 'trifaze' : 'monofaze'}`;
+    if (h.ad && !h.nt) satirlarCikti.push(h.ad);
+    satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${h.nt ? 'Nt' : 'N'} x L / S`);
+    satirlarCikti.push(`%e${no} = ${trSerbest(c)} x ${tr(h.P, 0)} x ${trSerbest(h.L)} / ${trSerbest(h.S)}`);
+    satirlarCikti.push(`%e${no} = ${tr(eY)}`, '');
+  });
+  toplam = +toplam.toFixed(2);
+  const dusumUygun = toplam <= limit;
+  satirlarCikti.push('TOPLAM');
+  satirlarCikti.push(adlar.join(' + '));
+  satirlarCikti.push(`${degerler.join(' + ')} = ${tr(toplam)} ${dusumUygun ? '<' : '>'} ${trSerbest(limit)}   ${dusumUygun ? 'UYGUNDUR.' : 'UYGUN DEĞİLDİR.'}`);
+  if (!mevcut && dusumUygun) satirlarCikti.push(`%et: ${tr(toplam)} < ${trSerbest(limit)} olduğundan kullanılan tüm kesitler uygundur.`);
+
+  const hepsi = isFinite(Nt) && akimUygun && dusumUygun;
+  $('durum').textContent = !isFinite(Nt) ? 'Talep gücünü girin' : hepsi ? `Uygun · toplam %${tr(toplam)}` : `Uygun değil · toplam %${tr(toplam)}${akimUygun ? '' : ' · branşman akımı yetmiyor'}`;
+  $('durum').className = 'durum ' + (hepsi ? 'iyi' : 'kotu');
+  $('cikti').textContent = satirlarCikti.join('\n');
+  $('katsayilar').textContent = `Katsayılar: trifaze bakır ${trSerbest(katsayi('3', 'cu'))}, trifaze alüminyum ${trSerbest(katsayi('3', 'al'))}, monofaze bakır ${trSerbest(katsayi('1', 'cu'))}, monofaze alüminyum ${trSerbest(katsayi('1', 'al'))}. In bölen: √3 × ${U3} × ${trSerbest(cosfi)} = ${trSerbest(+bolen.toFixed(3))}`;
+}
+
+$('kopyala').addEventListener('click', async () => {
+  const metin = $('cikti').textContent;
+  try { await navigator.clipboard.writeText(metin); $('kopyala').textContent = 'Kopyalandı ✓'; }
+  catch (e) {
+    const r = document.createRange(); r.selectNodeContents($('cikti'));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    $('kopyala').textContent = 'Seçildi, Ctrl+C ile kopyalayın';
+  }
+  setTimeout(() => { $('kopyala').textContent = 'AutoCAD için kopyala'; }, 2500);
+});
+
+ayarlariYukle();
+hatlariCiz();
+hesapla();
+</script>
+</body>
+</html>
