@@ -202,13 +202,13 @@ async function sayfaYazilari(doc) {
     const tc = await pg.getTextContent();
     out.push(tc.items.filter(i => i.str.trim()).map(i => {
       const t = pdfjs.Util.transform(vp.transform, i.transform);
-      return { s: i.str, x: t[4], y: t[5], egik: Math.abs(t[1]) > 0.01 || Math.abs(t[2]) > 0.01 };
+      return { s: i.str, x: t[4], y: t[5], w: i.width || 0, egik: Math.abs(t[1]) > 0.01 || Math.abs(t[2]) > 0.01 };
     }).filter(o => !o.egik));
   }
   return out;
 }
 
-// Resmi beyaz kenarlarından kırpıp sabit boyutlu beyaz zemine sığdırır (şablondaki resim yeri bu boyutta)
+// Resmi beyaz kenarlarından kırpar ve şablondaki resim yerini boşluksuz doldurur (iki resim aynı boyutta)
 function kirpVeSigdir(kaynak, [W, H]) {
   const c0 = document.createElement('canvas'); c0.width = kaynak.width; c0.height = kaynak.height;
   const x0 = c0.getContext('2d'); x0.drawImage(kaynak, 0, 0);
@@ -219,7 +219,7 @@ function kirpVeSigdir(kaynak, [W, H]) {
     if (v[i] < 235 || v[i + 1] < 235 || v[i + 2] < 235) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; }
   }
   if (c < 0) { a = 0; b = 0; c = c0.width - 1; d = c0.height - 1; }
-  const w = c - a + 1, h = d - b + 1, r = Math.min(W / w, H / h);
+  const w = c - a + 1, h = d - b + 1, r = Math.max(W / w, H / h);   // kutuyu boşluksuz doldur (taşan kenar kırpılır, ortalanır)
   const c1 = document.createElement('canvas'); c1.width = W; c1.height = H;
   const x1 = c1.getContext('2d'); x1.fillStyle = '#fff'; x1.fillRect(0, 0, W, H);
   x1.imageSmoothingQuality = 'high';
@@ -259,6 +259,9 @@ $('f-ic').addEventListener('change', async e => {
     D.icDoc = await pdfAc(f);
     const s = await sayfaYazilari(D.icDoc);
     D.ic = BHP.icTesisatOku(s.flat());
+    // güç dağıtım tablosu: PDF'teki gerçek yazılardan sütun sütun (kesin okuma; resimden okumaya gerek kalmaz)
+    for (const sayfa of s) { const g = BHP.gucTablosuOku(sayfa); if (g) { D.ic.satirlar = g; D.ic.gucKaynak = 'yazı'; break; } }
+    D.gucFark = false;
     if (await ornekVar()) $('ro-ic').hidden = false;
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
     if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
@@ -303,7 +306,7 @@ const ALANLAR = [
     }
   }
   $('alanlar').innerHTML = h;
-  $('alanlar').addEventListener('input', () => { guncelle(); if (typeof isaretCiz === 'function') isaretCiz(); });
+  $('alanlar').addEventListener('input', () => { guncelle(); satirOzet(); if (typeof isaretCiz === 'function') isaretCiz(); });
 })();
 function alanlariDoldur() {
   const g = D.gdz || {}, i = D.ic || {};
@@ -364,9 +367,13 @@ function satirlariCiz() {
 }
 function satirOzet() {
   const t = D.satirlar.reduce((a, r) => a + (parseFloat(r.kurulu) || 0), 0), tb = D.satirlar.reduce((a, r) => a + (parseFloat(r.baglanti) || 0), 0);
-  durum('d-satir', `${D.satirlar.length} satır · toplam kurulu ${t} W · satırların bağlantı gücü toplamı ${tb} W (eş zamanlı bağlantı gücü yukarıdaki talep gücüdür)`);
+  const k = BHP.gucKontrol(bilgiler()), kay = D.ic && D.ic.gucKaynak;
+  const hata = k.hata.concat(D.gucFark ? ['resimden iki okuma farklı çıktı: satırları iç tesisat projesiyle tek tek karşılaştırın'] : []);
+  durum('d-satir', `${D.satirlar.length} satır · toplam kurulu ${t} W · bağlantı gücü toplamı ${tb} W` +
+    (kay ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : '') +
+    (hata.length ? ' — HATA: ' + hata.join(' · ') : k.uyari.length ? ' — dikkat: ' + k.uyari.join(' · ') : ' — kontrol: antetle uyumlu'), hata.length ? 'kotu' : 'iyi');
 }
-$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; satirOzet(); guncelle(); } });
+$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; D.gucFark = false; satirOzet(); guncelle(); } });
 $('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
 $('satirEkle').addEventListener('click', () => {
   const son = D.satirlar[D.satirlar.length - 1] || {};
@@ -478,6 +485,7 @@ function guncelle() {
   else if (!kablo) eksik.push('kablo: talep gücü ve uzunluk girilmeli (3. bölüm)');
   if (!D.satirlar.length) eksik.push('güç dağılım tablosu (4. bölüm)');
   else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (4. bölüm, her satır)');
+  if (D.satirlar.length) { const k = BHP.gucKontrol(b); k.hata.forEach(h => eksik.push('güç dağıtım tablosu: ' + h)); if (D.gucFark) eksik.push('güç dağıtım tablosu: iki okuma farklı, satırları kontrol edip düzeltin'); }
   if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
   if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
   else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (8. bölüm)');
@@ -496,7 +504,7 @@ function onizle() {
   if (!D.kablo) { $('onizleme').innerHTML = ''; return; }
   if (!D.sablon) return;
   const { c, bilgi } = cizim(), B = bilgi.bolgeler, pay = k => [B[k][0] - 2, B[k][1] - 2, B[k][2] + 2, B[k][3] + 2];
-  $('onizleme').innerHTML = [['Tek hat şeması', 'tekhat'], ['Yük dağılımı ve tablo yükleme cetveli', 'cetvel'], ['Gerilim düşümü ve akım hesabı', 'hesap'], ['Güç dağıtım tablosu', 'guc']]
+  $('onizleme').innerHTML = [['Tek hat şeması', 'tekhat'], ['Montaj detayı', 'detay'], ['Gerilim düşümü ve akım hesabı', 'hesap'], ['Güç dağıtım tablosu', 'guc']]
     .map(([ad, k]) => `<div class="onizleme"><h4>${ad}</h4>${BHPCizim.svg(c, pay(k), 900)}</div>`).join('');
 }
 
@@ -609,9 +617,29 @@ Döndürülecek JSON:
       ic.korumalar = v.korumalar.filter(k => ['sigorta', 'tms', 'kar', 'tmsyks'].includes(k.tur)).slice(0, 2).map(k => ({ tur: k.tur, deger: String(k.deger || '') }));
       Object.assign(resimden, { k1tur: 1, k1deger: 1, k2tur: ic.korumalar.length > 1, k2deger: ic.korumalar.length > 1 });
     }
-    if (Array.isArray(v.satirlar) && v.satirlar.length) {
-      ic.satirlar = v.satirlar.map(r => ({ bb: String(r.bb ?? ''), tablo: String(r.tablo ?? ''), kurulu: String(r.kurulu ?? ''), baglanti: String(r.baglanti ?? ''),
+    const satirYap = l => (Array.isArray(l) ? l : []).map(r => ({ bb: String(r.bb ?? ''), tablo: String(r.tablo ?? ''), kurulu: String(r.kurulu ?? '').replace(/\D/g, ''), baglanti: String(r.baglanti ?? '').replace(/\D/g, ''),
         sayac: String(r.sayac ?? '3FAZ'), kullanim: String(r.kullanim ?? ''), tesis: String(r.tesis ?? ''), onu: r.onu ? String(r.onu) : '' }));
+    if (ic.gucKaynak === 'yazı') { /* tablo PDF yazısından kesin okundu; resimden okunan kullanılmaz */ }
+    else if (Array.isArray(v.satirlar) && v.satirlar.length) {
+      let a = satirYap(v.satirlar);
+      // güç dağıtım tablosu ikinci kez, yalnız tablo resmine bakılarak okunur; iki okuma karşılaştırılır
+      const gi = adlar.indexOf('guc');
+      if (gi >= 0) {
+        durum('d-ro-ic', 'Güç dağıtım tablosu ikinci kez okunuyor (karşılaştırma)…');
+        try {
+          const v2 = await sample.json(`Ekteki resim bir elektrik iç tesisat projesindeki GÜÇ DAĞITIM TABLOSU. Tablonun HER satırını (toplam satırları hariç) sırayla oku; yazanı aynen yaz, tahmin etme.
+Yalnız şu JSON'u döndür: {"satirlar": [ {"bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str} ]}  // kurulu ve baglanti W cinsinden tam sayı (tabloda kW yazıyorsa 1000 ile çarp)`,
+            { images: [parcalar[gi]], modelTier: 'default' });
+          const b2 = satirYap(v2 && v2.satirlar);
+          const ayni = b2.length === a.length && b2.every((r, i) => r.kurulu === a[i].kurulu && r.baglanti === a[i].baglanti);
+          const top = l => l.reduce((t, r) => t + (parseFloat(r.kurulu) || 0), 0), hedef = ic.kuruluW || (D.ic && D.ic.kuruluW);
+          if (!ayni) {
+            if (hedef && Math.abs(top(b2) - hedef) <= 1 && Math.abs(top(a) - hedef) > 1) a = b2;
+            else if (!(hedef && Math.abs(top(a) - hedef) <= 1)) D.gucFark = true;
+          }
+        } catch (x) { D.gucFark = true; }
+      }
+      ic.satirlar = a; ic.gucKaynak = 'resim';
       resimden.sayacAdet = 1;
     }
     ic.resimden = resimden; D.ic = ic;

@@ -18,7 +18,7 @@ async function sayfalar(dosya) {
     const tc = await pg.getTextContent();
     out.push(tc.items.filter(i => i.str.trim()).map(i => {
       const t = pdfjs.Util.transform(vp.transform, i.transform);
-      return { s: i.str, x: t[4], y: t[5], egik: Math.abs(t[1]) > 0.01 || Math.abs(t[2]) > 0.01 };
+      return { s: i.str, x: t[4], y: t[5], w: i.width || 0, egik: Math.abs(t[1]) > 0.01 || Math.abs(t[2]) > 0.01 };
     }).filter(o => !o.egik));
   }
   return out;
@@ -26,7 +26,10 @@ async function sayfalar(dosya) {
 const [gdzP, icP, cikis, iletken = 'al', enKucuk = '10', elle] = process.argv.slice(2);
 const g = BHP.gdzOku(await sayfalar(gdzP));
 const gs = await sayfalar(gdzP);
-const i = BHP.icTesisatOku((await sayfalar(icP))[0]);
+const icS = await sayfalar(icP);
+const i = BHP.icTesisatOku(icS[0]);
+for (const sf of icS) { const g = BHP.gucTablosuOku(sf); if (g) { i.satirlar = g; break; } }
+console.log('GÜÇ TABLOSU (yazıdan)', i.satirlar || 'bulunamadı');
 console.log('GDZ', g, '\nuydu sayfası', BHP.uyduSayfasi(gs) + 1);
 console.log('İÇ TESİSAT', i);
 const b = Object.assign(BHP.birlestir(g, i), elle ? JSON.parse(fs.readFileSync(elle, 'utf8')) : {});

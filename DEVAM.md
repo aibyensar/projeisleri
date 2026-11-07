@@ -149,6 +149,19 @@ gerçek eksikte kapanır ve altında "İndirmek için eksik: …" yazar. Kullan�
   kutuları) + sonuç satırı. Tek hatta "TEK HAT ŞEMASI" başlığı, yazı boyları sadeleştirildi.
 - Eşzamanlılık katsayısı satırı konmadı (onaylı projedeki 0,43 hesapla tutmuyor); kullanıcıya sorulacak.
 
+**v8 (yayında sürüm 12) — kullanıcının 12 maddelik geri bildirimi:**
+1. Güç dağıtım tablosu: BHP.gucTablosuOku (PDF yazısından, sütun başlıklarının ortasına göre; ı/i için büyük harfe çevirerek),
+   resimden okumada tablo 2. kez okunup karşılaştırılır (D.gucFark), BHP.gucKontrol (Σkurulu = antet, satır = BB adedi, bağlantı ≤ kurulu)
+   hata varsa İNDİR kapalı. Gerçek iç tesisat PDF'iyle HENÜZ DENENMEDİ (kullanıcıdan örnek istendi).
+2. Resimler eşit (277x150 mm), web kirpVeSigdir "cover" (boşluksuz, ortadan kırpar); RESIM 2000x1083.
+3/7. Semboller: tek hatta kullanıcının sembol tablosundaki 3~ W otomat, 3~ buşonlu, 3~ sayaç, topraklama; TMŞ/YKŞ IEC.
+   Vaziyette box = dikdörtgen yarısı dolu (kullanıcıya soruldu), pano = iki üçgen (kendi lejantı), etiketler dolgusuz, altı çizili.
+4. Montaj detayı JS'de (BHPCizim.detay) baştan: box/direk, beton kaide, pano, Ø100 PVC boru, ikaz şeridi, kum yatağı, 100 cm,
+   parsel sınırı, parsel dışı/içi ölçüleri, topraklama iletkeni + kazığı. Şablondaki eski detay blokları kullanılmıyor.
+5. Yük dağılımı cetveli kaldırıldı. 6. "20 °C" kaldırıldı. 8. Sayaçlar baradan YUKARI. 9. topraklamaKesit: ≤35 → 16, üstü ≥ S/2 standart.
+10. Gri başlık dolguları kaldırıldı. 12. Usul ve esaslar: metin sırası (sağ sütun → sol alt [Madde 4..6] → k) MTEXT → sol üst [Madde 7..])
+   birleştirilip paragraflara ayrıldı, gerçek Arial ölçüsüyle (ezdxf.fonts) iki eşit sütuna dizildi, alıntı altta çerçeveli.
+
 **AÇIK KONULAR (sıradaki)**
 0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
 1. Kullanıcının AutoCAD görüntüsünde güç dağılım tablosunda yalnız 2 satır vardı (14 ve ORTAK, toplam 32040 W): nasıl doldurduğu

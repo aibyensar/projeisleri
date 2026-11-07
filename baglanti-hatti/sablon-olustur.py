@@ -95,8 +95,12 @@ for lt, desen in (('BHP-KESIK', [4.0, 2.5, -1.5]), ('BHP-GIZLI', [1.5, 0.75, -0.
 SEMBOL_BASLIK = lambda e: any(s in metin(e).upper() for s in ('KUVVETL', 'ZAYIF', 'SEMBOLLER'))
 print('tek hat silindi', sil((-35, 5712, 390, 5796), SEMBOL_BASLIK))
 GECIS = lambda e: 'GEÇİŞ' in metin(e).upper() or 'GECIS' in metin(e).upper()
-VAZ_RESIM = (-263.2, 5822.0, 13.7, 5989.7)               # boxlu projede TKGM resminin yeri
-UYDU_RESIM = (-261.5, 5994.8, 52.7, 6159.8)              # GDZ uydu görüntüsünün yeri
+VAZ_RESIM = (-263.2, 5822.0, 13.7, 5989.7)               # boxlu projede TKGM resminin yeri (silme bölgesi)
+UYDU_RESIM = (-261.5, 5994.8, 52.7, 6159.8)              # GDZ uydu görüntüsünün yeri (silme bölgesi)
+# yeni resim kutuları: ikisi aynı boyutta (277 x 150 mm), boşluksuz doldurulur
+RESIM_W, RESIM_H = 277.0, 150.0
+VAZ_KUTU = (-263.2, 5830.0, -263.2 + RESIM_W, 5830.0 + RESIM_H)
+UYDU_KUTU = (-263.2, 6003.0, -263.2 + RESIM_W, 6003.0 + RESIM_H)
 print('vaziyet yazıları silindi', sil((VAZ_RESIM[0] - 2, VAZ_RESIM[1] - 2, VAZ_RESIM[2] + 2, VAZ_RESIM[3] + 2), GECIS))
 print('uydu üstü silindi', sil(UYDU_RESIM, GECIS))
 
@@ -123,8 +127,8 @@ def detay_blok(kaynak, ad):
 
 bBox = detay_blok(d, 'BHP_DETAY_BOX')
 bDirek = detay_blok(dd, 'BHP_DETAY_DIREK')
-m.add_blockref(bBox.name, (0, 0), dxfattribs={'layer': 'BHP-DETAY-BOX'})
-m.add_blockref(bDirek.name, (0, 0), dxfattribs={'layer': 'BHP-DETAY-DIREK'})
+# montaj detayı artık her işte web aracı tarafından çizilir (bhp-cizim.js detay); eski çerçeve çizgileri silinir
+print('detay çerçevesi silindi', sil((60, 6135, 390, 6292)))
 
 # ---------- Yazı düzeltmeleri (Türkçe karakter) ve kablo adı ----------
 DUZELT = {'BITMIS ZEMIN KOTU': 'BİTMİŞ ZEMİN KOTU', 'IKAZ SERIDI': 'İKAZ ŞERİDİ', 'TUGLA': 'TUĞLA', 'NYY KABLO': '{{KABLO}}',
@@ -212,9 +216,17 @@ def resim(ad, isim, k, px, py):
     tanim = d.add_image_def(filename=ad, size_in_pixel=(px, py), name=isim)
     r = m.add_image(tanim, insert=ins, size_in_units=(gw, gh), rotation=0, dxfattribs={'layer': 'BHP-RESIM'})
     return r, [round(ins[0], 4), round(ins[1], 4), round(ins[0] + gw, 4), round(ins[1] + gh, 4)]
-UYDU_PX, VAZ_PX = (2000, 1087), (2000, 1056)
-r1, kUydu = resim('{{UYDU}}', 'BHP-UYDU', UYDU_RESIM, *UYDU_PX)
-r2, kVaz = resim('{{VAZIYET}}', 'BHP-VAZIYET', VAZ_RESIM, *VAZ_PX)
+UYDU_PX = VAZ_PX = (2000, round(2000 * RESIM_H / RESIM_W))
+r1, kUydu = resim('{{UYDU}}', 'BHP-UYDU', UYDU_KUTU, *UYDU_PX)
+r2, kVaz = resim('{{VAZIYET}}', 'BHP-VAZIYET', VAZ_KUTU, *VAZ_PX)
+for k in (UYDU_KUTU, VAZ_KUTU):                            # resim çerçevesi
+    m.add_lwpolyline([(k[0], k[1]), (k[2], k[1]), (k[2], k[3]), (k[0], k[3])], close=True, dxfattribs={'layer': 'BHP-TABLO', 'lineweight': 35})
+m.add_text('GDZ BAĞLANTI GÖRÜŞÜ EKİ UYDU GÖRÜNTÜSÜ', height=2.8, dxfattribs={'style': 'BHP-K', 'layer': 'BHP-TABLO'}).set_placement((UYDU_KUTU[0], UYDU_KUTU[3] + 2.2), align=A.BOTTOM_LEFT)
+# "geçiş izinleri" uyarısı iki resmin arasına
+for e in m.query('MTEXT'):
+    if 'GEÇİŞ' in e.plain_text().upper():
+        e.dxf.attachment_point = 4; e.dxf.insert = (UYDU_KUTU[0], (VAZ_KUTU[3] + UYDU_KUTU[1]) / 2); e.dxf.width = RESIM_W; e.dxf.char_height = 3.6
+        e.text = e.plain_text().replace('\n', ' ').strip()
 m.set_redraw_order([(r1.dxf.handle, '1'), (r2.dxf.handle, '2')])
 
 # ---------- Tek düzen: tek yazı tipi (Arial), tek renk, iki çizgi tipi ----------
@@ -275,8 +287,85 @@ for yer in [m] + [d.blocks.get(a) for a in ('BHP_DETAY_BOX', 'BHP_DETAY_DIREK')]
             if hasattr(p, 'source_boundary_objects'): p.source_boundary_objects = []
 # katmanlar: siyah/beyaz, düz çizgi (renk 7); kullanıcının "uyarı" katmanları da tek renk
 for k in d.layers:
-    if k.dxf.name.startswith('BHP') or k.dxf.name in ('0', 'DEFPOINTS', 'Defpoints'): continue
+    if k.dxf.name.startswith('BHP'): continue
     k.dxf.color = 7; k.dxf.linetype = 'Continuous'
+# ---------- TEDAŞ "Enerji kabloları uygulama usul ve esasları" metni: doğru sırayla birleştirilip iki eşit sütuna dizilir ----------
+# Kullanıcının paftasında metin parçalı duruyordu: belgenin başı sağ sütunda, devamı sol sütunun alt yarısında (Madde 4'ten),
+# sonu sol sütunun üst yarısında (Madde 7'den). Satırlar paragraflara birleştirilir, aynı yazı boyuyla yeniden kırılır.
+import re as _re
+from ezdxf.fonts import fonts as _fonts
+_FN = {}
+def gen(t, h, kalin=False):                                # gerçek Arial ölçüsü (AutoCAD yazı yüksekliği = büyük harf yüksekliği)
+    k = (h, kalin)
+    if k not in _FN: _FN[k] = _fonts.make_font('arialbd.ttf' if kalin else 'arial.ttf', h)
+    return _FN[k].text_width(t)
+SX0, SX1, SY0, SY1 = 391.0, 684.6, 5393.6, 6293.6
+sag, solA, solU, alinti, kmt = [], [], [], None, None
+for e in list(m):
+    k = kut(e)
+    if not k or k[0] < SX0 - 1 or e.dxftype() not in ('TEXT', 'MTEXT'): continue
+    t = metin(e).strip()
+    if e.dxftype() == 'MTEXT' and 'demiryolu' in t: alinti = ' '.join(t.split()); m.delete_entity(e); continue
+    if e.dxftype() == 'MTEXT': kmt = ' '.join(t.split()); m.delete_entity(e); continue
+    (sag if k[0] > 548 else solU if k[1] >= 5851 else solA).append((-k[1], t)); m.delete_entity(e)
+akis = [t for _, t in sorted(sag)] + [t for _, t in sorted(solA)] + ([kmt] if kmt else []) + [t for _, t in sorted(solU)]
+BAS = _re.compile(r'^(BÖLÜM|Madde|MADDE|[A-Z]\s*-\s*[A-ZÇĞİÖŞÜ]|\d+(\.\d+)+\.?\s|\d+-[A-ZÇĞİÖŞÜ])')
+MAD = _re.compile(r'^[a-zçğıöşü]\)\s')
+par = []                                                   # (tür, metin): baslik / madde / normal
+for t in akis:
+    t = ' '.join(t.split())
+    if not t: continue
+    ustbas = t.upper() == t and any(ch.isalpha() for ch in t)
+    if BAS.match(t) or (ustbas and len(t) < 90):
+        if par and par[-1][0] == 'baslik' and ustbas and not BAS.match(t): par[-1] = ('baslik', par[-1][1] + ' ' + t)
+        else: par.append(('baslik', t))
+    elif MAD.match(t) or not par: par.append(('madde', t))
+    elif par[-1][0] == 'baslik' and par[-1][1].endswith(':') is False and len(par[-1][1]) < 40 and not t[0].isupper(): par[-1] = ('baslik', par[-1][1] + ' ' + t)
+    else:
+        if par[-1][0] == 'baslik': par.append(('normal', t))
+        else: par[-1] = (par[-1][0], par[-1][1] + ' ' + t)
+ilk_baslik = par.pop(0)[1] if par and 'ELEKTRİK DAĞITIM' in par[0][1] else ''
+print('usul ve esaslar:', len(akis), 'satır →', len(par), 'paragraf')
+GAP = 4.0
+KW = (SX1 - SX0 - 3 * GAP) / 2
+UST = SY1 - 4 - 12                                         # başlık şeridinin altı
+ALT = SY0 + 4 + 22                                         # alıntı kutusunun üstü
+def diz(h):
+    satirlar = []                                          # (metin, kalin, paragraf başı)
+    for tur, t in par:
+        kal = tur == 'baslik'
+        sat, cur = [], ''
+        for w in t.split():
+            aday = (cur + ' ' + w).strip()
+            if gen(aday, h, kal) > KW - 7 and cur: sat.append(cur); cur = w
+            else: cur = aday
+        if cur: sat.append(cur)
+        for i, x in enumerate(sat): satirlar.append((x, kal, i == 0))
+    return satirlar
+def yukseklik(sat, h): return sum(h * 1.5 + (h * 0.6 if bas else 0) for _, _, bas in sat)
+h = 3.4
+while h > 1.6 and yukseklik(diz(h), h) > 2 * (UST - ALT) * 0.985: h -= 0.02
+sat = diz(h)
+print('usul ve esaslar yazı boyu', round(h, 2), 'satır', len(sat))
+kol, y = 0, UST
+for x, kal, bas in sat:
+    dy = h * 1.5 + (h * 0.6 if bas else 0)
+    if y - dy < ALT:
+        kol += 1; y = UST
+        if kol > 1: print('UYARI: metin sığmadı'); break
+    y -= dy
+    m.add_text(x, height=h, dxfattribs={'style': 'BHP-K' if kal else 'BHP', 'layer': 'BHP-TABLO', 'insert': (SX0 + GAP + kol * (KW + GAP), y)})
+m.add_line((SX0 + GAP + KW + GAP / 2, ALT), (SX0 + GAP + KW + GAP / 2, UST + 2), dxfattribs={'layer': 'BHP-TABLO'})
+bas_t = 'ELEKTRİK DAĞITIM ŞEBEKELERİ ENERJİ KABLOLARI UYGULAMA USUL VE ESASLARI'
+m.add_text(bas_t, height=3.2, dxfattribs={'style': 'BHP-K', 'layer': 'BHP-TABLO'}).set_placement(((SX0 + SX1) / 2, SY1 - 6.5), align=A.MIDDLE_CENTER)
+m.add_line((SX0, SY1 - 12), (SX1, SY1 - 12), dxfattribs={'layer': 'BHP-TABLO', 'lineweight': 35})
+if ilk_baslik: print('ilk başlık:', ilk_baslik[:90])
+if alinti:
+    ab = (SX0 + GAP, SY0 + 4, SX1 - GAP, SY0 + 4 + 18)
+    m.add_lwpolyline([(ab[0], ab[1]), (ab[2], ab[1]), (ab[2], ab[3]), (ab[0], ab[3])], close=True, dxfattribs={'layer': 'BHP-TABLO', 'lineweight': 35})
+    mt = m.add_mtext(alinti, dxfattribs={'style': 'BHP-K', 'layer': 'BHP-TABLO', 'char_height': 2.4, 'width': ab[2] - ab[0] - 4, 'attachment_point': 5})
+    mt.dxf.insert = ((ab[0] + ab[2]) / 2, (ab[1] + ab[3]) / 2)
+
 # kullanılmayan bloklar, çizgi tipleri, yazı stilleri silinir
 kullanilan = {'BHP_DETAY_BOX', 'BHP_DETAY_DIREK'}
 def blok_ref(yer):
@@ -317,7 +406,7 @@ d.set_modelspace_vport(height=(TY1 - TY0) * 1.05, center=((TX0 + TX1) / 2, (TY0 
 d.audit()
 d.saveas(cikis, encoding='utf-8')
 bilgi = {'model': m.block_record_handle, 'surum': 4,
-         'bolgeler': {'tekhat': [-30, 5714, 386, 5794], 'cetvel': [16, 5930, 383, 5985], 'hesap': [16, 5795, 383, 5927],
+         'bolgeler': {'tekhat': [18, 5714, 386, 5841], 'hesap': [18, 5847, 386, 5986], 'detay': [68, 6141, 386, 6290],
                       'guc': [-267.5, 5673, -79, 5803]},
          'resim': {'uydu': kUydu, 'vaziyet': kVaz}}
 s = open(cikis, encoding='utf-8').read()

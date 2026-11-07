@@ -137,6 +137,73 @@
     return v;
   }
 
+  // ---------- Güç dağıtım tablosu: PDF'teki gerçek yazılardan (resimden değil) sütun sütun okunur ----------
+  // Başlık "GÜÇ DAĞITIM/DAĞILIM TABLOSU" bulunur; altındaki sütun başlıklarının ortası sütun yerini verir;
+  // satırlar yazıların yüksekliğine göre gruplanır, "TOPLAM" satırında durulur. Tablo yoksa null döner.
+  function gucTablosuOku(ogeler) {
+    const T = o => buyuk(o.s), ort = o => o.x + (o.w || 0) / 2;   // büyük harfle karşılaştırılır (ı/i farkı)
+    const bas = ogeler.filter(o => /G[ÜU]Ç\s*DA[ĞG]I[LT]IM/i.test(T(o)));
+    for (const b of bas) {
+      const alt = ogeler.filter(o => o.y > b.y + 0.5 && o.y < b.y + 45);
+      const bul = re => alt.filter(o => re.test(T(o))).sort((p, q) => p.y - q.y)[0];
+      const kol = { bb: bul(/BA[ĞG]IMSIZ/i), tablo: bul(/ENERJ[İI]|ALDI[ĞG]I/i), kurulu: bul(/KURULU/i), sayac: bul(/SAYA[ÇC]/i), kullanim: bul(/KULLANIM/i), tesis: bul(/TES[İI]S/i) };
+      if (!kol.kurulu) continue;
+      kol.baglanti = alt.filter(o => /BA[ĞG]LANTI/i.test(T(o)) && ort(o) > ort(kol.kurulu) + 2).sort((p, q) => ort(p) - ort(q))[0];
+      const ad = Object.keys(kol).filter(k => kol[k]);
+      if (ad.length < 4) continue;
+      const merk = ad.map(k => [k, ort(kol[k])]).sort((p, q) => p[1] - q[1]);
+      const sinir = merk.map((m, i) => i ? (merk[i - 1][1] + m[1]) / 2 : m[1] - (merk[1][1] - m[1]) / 2);
+      sinir.push(merk[merk.length - 1][1] + (merk[merk.length - 1][1] - merk[merk.length - 2][1]) / 2);
+      const kW = alt.some(o => /\(\s*kW\s*\)/i.test(T(o)) && Math.abs(ort(o) - ort(kol.kurulu)) < 25);
+      const ust = Math.max(...ad.map(k => kol[k].y)) + 1.5;
+      const veri = ogeler.filter(o => o.y > ust && o.y < ust + 400 && ort(o) > sinir[0] && ort(o) < sinir[sinir.length - 1]).sort((p, q) => p.y - q.y);
+      const gruplar = [];
+      for (const o of veri) {
+        const g = gruplar[gruplar.length - 1];
+        if (g && Math.abs(o.y - g.y) < 2.2) g.l.push(o); else gruplar.push({ y: o.y, l: [o] });
+      }
+      const satirlar = [];
+      for (const g of gruplar) {
+        const metin = g.l.map(T).join(' ');
+        if (/TOPLAM|D[İI]VERS|E[ŞS]\s*ZAMAN|BG.?LER/i.test(metin)) break;
+        const r = { bb: '', tablo: '', kurulu: '', baglanti: '', sayac: '', kullanim: '', tesis: '', onu: '' };
+        for (const o of g.l.sort((p, q) => p.x - q.x)) {
+          const c = ort(o); let i = sinir.findIndex((x, j) => j < sinir.length - 1 && c >= x && c < sinir[j + 1]);
+          if (i < 0) continue;
+          const k = merk[i][0]; r[k] = temiz(r[k] + ' ' + temiz(o.s));
+        }
+        if (!/\d/.test(r.kurulu)) { if (satirlar.length) break; else continue; }
+        for (const k of ['kurulu', 'baglanti']) {
+          let n = sayi(r[k]);
+          if (kW && n < 1000) n = Math.round(n * 1000);
+          if (!isNaN(n)) r[k] = String(Math.round(n));
+        }
+        r.sayac = (r.sayac || '3FAZ').replace(/\s+/g, '');
+        satirlar.push(r);
+      }
+      if (satirlar.length) return satirlar;
+    }
+    return null;
+  }
+  // Bağımsız bölüm adedi antette "14+1" gibi yazılır
+  function bbSayisi(t) { const p = String(t || '').match(/\d+/g); return p ? p.reduce((a, b) => a + +b, 0) : 0; }
+  // Güç dağıtım tablosu kontrolü: hata varsa proje indirilmez
+  function gucKontrol(b) {
+    const hata = [], uyari = [], r = b.satirlar || [];
+    if (!r.length) return { hata: ['güç dağıtım tablosu boş'], uyari };
+    const bos = r.filter(x => !(parseFloat(x.kurulu) > 0) || !(parseFloat(x.baglanti) > 0)).map(x => x.bb || x.tablo || '?');
+    if (bos.length) hata.push(`kurulu / bağlantı gücü eksik satır: ${bos.slice(0, 6).join(', ')}${bos.length > 6 ? '…' : ''}`);
+    const ters = r.filter(x => parseFloat(x.baglanti) > parseFloat(x.kurulu)).map(x => x.bb || x.tablo);
+    if (ters.length) hata.push(`bağlantı gücü kurulu güçten büyük: ${ters.join(', ')}`);
+    const tk = r.reduce((t, x) => t + (parseFloat(x.kurulu) || 0), 0);
+    if (b.kuruluW > 0 && Math.abs(tk - b.kuruluW) > 1) hata.push(`tablodaki kurulu güç toplamı ${tk} W, antette ${b.kuruluW} W`);
+    const n = bbSayisi(b.bagimsiz);
+    if (n > 1 && n !== r.length) hata.push(`tabloda ${r.length} satır var, antette bağımsız bölüm ${b.bagimsiz} (${n})`);
+    const tb = r.reduce((t, x) => t + (parseFloat(x.baglanti) || 0), 0);
+    if (b.talepW > 0 && tb + 1 < b.talepW) uyari.push(`satırların bağlantı gücü toplamı (${tb} W) talep gücünden (${b.talepW} W) küçük`);
+    return { hata, uyari };
+  }
+
   // ---------- Kablo seçimi ve hesap (kullanıcının yöntemi) ----------
   // Katsayılar kullanıcının yöntemi: c = 100/(κ·U²) trifaze 380 V, 200/(κ·U²) monofaze 220 V; κ Cu 56, Al 35
   const C = { 3: { cu: 0.0000124, al: 0.0000198 }, 1: { cu: 0.000074, al: 0.000118 } };
@@ -300,7 +367,7 @@
     return sablon.replace(/\{\{([A-Z_0-9]+)\}\}/g, (a, k) => temiz(d[k] === undefined ? '' : d[k]));
   }
 
-  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
-    virgul, baslikHarf, RESIM: { uydu: [2000, 1087], vaziyet: [2000, 1056] } };
+  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
+    virgul, baslikHarf, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);
