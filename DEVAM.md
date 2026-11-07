@@ -68,16 +68,23 @@ Kullanıcı iç tesisat aracını henüz "tamam" demedi; son değişikliği (web
 Sonra sırayla: kompanzasyon, trafo gücü seçimi, aydınlatma; teklif hazırlayıcı, keşif/metraj, hakediş; proje takip,
 müşteri listesi, periyodik kontrol hatırlatıcı. Her yeni araçta önce kullanıcının kendi yöntemini/örneğini isteyin.
 
-## Yeni iş: Bağlantı hattı projesi (BHP) aracı — başlandı (7 Kasım 2026)
-Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Amaç: PDF'leri yükle, BHP hazır çizilsin.
-- Örnek: GDZ görüşü 20254622 (Semih Işık, 106/9, YENİ HARMANDALI TR-2 A-21, yeraltı AG 10 m, kurulu 31,56 kW, talep 14,22 kW)
-  ve kullanıcının çizimi harmandalı_BHP (DWG okunamadı; PDF'i incelendi). Dosyalar depoda yok (kişisel bilgi).
-- GDZ PDF'inden okunacaklar: başvuru no, sahibi, adres, ada/parsel, kullanım, hat tipi/uzunluk (parsel dışı/içi), kurulu/talep güç,
-  bağımsız bölüm, bağlantı noktası (direk adı), bağlantı şekli; 8. sayfadaki uydu görüntüsü (projede üstte kullanılıyor).
-- BHP paftası: sabit kısımlar (açıklamalar, kesit-sigorta tablosu, şartname yazıları, kablo kanalı detayı, kablo başlığı detayı,
-  sembol tabloları, "geçiş izinleri" notu, AGY Mühendislik anteti) + değişenler (antet yapı/arsa/güç bilgileri, güç dağılım tablosu,
-  gerilim düşümü hesabı [A.G. PANOSU (GDZ) → ADP, %e1 = c·N·L/S], akım kontrolü [N/527], tek hat şeması [direk → kablo → sayaç
-  panosu: 10kA 4x63A sigorta, K.A.R 4x63A 300mA, elektronik 3x10A sayaç, 1x16 pano topraklama], vaziyet planı [TKGM ekran görüntüsü]).
-- Kullanıcı cevapları: sigorta/KAR/sayaç değerleri iç tesisat projesinden gelir (iç tesisat PDF'i yükleyebilir);
-  vaziyet planı görüntüsü TKGM'den; havai hat projeleri de var (farklılıklar olur, sonra ele alınacak); kablo adı küçük x.
-- Sıradaki: kullanıcıdan aynı binanın iç tesisat proje PDF'ini istemek → önce yeraltı için web aracı → onay → AutoCAD komutu.
+## Bağlantı hattı projesi (BHP) aracı — ilk sürüm yayında, kullanıcının denemesi bekleniyor (7 Kasım 2026)
+Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Araç bunu hızlandırır.
+- Web: `araclar/baglanti-hatti.html`. Yüklenenler: GDZ görüşü PDF + iç tesisat PDF + TKGM ekran görüntüsü.
+  Kullanıcı Bakır/Alüminyum seçer (kendi isteği), araç en küçük uygun kesiti önerir (en küçük kesit varsayılanı Cu 10, Al 16 —
+  BU BENİM VARSAYIMIM, kullanıcıya onaylatılacak). İndirilen .zip: BHP-<başvuruNo>.dxf + 2 resim (aynı klasörde durmalı).
+- Ortak kod: `ortak/bhp.js` (PDF yazılarından okuma, kablo seçimi, hesap, şablon doldurma). Tarayıcı ve Node aynı kodu kullanır.
+- Şablon: `baglanti-hatti/BHP-SABLON.dxf`, kullanıcının kendi çiziminden (harmandalı_BHP.dxf, depoda YOK: kişisel bilgi)
+  `baglanti-hatti/sablon-olustur.py` (ezdxf) ile üretilir. Değişen yazılar `{{ANAHTAR}}`; Excel/resim (OLE) nesneleri silindi,
+  yerine çizgi+yazı: gerilim düşümü hesabı, güç dağılım tablosu, sayaç panosu içi. Uydu ve vaziyet resmi IMAGE (.\dosya.jpg).
+  Resim boyutları sabit: uydu 2000x1087, vaziyet 2000x1056 (web aracı resmi kırpıp bu boyuta sığdırır).
+  Yayında şablon `baglanti-hatti/BHP-SABLON.txt` adıyla durur (dxf web türü değil).
+- Deneme: `node baglanti-hatti/test/dene.mjs <gdz.pdf> <ic.pdf> <klasör> al 16` (pdfjs-dist@4.10.38 gerekir, PDFJS ortam değişkeni).
+  Önizleme için ezdxf + pymupdf ile DXF→PDF çizdirildi.
+- Denenen: Faruk Erdoğan (20247913, geçici tesis/şantiye, 246/154, KARAALİ TR-1 C-23, 4 m, 8500 W) → 4x16 mm² NAYY, %0,04, 16,1 A < 78 A.
+  Semih Işık (20254622, eski GDZ düzeni) GDZ okuması doğru.
+- Okunamayanlar: iç tesisat PDF'inde sayaç tipi ve güç dağılım tablosu resim → varsayılan 3x10, "AT"; kullanıcı düzeltebilir.
+- Bilinen eksikler: vaziyet planındaki direk/kablo/ada-parsel yazıları eski yerinde kalır, kullanıcı taşır. Havai hat yok
+  (kullanıcı "yeraltı çiz" dedi). Tek bağımsız bölüm satırı. Monofaze bağlantı yok.
+- Sıradaki: kullanıcı Faruk Erdoğan işiyle dener (AutoCAD'de açılıyor mu, resimler görünüyor mu, düzen doğru mu); geri bildirime göre düzelt.
+  Sonra havai hat (kullanıcıdan havai BHP örneği istenecek).

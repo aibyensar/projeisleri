@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bağlantı Hattı Projesi</title>
+<link rel="stylesheet" href="../ortak/stil.css">
+<style>
+  .yukle { display: grid; gap: 12px; }
+  .yukle label { display: block; border: 1px dashed var(--cizgi); border-radius: 8px; padding: 12px; cursor: pointer; }
+  .yukle label b { display: block; }
+  .yukle input[type=file] { margin-top: 8px; max-width: 100%; }
+  .durum { font-size: .85rem; color: var(--soluk); display: block; margin-top: 4px; }
+  .durum.iyi { color: var(--iyi); } .durum.kotu { color: var(--kotu); }
+  .secim { display: flex; gap: 8px; margin-bottom: 12px; }
+  .secim button { flex: 1; min-width: 0; font: inherit; padding: 12px 6px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  .secim button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .alanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 12px; margin-bottom: 14px; }
+  .alanlar h3 { grid-column: 1 / -1; margin: 6px 0 0; font-size: .9rem; color: var(--soluk); }
+  .alanlar label { font-size: .85rem; min-width: 0; }
+  .alanlar .genis { grid-column: 1 / -1; }
+  .alanlar input, .alanlar select, #kesit, #enKucuk { width: 100%; min-width: 0; font: inherit; padding: 8px; border-radius: 6px;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  .okundu { border-color: var(--iyi) !important; }
+  .formul { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; overflow-wrap: anywhere; }
+  .sonuc-satir { padding: 8px 0; border-top: 1px solid var(--cizgi); }
+  .sonuc-satir:first-child { border-top: 0; }
+  .sonuc-satir b { display: block; font-size: .85rem; color: var(--soluk); font-weight: 600; }
+  .uygun { color: var(--iyi); font-weight: 700; } .degil { color: var(--kotu); font-weight: 700; }
+  .resimler { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .resimler figure { margin: 0; } .resimler img { width: 100%; border: 1px solid var(--cizgi); border-radius: 6px; background: #fff; }
+  .resimler figcaption { font-size: .8rem; color: var(--soluk); }
+  .ana-dugme { font: inherit; font-weight: 700; font-size: 1.05rem; padding: 14px 18px; border-radius: 8px; border: 0; cursor: pointer;
+    background: var(--vurgu); color: #fff; width: 100%; }
+  .ana-dugme:disabled { opacity: .5; cursor: not-allowed; }
+  .uyari { background: var(--kotu-zemin); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: .9rem; }
+  .bilgi { background: var(--iyi-zemin); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: .9rem; }
+  ol.adimlar { padding-left: 20px; margin: 8px 0 0; } ol.adimlar li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="../index.html">← Proje İşleri</a>
+  <h1>Bağlantı hattı projesi</h1>
+  <p>GDZ bağlantı görüşü + iç tesisat projesi → AutoCAD'de açılacak hazır proje</p>
+</header>
+<main>
+  <div class="kart">
+    <h2 style="margin-top:0">1. Belgeleri yükleyin</h2>
+    <div class="yukle">
+      <label><b>GDZ bağlantı görüşü (PDF)</b>
+        <input type="file" id="f-gdz" accept="application/pdf,.pdf">
+        <span class="durum" id="d-gdz">Henüz yüklenmedi</span></label>
+      <label><b>Onaylı iç tesisat projesi (PDF)</b>
+        <input type="file" id="f-ic" accept="application/pdf,.pdf">
+        <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
+      <label><b>TKGM parsel görüntüsü (resim) — vaziyet planı</b>
+        <input type="file" id="f-tkgm" accept="image/*">
+        <span class="durum" id="d-tkgm">Henüz yüklenmedi</span></label>
+    </div>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">2. Kablo bakır mı, alüminyum mu?</h2>
+    <div class="secim" id="iletken">
+      <button type="button" data-v="cu" aria-pressed="false">Bakır (NYY)</button>
+      <button type="button" data-v="al" aria-pressed="false">Alüminyum (NAYY)</button>
+    </div>
+    <div class="alanlar" style="margin-bottom:0">
+      <label>Kablo<select id="kesit" disabled><option>Önce seçim yapın</option></select></label>
+      <label>En küçük kesit (mm²)<input id="enKucuk" type="number" min="1" step="any"></label>
+    </div>
+    <p class="not" style="margin-bottom:0">Araç, akım ve gerilim düşümüne göre uygun olan en küçük kesiti önerir. İsterseniz listeden değiştirin.</p>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">3. Okunan bilgiler</h2>
+    <p class="not">Yeşil kenarlı kutular belgelerden okundu. Hepsini kontrol edin, gerekirse düzeltin.</p>
+    <div id="hatNotu"></div>
+    <div class="alanlar" id="alanlar"></div>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">4. Hesap</h2>
+    <div id="sonuc"><p class="not">Belgeleri yükleyip kablo türünü seçince hesap burada görünür.</p></div>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">5. Resimler</h2>
+    <div class="resimler">
+      <figure><img id="r-uydu" alt="GDZ uydu görüntüsü" hidden><figcaption id="c-uydu">GDZ yazısındaki uydu görüntüsü (üstteki pafta)</figcaption></figure>
+      <figure><img id="r-vaziyet" alt="Vaziyet planı" hidden><figcaption id="c-vaziyet">TKGM görüntüsü (vaziyet planı)</figcaption></figure>
+    </div>
+    <label class="durum" style="margin-top:10px">Uydu görüntüsü bulunamazsa kendiniz seçin:
+      <input type="file" id="f-uydu" accept="image/*"></label>
+  </div>
+
+  <div class="kart">
+    <h2 style="margin-top:0">6. Projeyi indirin</h2>
+    <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
+    <p class="durum" id="d-indir"></p>
+    <ol class="adimlar">
+      <li>İnen .zip dosyasını açın. İçindeki <b>3 dosya aynı klasörde</b> kalsın (çizim ve 2 resim).</li>
+      <li>.dxf dosyasını AutoCAD'de açın, <b>DWG olarak kaydedin</b>.</li>
+      <li><b>Vaziyet planında</b> direk, kablo ve ada/parsel yazılarını resimdeki gerçek yerlerine taşıyın.</li>
+      <li>Resim görünmezse: <code>XREF</code> yazıp Enter, resmin yolunu zip'i açtığınız klasör olarak gösterin.</li>
+    </ol>
+  </div>
+</main>
+
+<script src="../veri/katalog.js"></script>
+<script src="../ortak/bhp.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module">
+import * as pdfjs from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+
+const $ = id => document.getElementById(id);
+const durum = (id, t, s) => { const e = $(id); e.textContent = t; e.className = 'durum' + (s ? ' ' + s : ''); };
+const D = { gdz: null, gdzSayfalar: null, gdzDoc: null, ic: null, iletken: null, uydu: null, vaziyet: null, sablon: null };
+
+// Şablonu önceden indir
+// (yayında .txt adıyla durur; depoda .dxf)
+const sablonAl = yol => fetch(yol).then(r => r.ok ? r.text() : Promise.reject(r.status));
+sablonAl('../baglanti-hatti/BHP-SABLON.txt').catch(() => sablonAl('../baglanti-hatti/BHP-SABLON.dxf'))
+  .then(t => { if (!t.includes('{{KABLO}}')) throw 0; D.sablon = t; guncelle(); }).catch(() => durum('d-indir', 'Çizim şablonu yüklenemedi. Sayfayı yenileyin.', 'kotu'));
+
+async function pdfAc(dosya) {
+  return pdfjs.getDocument({ data: new Uint8Array(await dosya.arrayBuffer()) }).promise;
+}
+async function sayfaYazilari(doc) {
+  const out = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const pg = await doc.getPage(p), vp = pg.getViewport({ scale: 1 });
+    const tc = await pg.getTextContent();
+    out.push(tc.items.filter(i => i.str.trim()).map(i => {
+      const t = pdfjs.Util.transform(vp.transform, i.transform);
+      return { s: i.str, x: t[4], y: t[5], egik: Math.abs(t[1]) > 0.01 || Math.abs(t[2]) > 0.01 };
+    }).filter(o => !o.egik));
+  }
+  return out;
+}
+
+// Resmi beyaz kenarlarından kırpıp sabit boyutlu beyaz zemine sığdırır (şablondaki resim yeri bu boyutta)
+function kirpVeSigdir(kaynak, [W, H]) {
+  const c0 = document.createElement('canvas'); c0.width = kaynak.width; c0.height = kaynak.height;
+  const x0 = c0.getContext('2d'); x0.drawImage(kaynak, 0, 0);
+  const v = x0.getImageData(0, 0, c0.width, c0.height).data;
+  let a = c0.width, b = c0.height, c = -1, d = -1;
+  for (let y = 0; y < c0.height; y += 2) for (let x = 0; x < c0.width; x += 2) {
+    const i = (y * c0.width + x) * 4;
+    if (v[i] < 235 || v[i + 1] < 235 || v[i + 2] < 235) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; }
+  }
+  if (c < 0) { a = 0; b = 0; c = c0.width - 1; d = c0.height - 1; }
+  const w = c - a + 1, h = d - b + 1, r = Math.min(W / w, H / h);
+  const c1 = document.createElement('canvas'); c1.width = W; c1.height = H;
+  const x1 = c1.getContext('2d'); x1.fillStyle = '#fff'; x1.fillRect(0, 0, W, H);
+  x1.imageSmoothingQuality = 'high';
+  x1.drawImage(c0, a, b, w, h, (W - w * r) / 2, (H - h * r) / 2, w * r, h * r);
+  return new Promise(res => c1.toBlob(res, 'image/jpeg', 0.9));
+}
+function resimGoster(id, blob) { const im = $(id); im.src = URL.createObjectURL(blob); im.hidden = false; }
+async function dosyadanResim(dosya) { return createImageBitmap(dosya); }
+
+$('f-gdz').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  durum('d-gdz', 'Okunuyor…');
+  try {
+    D.gdzDoc = await pdfAc(f); D.gdzSayfalar = await sayfaYazilari(D.gdzDoc);
+    D.gdz = BHP.gdzOku(D.gdzSayfalar);
+    if (!D.gdz.basvuruNo) throw new Error('Bu bir GDZ bağlantı görüşü gibi görünmüyor.');
+    durum('d-gdz', `Okundu: ${D.gdz.basvuruNo} · ${D.gdz.sahibi} · ${D.gdz.direk || 'direk bulunamadı'}`, 'iyi');
+    const sn = BHP.uyduSayfasi(D.gdzSayfalar);
+    if (sn >= 0) {
+      const pg = await D.gdzDoc.getPage(sn + 1), vp = pg.getViewport({ scale: 3 });
+      const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
+      await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      D.uydu = await kirpVeSigdir(cv, BHP.RESIM.uydu);
+      resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = `GDZ yazısının ${sn + 1}. sayfasından alındı`;
+    } else { $('c-uydu').textContent = 'GDZ yazısında uydu görüntüsü bulunamadı; aşağıdan kendiniz seçin.'; }
+    alanlariDoldur();
+  } catch (x) { durum('d-gdz', 'Okunamadı: ' + x.message, 'kotu'); }
+});
+$('f-ic').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  durum('d-ic', 'Okunuyor…');
+  try {
+    const s = await sayfaYazilari(await pdfAc(f));
+    D.ic = BHP.icTesisatOku(s[0]);
+    const n = Object.values(D.ic).filter(v => v && !(typeof v === 'number' && isNaN(v))).length;
+    durum('d-ic', n > 5 ? `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}` : 'Az bilgi okunabildi; kutuları kontrol edin.', n > 5 ? 'iyi' : 'kotu');
+    alanlariDoldur();
+  } catch (x) { durum('d-ic', 'Okunamadı: ' + x.message, 'kotu'); }
+});
+$('f-tkgm').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  D.vaziyet = await kirpVeSigdir(await dosyadanResim(f), BHP.RESIM.vaziyet);
+  resimGoster('r-vaziyet', D.vaziyet); durum('d-tkgm', 'Yüklendi', 'iyi'); guncelle();
+});
+$('f-uydu').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  D.uydu = await kirpVeSigdir(await dosyadanResim(f), BHP.RESIM.uydu);
+  resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = 'Sizin seçtiğiniz resim'; guncelle();
+});
+
+// ---- Düzenlenebilir alanlar ----
+const ALANLAR = [
+  ['Yapı', [['malSahibi', 'Mal sahibi', 'genis'], ['kullanim', 'Kullanım amacı'], ['adres', 'Adres', 'genis'],
+    ['il', 'İl'], ['ilce', 'İlçe'], ['belediye', 'Belediye'], ['mahalle', 'Mahalle'], ['pafta', 'Pafta'], ['ada', 'Ada'], ['parsel', 'Parsel'],
+    ['kat', 'Kat adedi'], ['alan', 'Toplam alan (m²)'], ['bagimsiz', 'Bağımsız bölüm']]],
+  ['Güç', [['kuruluW', 'Kurulu güç (W)', '', 'number'], ['talepW', 'Talep / bağlantı gücü (W)', '', 'number']]],
+  ['Bağlantı hattı', [['direk', 'Bağlantı noktası (direk)', 'genis'], ['uzunluk', 'Uzunluk (m)', '', 'number']]],
+  ['Sayaç panosu', [['sigortaA', 'Ana sigorta'], ['sigortaKA', 'Kesme gücü'], ['karA', 'K.A.R akımı'], ['karMA', 'K.A.R hassasiyeti'],
+    ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif']]],
+  ['Güç dağılım tablosu', [['tabloAdi', 'Enerji aldığı tablo'], ['gucKullanim', 'Kullanım amacı'], ['tesisNo', 'Tesisat no (varsa)']]],
+];
+(function alanlariKur() {
+  const k = $('alanlar'); let h = '';
+  for (const [baslik, liste] of ALANLAR) {
+    h += `<h3>${baslik}</h3>`;
+    for (const [id, ad, sinif, tip] of liste) {
+      const g = tip && tip.startsWith('select:')
+        ? `<select id="a-${id}">${tip.slice(7).split('|').map(o => `<option>${o}</option>`).join('')}</select>`
+        : `<input id="a-${id}" ${tip === 'number' ? 'type="number" inputmode="decimal" step="any" min="0"' : 'type="text"'}>`;
+      h += `<label class="${sinif || ''}">${ad}${g}</label>`;
+    }
+  }
+  k.innerHTML = h;
+  k.addEventListener('input', guncelle);
+})();
+function alanlariDoldur() {
+  const b = BHP.birlestir(D.gdz || {}, D.ic || {});
+  b.sayacTur = b.reaktif ? 'Aktif-Reaktif' : 'Aktif';
+  const okunan = new Set();
+  const g = D.gdz || {}, i = D.ic || {};
+  const kaynakVar = { malSahibi: i.malSahibi || g.sahibi, kullanim: i.kullanim || g.kullanim, adres: i.adres || g.adres, il: i.il || g.adres,
+    ilce: i.ilce || g.adres, belediye: i.belediye || g.adres, mahalle: i.mahalle || g.adres, pafta: i.pafta, ada: i.ada || g.ada, parsel: i.parsel || g.parsel,
+    kat: i.kat, alan: i.alan, bagimsiz: i.bagimsiz || g.bagimsiz, kuruluW: i.kuruluW || g.kuruluKW, talepW: i.talepW || g.talepKW,
+    direk: g.direk, uzunluk: g.uzunluk, sigortaA: i.sigortaA, sigortaKA: i.sigortaKA, karA: i.karA, karMA: i.karMA, sayac: i.sayac, sayacTur: i.karMA };
+  for (const [, liste] of ALANLAR) for (const [id] of liste) {
+    const el = $('a-' + id); if (!el) continue;
+    const v = b[id]; el.value = (v === undefined || (typeof v === 'number' && isNaN(v))) ? '' : v;
+    const k = kaynakVar[id]; el.classList.toggle('okundu', !!(k && !(typeof k === 'number' && isNaN(k))));
+  }
+  const not = $('hatNotu');
+  not.innerHTML = g.hatTipi === 'HAVAI'
+    ? `<div class="uyari">GDZ yazısında hat <b>havai</b> görünüyor. Bu araç şimdilik <b>yeraltı</b> olarak çizer.</div>`
+    : (g.kaziIzni === 'Yok' ? `<div class="uyari">GDZ yazısına göre <b>kazı izni yok</b>.</div>` : '');
+  guncelle();
+}
+function bilgiler() {
+  const b = {};
+  for (const [, liste] of ALANLAR) for (const [id, , , tip] of liste) {
+    const v = $('a-' + id).value.trim(); b[id] = tip === 'number' ? parseFloat(v.replace(',', '.')) || 0 : v;
+  }
+  b.reaktif = b.sayacTur === 'Aktif-Reaktif';
+  b.basvuruNo = (D.gdz && D.gdz.basvuruNo) || 'bhp';
+  b.alan = /\d/.test(b.alan) ? b.alan.replace(/\s*m²?$/, '') : '-';
+  return b;
+}
+
+// ---- Kablo seçimi ----
+$('iletken').addEventListener('click', e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  D.iletken = btn.dataset.v;
+  for (const x of $('iletken').children) x.setAttribute('aria-pressed', x === btn);
+  $('enKucuk').value = D.iletken === 'al' ? 16 : 10;
+  D.elleSecilen = null; guncelle();
+});
+$('enKucuk').addEventListener('input', () => { D.elleSecilen = null; guncelle(); });
+$('kesit').addEventListener('change', () => { D.elleSecilen = $('kesit').value; guncelle(); });
+
+function guncelle() {
+  const sel = $('kesit');
+  const b = bilgiler();
+  const N = b.talepW, L = b.uzunluk;
+  let kablo = null;
+  if (D.iletken && N > 0 && L > 0) {
+    const liste = BHP.kablolar(D.iletken);
+    const oneri = BHP.kabloOner(D.iletken, N, L, parseFloat($('enKucuk').value) || 0);
+    const secili = D.elleSecilen || oneri.ad;
+    sel.disabled = false;
+    sel.innerHTML = liste.map(k => {
+      const h = BHP.hesap(k, N, L);
+      return `<option value="${k.ad}" ${k.ad === secili ? 'selected' : ''}>${k.yazi}${k.ad === oneri.ad ? ' (önerilen)' : ''}${h.uygun ? '' : ' — uygun değil'}</option>`;
+    }).join('');
+    kablo = liste.find(k => k.ad === secili);
+  } else if (D.iletken) { sel.disabled = true; sel.innerHTML = '<option>Güç ve uzunluk gerekli</option>'; }
+  D.kablo = kablo;
+  // hesap
+  const s = $('sonuc');
+  if (kablo) {
+    const h = BHP.hesap(kablo, N, L), v = BHP.virgul;
+    s.innerHTML = `
+      <div class="sonuc-satir"><b>Gerilim düşümü</b><span class="formul">%e = ${v(h.c, 7)} × ${N} × ${String(L).replace('.', ',')} / ${String(kablo.kesit).replace('.', ',')} = ${v(h.e, 5)} ≈ %${v(h.e, 2)} &lt; %1,5</span>
+        <span class="${h.eUygun ? 'uygun' : 'degil'}"> ${h.eUygun ? 'uygun' : 'UYGUN DEĞİL'}</span></div>
+      <div class="sonuc-satir"><b>Akım kontrolü</b><span class="formul">I = ${N} / 527 = ${v(h.I, 3)} A &lt; ${kablo.iz} A</span>
+        <span class="${h.iUygun ? 'uygun' : 'degil'}"> ${h.iUygun ? 'uygun' : 'UYGUN DEĞİL'}</span>
+        <span class="durum">${kablo.yazi}, toprakta ${kablo.iz} A (Öznur Kablo kataloğu)</span></div>`;
+  }
+  // indirme düğmesi
+  const eksik = [];
+  if (!D.sablon) eksik.push('çizim şablonu');
+  if (!D.gdz) eksik.push('GDZ yazısı');
+  if (!D.iletken) eksik.push('bakır/alüminyum seçimi');
+  if (!kablo) eksik.push('kablo');
+  if (!D.uydu) eksik.push('uydu görüntüsü');
+  if (!D.vaziyet) eksik.push('TKGM görüntüsü');
+  $('indir').disabled = eksik.length > 0;
+  if (eksik.length) durum('d-indir', 'Eksik: ' + eksik.join(', ')); else durum('d-indir', 'Hazır.', 'iyi');
+}
+
+$('indir').addEventListener('click', async () => {
+  const b = bilgiler(), ad = b.basvuruNo;
+  const uyduAd = `${ad}-uydu.jpg`, vazAd = `${ad}-vaziyet.jpg`;
+  const dxf = BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd));
+  const zip = new JSZip(), klasor = zip.folder(`BHP-${ad}`);
+  klasor.file(`BHP-${ad}.dxf`, dxf);
+  klasor.file(uyduAd, D.uydu); klasor.file(vazAd, D.vaziyet);
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `BHP-${ad}.zip`;
+  document.body.appendChild(a); a.click(); a.remove();
+  durum('d-indir', `İndirildi: BHP-${ad}.zip`, 'iyi');
+});
+</script>
+</body>
+</html>

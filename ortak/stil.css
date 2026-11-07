@@ -81,6 +81,7 @@ a.arac:hover { border-color: var(--vurgu); }
 .etiket { display: inline-block; font-size: .75rem; padding: 2px 8px; border-radius: 99px; margin-bottom: 8px; }
 .hazir { background: var(--iyi-zemin); color: var(--iyi); }
 .sirada { background: var(--zemin); color: var(--soluk); border: 1px solid var(--cizgi); }
+.deneme { background: var(--kotu-zemin); color: var(--vurgu); border: 1px solid var(--vurgu); }
 .pasif { opacity: .7; }
 form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 label { display: flex; flex-direction: column; font-size: .85rem; color: var(--soluk); gap: 4px; }
