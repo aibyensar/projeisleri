@@ -67,3 +67,17 @@ Hes Kablo, Besav/Hanif, Koç Kablo ile karşılaştırıldı (fark %2–5). Firm
 Kullanıcı iç tesisat aracını henüz "tamam" demedi; son değişikliği (web aracının AutoCAD'le aynı olması) denemesi bekleniyor.
 Sonra sırayla: kompanzasyon, trafo gücü seçimi, aydınlatma; teklif hazırlayıcı, keşif/metraj, hakediş; proje takip,
 müşteri listesi, periyodik kontrol hatırlatıcı. Her yeni araçta önce kullanıcının kendi yöntemini/örneğini isteyin.
+
+## Yeni iş: Bağlantı hattı projesi (BHP) aracı — başlandı (7 Kasım 2026)
+Süreç: iç tesisat onayı → GDZ'ye başvuru → GDZ "Bağlantı Görüşü" PDF'i → kullanıcı BHP çizer. Amaç: PDF'leri yükle, BHP hazır çizilsin.
+- Örnek: GDZ görüşü 20254622 (Semih Işık, 106/9, YENİ HARMANDALI TR-2 A-21, yeraltı AG 10 m, kurulu 31,56 kW, talep 14,22 kW)
+  ve kullanıcının çizimi harmandalı_BHP (DWG okunamadı; PDF'i incelendi). Dosyalar depoda yok (kişisel bilgi).
+- GDZ PDF'inden okunacaklar: başvuru no, sahibi, adres, ada/parsel, kullanım, hat tipi/uzunluk (parsel dışı/içi), kurulu/talep güç,
+  bağımsız bölüm, bağlantı noktası (direk adı), bağlantı şekli; 8. sayfadaki uydu görüntüsü (projede üstte kullanılıyor).
+- BHP paftası: sabit kısımlar (açıklamalar, kesit-sigorta tablosu, şartname yazıları, kablo kanalı detayı, kablo başlığı detayı,
+  sembol tabloları, "geçiş izinleri" notu, AGY Mühendislik anteti) + değişenler (antet yapı/arsa/güç bilgileri, güç dağılım tablosu,
+  gerilim düşümü hesabı [A.G. PANOSU (GDZ) → ADP, %e1 = c·N·L/S], akım kontrolü [N/527], tek hat şeması [direk → kablo → sayaç
+  panosu: 10kA 4x63A sigorta, K.A.R 4x63A 300mA, elektronik 3x10A sayaç, 1x16 pano topraklama], vaziyet planı [TKGM ekran görüntüsü]).
+- Kullanıcı cevapları: sigorta/KAR/sayaç değerleri iç tesisat projesinden gelir (iç tesisat PDF'i yükleyebilir);
+  vaziyet planı görüntüsü TKGM'den; havai hat projeleri de var (farklılıklar olur, sonra ele alınacak); kablo adı küçük x.
+- Sıradaki: kullanıcıdan aynı binanın iç tesisat proje PDF'ini istemek → önce yeraltı için web aracı → onay → AutoCAD komutu.
