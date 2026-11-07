@@ -68,10 +68,13 @@ const { chromium } = require('playwright');
   await p.click('#gOku');
   await p.waitForFunction(() => /Ana kesici|okunamadı|Okunamadı/.test(document.getElementById('d-g').textContent), null, { timeout: 30000 });
   console.log('3)', await p.textContent('#d-g'));
-  console.log('   adımlar:', await p.textContent('#gAdimlar'), '| k1:', await p.inputValue('#a-k1tur'), await p.inputValue('#a-k1deger'), '| onu:', await p.$eval('#satirlar input[data-k=onu]', e => e.value));
-  console.log('   onu sütunu:', JSON.stringify(await p.$$eval('#satirlar input[data-k=onu]', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'));
+  console.log('   adımlar:', await p.textContent('#gAdimlar'), '| k1:', await p.inputValue('#a-k1tur'), await p.inputValue('#a-k1deger'), '| onu:', await p.$eval('#onuListe input', e => e.value));
+  console.log('   onu sütunu:', JSON.stringify(await p.$$eval('#onuListe input', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'));
   if (process.env.SENARYO === 'C') { await p.fill('#a-onuHepsi', '3 x 20A 6kA');
-    console.log('   elle hepsine:', JSON.stringify(await p.$$eval('#satirlar input[data-k=onu]', l => l.map(e => e.value + (e.style.border ? '(K)' : ''))))); }
+    console.log('   elle hepsine:', JSON.stringify(await p.$$eval('#onuListe input', l => l.map(e => e.value + (e.style.border ? '(K)' : ''))))); }
+  console.log('   güç tablosu sütunları:', await p.$$eval('#satirlar th', l => l.map(e => e.textContent).filter(Boolean).join(' | ')), '| liste açık:', await p.$eval('#onuDetay', d => !d.hidden && d.open));
+  if (process.env.SENARYO === 'A') { await p.fill('#onuListe input[data-j="2"]', '3x25A'); for (const j of [0, 1, 3, 4, 5]) await p.fill(`#onuListe input[data-j="${j}"]`, '3x32A 6kA');
+    console.log('   tek tek düzeltildi:', JSON.stringify(await p.$$eval('#onuListe input', l => l.map(e => e.value + (e.style.border ? '(K)' : '')))), '| hepsi kutusu:', await p.inputValue('#a-onuHepsi'), '|', await p.getAttribute('#a-onuHepsi', 'placeholder')); }
   await p.check('#panoOnay'); await p.check('#gucOnay');
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle
@@ -79,7 +82,7 @@ const { chromium } = require('playwright');
   console.log('4) yok düğmesi görünür:', await p.isVisible('#gYok'), '| çerçeve geri geldi:', await p.isVisible('#gCerceve'));
   await p.click('#gYok');
   console.log('  ', await p.textContent('#d-g'));
-  console.log('   satırlar:', await p.textContent('#d-satir'), '| onu korundu:', await p.$eval('#satirlar input[data-k=onu]', e => e.value), '| resim kutusu gizli:', await p.isHidden('#gucResimKutu'), '| adımlar:', await p.textContent('#gAdimlar'));
+  console.log('   satırlar:', await p.textContent('#d-satir'), '| onu korundu:', await p.$eval('#onuListe input', e => e.value), '| resim kutusu gizli:', await p.isHidden('#gucResimKutu'), '| adımlar:', await p.textContent('#gAdimlar'));
   console.log('istekler:', JSON.stringify(await p.evaluate(() => window.__istek)));
   await b.close();
 })();

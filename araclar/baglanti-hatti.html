@@ -127,9 +127,14 @@
     <p class="not">Yeşil kenarlı kutular belgelerin yazısından, turuncu kenarlılar resimden okundu. Hepsini kontrol edin, gerekirse düzeltin.</p>
     <div id="hatNotu"></div>
     <div class="alanlar" id="alanlar"></div>
+    <details id="onuDetay" hidden style="margin:0 0 12px">
+      <summary style="cursor:pointer;font-size:.9rem">Sayaç önü sigortaları sayaç sayaç (değerler farklıysa)</summary>
+      <p class="not" style="margin:6px 0">Yalnız tek hat şemasında kullanılır; güç dağıtım tablosuna yazılmaz.</p>
+      <div class="alanlar" id="onuListe" style="margin-bottom:0"></div>
+    </details>
     <div id="panoKutu" hidden style="margin:8px 0;padding:10px;border:1px solid var(--cizgi);border-radius:8px">
       <b style="font-size:.9rem">Sayaç panosu: ana kesici ve sayaç önü sigortalar</b>
-      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (4. bölümdeki tabloda "Sayaç önü sigorta" sütunu). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır. Yanlışsa 1. bölümde "3. Kolon şeması" adımında çerçeveyi düzeltip yeniden okutun.</p>
+      <p class="not" style="margin:4px 0">Ana kesici: branşman kablosunun girdiği ilk koruma (sigorta, TMŞ, TMŞ+YKŞ…). Sayaç önü: her sayacın önündeki kesici (yalnız tek hat şemasında kullanılır). Okumalar birbirini tutmayan değerler kırmızı kenarlıdır. Yanlışsa 1. bölümde "3. Kolon şeması" adımında çerçeveyi düzeltip yeniden okutun.</p>
       <img id="panoResim" hidden alt="İç tesisat sayaç panosu / kolon şeması" style="width:100%;border:1px solid var(--cizgi);border-radius:6px;background:#fff">
       <label id="panoOnayKutu" hidden style="display:flex;gap:8px;align-items:center;margin-top:6px;font-weight:600"><input type="checkbox" id="panoOnay"> Ana kesiciyi ve sayaç önü sigortalarını resimle karşılaştırdım, doğru.</label>
       <span class="durum" id="d-pano"></span>
@@ -138,7 +143,7 @@
 
   <div class="kart">
     <h2 style="margin-top:0">4. Güç dağılım tablosu</h2>
-    <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin. <b>Sayaç önü sigorta</b> her satırda girilmelidir (iç tesisat projesindeki kolon şemasından; örneğin 4x32A 10kA). Tek hat şemasında ve malzeme listesinde kullanılır.</p>
+    <p class="not">Her bağımsız bölüm bir satır. Daireler aynıysa aşağıdan tek seferde üretin.</p>
     <div class="uret">
       <label>Daire sayısı<input type="number" id="u-adet" min="0" step="1" inputmode="numeric"></label>
       <label>Tablo adı öneki<input type="text" id="u-onek" value="D"></label>
@@ -146,8 +151,6 @@
       <label>Daire bağlantı gücü (W)<input type="number" id="u-baglanti" min="0" inputmode="decimal"></label>
       <label>Ortak kurulu (W)<input type="number" id="u-okurulu" min="0" inputmode="decimal"></label>
       <label>Ortak bağlantı (W)<input type="number" id="u-obaglanti" min="0" inputmode="decimal"></label>
-      <label>Daire sayaç önü sigorta<input type="text" id="u-onu" placeholder="4x32A 10kA"></label>
-      <label>Ortak sayaç önü sigorta<input type="text" id="u-oonu" placeholder="4x40A 10kA"></label>
       <button type="button" class="kucuk-dugme" id="u-yap">Satırları üret</button>
     </div>
     <div id="gucResimKutu" hidden style="margin:8px 0">
@@ -303,7 +306,7 @@ $('f-ic').addEventListener('change', async e => {
     D.icYazi = Object.assign({}, D.ic); D.gucElle = false;
     // güç dağıtım tablosu: PDF'teki gerçek yazılardan sütun sütun (kesin okuma; resimden okumaya gerek kalmaz)
     for (const sayfa of s) { const g = BHP.gucTablosuOku(sayfa); if (g) { D.ic.satirlar = g; D.ic.gucKaynak = 'yazı'; break; } }
-    D.gucFark = false; D.supheli = {}; D.gucResimUrl = null; $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
+    D.gucFark = false; D.onuFark = false; D.supheli = {}; D.gucResimUrl = null; $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
     if (await ornekVar()) {
       $('panoKutu').hidden = false; D.panoKaynak = null; D.panoSupheli = {}; $('panoResim').hidden = true; $('panoOnayKutu').hidden = true; panoSupheliGoster();
       durum('d-pano', 'Kolon şemasını 1. bölümde işaretleyip okutun.');
@@ -338,7 +341,7 @@ const ALANLAR = [
     ['Ldis', 'Parsel dışı (m)', '', 'number'], ['Lic', 'Parsel içi (m)', '', 'number'], ['projeTarihi', 'Proje tarihi']]],
   ['Sayaç panosu korumaları (sırayla)', [['k1tur', '1. koruma', '', KORUMA], ['k1deger', '1. değer (4x40A 10kA gibi)'],
     ['k2tur', '2. koruma', '', KORUMA], ['k2deger', '2. değer (4x40A 300mA gibi)'],
-    ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif'], ['onuHepsi', 'Sayaç önü sigorta (bütün sayaçlara; farklıysa 4. bölümde tek tek)', 'genis']]],
+    ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif'], ['onuHepsi', 'Sayaç önü sigorta (bütün sayaçlara; farklıysa alttaki listeden sayaç sayaç)', 'genis']]],
 ];
 (function alanlariKur() {
   let h = '';
@@ -358,7 +361,7 @@ const ALANLAR = [
     if (e.target.id !== 'a-onuHepsi') return;
     const v = kesiciYaz(e.target.value);
     D.satirlar.forEach((r, j) => { r.onu = v; if (D.supheli) delete D.supheli[j + ':onu']; });
-    D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; satirlariCiz();
+    supheliGuncelle(); satirlariCiz(); guncelle();
   });
   $('alanlar').addEventListener('input', e => { panoTemizle(e); guncelle(); satirOzet(); if (typeof isaretCiz === 'function') isaretCiz(); });
 })();
@@ -415,12 +418,28 @@ function bilgiler() {
 }
 
 // ---- Güç dağılım satırları ----
-const SUTUN = [['bb', 'B.B. No'], ['tablo', 'Tablo adı'], ['kurulu', 'Kurulu (W)'], ['baglanti', 'Bağlantı (W)'], ['onu', 'Sayaç önü sigorta'], ['sayac', 'Sayaç tipi'], ['kullanim', 'Kullanım'], ['tesis', 'Tesisat no']];
+const SUTUN = [['bb', 'B.B. No'], ['tablo', 'Tablo adı'], ['kurulu', 'Kurulu (W)'], ['baglanti', 'Bağlantı (W)'], ['sayac', 'Sayaç tipi'], ['kullanim', 'Kullanım'], ['tesis', 'Tesisat no']];
 function satirlariCiz() {
   $('satirlar').innerHTML = `<tr>${SUTUN.map(s => `<th>${s[1]}</th>`).join('')}<th></th></tr>` +
     D.satirlar.map((r, j) => `<tr>${SUTUN.map(([k]) => `<td><input type="text" data-j="${j}" data-k="${k}" value="${kac(r[k])}"${(D.supheli || {})[j + ':' + k] ? ' style="border:2px solid var(--kotu)" title="Okumalar birbirini tutmadı"' : ''}></td>`).join('')}<td><button class="sil" data-sil="${j}" aria-label="Satırı sil">×</button></td></tr>`).join('');
-  satirOzet();
+  onuListeCiz(); satirOzet();
 }
+function onuVarsayilan() { return kesiciYaz($('a-onuHepsi') ? $('a-onuHepsi').value : ''); }
+function supheliGuncelle() {                                // güç tablosu ve sayaç önü işaretleri ayrı sayılır
+  const k = Object.keys(D.supheli || {});
+  D.gucFark = k.some(x => !x.endsWith(':onu')); D.onuFark = k.some(x => x.endsWith(':onu'));
+}
+function onuListeCiz() {
+  const n = D.satirlar.length, farkli = new Set(D.satirlar.map(r => kesiciAnahtar(r.onu))).size > 1;
+  $('onuDetay').hidden = n < 2;
+  if (farkli || D.onuFark) $('onuDetay').open = true;
+  $('onuListe').innerHTML = D.satirlar.map((r, j) => `<label>${kac(r.tablo || r.bb || (j + 1) + '. sayaç')}<input type="text" data-j="${j}" value="${kac(r.onu || '')}"${(D.supheli || {})[j + ':onu'] ? ' style="border:2px solid var(--kotu)" title="Kontrol edin"' : ''}></label>`).join('');
+}
+$('onuListe').addEventListener('input', e => {
+  const el = e.target; if (el.dataset.j == null) return;
+  D.satirlar[+el.dataset.j].onu = kesiciYaz(el.value); if (D.supheli) delete D.supheli[el.dataset.j + ':onu'];
+  el.style.border = ''; supheliGuncelle(); onuHepsiGoster(); guncelle();
+});
 function satirOzet() {
   const t = D.satirlar.reduce((a, r) => a + (parseFloat(r.kurulu) || 0), 0), tb = D.satirlar.reduce((a, r) => a + (parseFloat(r.baglanti) || 0), 0);
   const k = BHP.gucKontrol(bilgiler()), kay = D.ic && D.ic.gucKaynak;
@@ -430,19 +449,19 @@ function satirOzet() {
     (kay === 'yazı' || kay === 'resim' ? ` · ${kay === 'yazı' ? 'PDF yazısından okundu' : 'resimden okundu'}` : kay === 'elle' ? ' · elle giriliyor' : '') +
     (hata.length ? ' — HATA: ' + hata.join(' · ') : k.uyari.length ? ' — dikkat: ' + k.uyari.join(' · ') : ' — kontrol: antetle uyumlu'), hata.length ? 'kotu' : 'iyi');
 }
-$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; if (D.supheli) delete D.supheli[el.dataset.j + ':' + el.dataset.k]; el.style.border = ''; D.gucFark = D.supheli && Object.keys(D.supheli).length > 0; if (el.dataset.k === 'onu') onuHepsiGoster(); satirOzet(); guncelle(); } });
+$('satirlar').addEventListener('input', e => { const el = e.target; if (el.dataset.k) { D.satirlar[+el.dataset.j][el.dataset.k] = el.value; if (D.supheli) delete D.supheli[el.dataset.j + ':' + el.dataset.k]; el.style.border = ''; supheliGuncelle(); satirOzet(); guncelle(); } });
 $('gucOnay').addEventListener('change', () => { satirOzet(); guncelle(); });
 $('satirlar').addEventListener('click', e => { const j = e.target.dataset.sil; if (j != null) { D.satirlar.splice(+j, 1); satirlariCiz(); guncelle(); } });
 $('satirEkle').addEventListener('click', () => {
   const son = D.satirlar[D.satirlar.length - 1] || {};
-  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || (($('a-sayac').value || '3x10') + ' A'), kullanim: son.kullanim || '', tesis: '', onu: son.onu || '' });
+  D.satirlar.push({ bb: String(D.satirlar.length + 1), tablo: '', kurulu: '', baglanti: '', sayac: son.sayac || (($('a-sayac').value || '3x10') + ' A'), kullanim: son.kullanim || '', tesis: '', onu: son.onu || onuVarsayilan() });
   satirlariCiz(); guncelle();
 });
 $('u-yap').addEventListener('click', () => {
   const n = parseInt($('u-adet').value, 10) || 0, on = $('u-onek').value || 'D';
-  const kul = (D.satirlar[0] && D.satirlar[0].kullanim) || 'KONUT';
-  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: $('u-onu').value.trim() }));
-  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: $('u-oonu').value.trim() });
+  const kul = (D.satirlar[0] && D.satirlar[0].kullanim) || 'KONUT', eski = D.satirlar;
+  D.satirlar = Array.from({ length: n }, (_, k) => ({ bb: String(k + 1), tablo: on + (k + 1), kurulu: $('u-kurulu').value, baglanti: $('u-baglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: (eski[k] || {}).onu || onuVarsayilan() }));
+  if ($('u-okurulu').value || $('u-obaglanti').value) D.satirlar.push({ bb: 'ORTAK', tablo: 'UMUMİ', kurulu: $('u-okurulu').value, baglanti: $('u-obaglanti').value, sayac: ($('a-sayac').value || '3x10') + ' A', kullanim: kul, tesis: '', onu: (eski[n] || {}).onu || onuVarsayilan() });
   $('a-sayacAdet').value = D.satirlar.length;
   satirlariCiz(); guncelle();
 });
@@ -542,7 +561,8 @@ function guncelle() {
   if (!D.iletken) eksik.push('bakır / alüminyum seçimi (2. bölüm)');
   else if (!kablo) eksik.push('kablo: talep gücü ve uzunluk girilmeli (3. bölüm)');
   if (!D.satirlar.length) eksik.push('güç dağılım tablosu (4. bölüm)');
-  else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (4. bölüm, her satır)');
+  else if (BHP.sayacOnuEksik(b)) eksik.push('sayaç önü sigorta değerleri (3. bölüm, "Sayaç önü sigorta"; tek hat şeması için)');
+  if (D.onuFark) eksik.push('sayaç önü sigortalar: kırmızı kenarlı değerleri kontrol edin (3. bölüm)');
   if (D.satirlar.length) {
     const k = BHP.gucKontrol(b); k.hata.forEach(h => eksik.push('güç dağıtım tablosu: ' + h));
     if (D.gucFark) eksik.push('güç dağıtım tablosu: kırmızı hücreleri iç tesisatla karşılaştırıp düzeltin');
@@ -825,7 +845,7 @@ function panoUygula(v) {
   D.supheli = D.supheli || {};
   Object.keys(D.supheli).filter(x => x.endsWith(':onu')).forEach(x => delete D.supheli[x]);
   Object.keys(v.supheli).filter(x => x.startsWith('onu:')).forEach(x => { D.supheli[x.slice(4) + ':onu'] = 1; });
-  D.gucFark = Object.keys(D.supheli).length > 0;
+  supheliGuncelle();
   D.panoSupheli = Object.fromEntries(Object.keys(v.supheli).filter(x => !x.startsWith('onu:')).map(x => [x, 1]));
   D.panoKaynak = 'resim';
   if (D.ic) { D.ic.korumalar = v.ana.length ? v.ana : D.ic.korumalar; if (v.sayac) D.ic.sayac = v.sayac; }
@@ -833,14 +853,14 @@ function panoUygula(v) {
 }
 function onuHepsiGoster() {
   const f = [...new Set(D.satirlar.map(r => kesiciYaz(r.onu)))];
-  $('a-onuHepsi').value = f.length === 1 ? f[0] : ''; $('a-onuHepsi').placeholder = f.length > 1 ? 'satırlarda farklı değerler var (4. bölüm)' : 'ör. 3x32A 6kA';
+  $('a-onuHepsi').value = f.length === 1 ? f[0] : ''; $('a-onuHepsi').placeholder = f.length > 1 ? 'sayaçlarda farklı değerler var (alttaki liste)' : 'ör. 3x32A 6kA';
 }
 function panoOzet(v) {
   const ad = { sigorta: 'sigorta', tms: 'TMŞ', tmsyks: 'TMŞ+YKŞ', kar: 'K.A.R' };
   const sup = Object.keys(v.supheli).length;
   const eksik = v.onu.filter(x => !x).length;
   return `Ana kesici: ${v.ana.length ? v.ana.map(k => `${ad[k.tur] || k.tur} ${k.deger}`).join(' + ') : 'okunamadı'} · sayaç önü: ${[...new Set(v.onu.filter(Boolean))].join(', ') || 'OKUNAMADI'}` +
-    (eksik ? ` — ${eksik} sayacın önü okunamadı: 3. bölümde "Sayaç önü sigorta" kutusuna ya da 4. bölümdeki tabloya elle girin` : '') +
+    (eksik ? ` — ${eksik} sayacın önü okunamadı: 3. bölümde "Sayaç önü sigorta" kutusuna ya da sayaç sayaç listesine elle girin` : '') +
     (sup ? ` — ${sup} değer kontrol edilmeli (kırmızı kenarlı; okumalar ya da sayaç sayısı tutmadı)` : ' — okumalar birbirini tuttu') + '. Resimle karşılaştırıp kutuyu işaretleyin.';
 }
 $('panoOnay').addEventListener('change', () => guncelle());
@@ -1016,7 +1036,8 @@ async function gucOkuUygula(sample, ham, yaz) {
   const eski = D.satirlar || [];                            // sayaç önü sigortalar eski satırlardan korunur
   a.forEach(r => { const o = eski.find(x => (r.tablo && x.tablo === r.tablo) || (r.bb && x.bb === r.bb)); if (o && o.onu) r.onu = o.onu; });
   D.ic = D.ic || {}; D.ic.satirlar = a; D.ic.gucKaynak = 'resim'; D.gucElle = false;
-  D.satirlar = a; D.supheli = supheli; D.gucFark = Object.keys(supheli).length > 0;
+  const onuIsaret = Object.keys(D.supheli || {}).filter(x => x.endsWith(':onu'));
+  D.satirlar = a; D.supheli = Object.assign(supheli, Object.fromEntries(onuIsaret.map(x => [x, 1]))); supheliGuncelle();
   $('a-sayacAdet').value = a.length;
   satirlariCiz(); guncelle();
   const k = BHP.gucKontrol(bilgiler());
@@ -1050,7 +1071,7 @@ $('gYok').addEventListener('click', () => {
   $('gucResimKutu').hidden = true; $('gucOnay').checked = false;
   const b = BHP.birlestir(D.gdz || {}, D.ic), eski = D.satirlar || [];
   b.satirlar.forEach((r, j) => { const o = eski[j]; if (o && o.onu) r.onu = o.onu; });   // okunan sayaç önü sigortalar korunur
-  D.satirlar = b.satirlar; D.supheli = {}; D.gucFark = false; $('a-sayacAdet').value = b.sayacAdet;
+  D.satirlar = b.satirlar; D.supheli = Object.fromEntries(Object.keys(D.supheli || {}).filter(x => x.endsWith(':onu')).map(x => [x, 1])); supheliGuncelle(); $('a-sayacAdet').value = b.sayacAdet;
   satirlariCiz(); guncelle();
   G.durum.guc = 'yok'; delete G.isaret.guc;
   const devam = gSonraki();

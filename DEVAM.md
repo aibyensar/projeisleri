@@ -157,6 +157,11 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    (ana kesiciden farklı, sayaç sembolünün önünde, HER sayaç ayrı, onuOrtak, sayacSayisi). Hiç bulunamazsa ONU_ISTEM ile yalnız sayaçlara
    bakan 2 ek okuma. Elle giriş: 3. bölüm korumalar grubunda "Sayaç önü sigorta (bütün sayaçlara…)" kutusu (a-onuHepsi) bütün satırlara
    yazar, kırmızıları kaldırır; farklıysa 4. bölüm tablosunda tek tek. Deneme: SENARYO=A|B|C node test/isaretle-dene.js.
+1f. GÜÇ TABLOSU SADE (7 Kasım 2026): kullanıcı "güç dağılımda sayaç önü sigortaları girmeye gerek yok, onlar yalnız tek hat şemasında
+   lazım" dedi. 4. bölüm tablosundan "Sayaç önü" sütunu ve satır üretmedeki sayaç önü kutuları kaldırıldı (SUTUN'da onu yok; veri satırda
+   r.onu olarak durur, tek hat şeması kullanır). Sayaç önü yalnız 3. bölümde: "Sayaç önü sigorta (bütün sayaçlara)" + açılır "sayaç sayaç"
+   listesi (onuListe; farklıysa / kırmızı varsa kendiliğinden açılır). Kırmızılar ayrı sayılır (D.gucFark güç, D.onuFark sayaç önü).
+   Paftadaki güç dağıtım tablosunda zaten sayaç önü sütunu yoktu.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
