@@ -590,6 +590,38 @@ const hataYaz = x => HATA_METNI[x && x.code] || ('Okunamadı (' + ((x && x.code)
 // 1) sayfa parçalara bölünür (çok geniş paftalarda tablo küçük kalmasın), bölümlerin yeri bulunur;
 // 2) her bölüme yakınlaşılıp kesin sınırı alınır; 3) her bölüm yüksek çözünürlükte AYRI AYRI okunur.
 // Güç dağıtım tablosu iki kez okunur ve karşılaştırılır; PDF'te gerçek yazı varsa yazıdan okunan değer önceliklidir.
+// Tablo resminde yatay çizgileri bulur (satırdaki en uzun koyu çizgi, genişliğin %45'inden uzun) ve her satır bandının
+// soluna kırmızı numara yazar. Okuyucu her bandı numarasıyla okur; böylece satır atlanmaz, okumalar birebir eşleşir.
+async function bantlariNumarala(blob) {
+  const bm = await createImageBitmap(blob), W = bm.width, H = bm.height;
+  const c0 = document.createElement('canvas'); c0.width = W; c0.height = H;
+  const x0 = c0.getContext('2d'); x0.drawImage(bm, 0, 0);
+  const d = x0.getImageData(0, 0, W, H).data, ys = [];
+  for (let y = 0; y < H; y++) {
+    let en = 0, cur = 0;
+    let bosluk = 0;                                         // ince/gri çizgi ve üstünden geçen filigran için: 5 px'e kadar kesinti sayılmaz
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      if (d[i] + d[i + 1] + d[i + 2] < 510) { cur += 1 + bosluk; bosluk = 0; if (cur > en) en = cur; }
+      else if (cur && ++bosluk > 5) { cur = 0; bosluk = 0; }
+    }
+    if (en > W * 0.45) ys.push(y);
+  }
+  const cizgi = [];
+  for (const y of ys) { const s = cizgi[cizgi.length - 1]; if (s && y - s[1] <= 3) s[1] = y; else cizgi.push([y, y]); }
+  const orta = cizgi.map(([a, b]) => (a + b) / 2).filter((y, i, l) => !i || y - l[i - 1] > 8);
+  const M = 70, c1 = document.createElement('canvas'); c1.width = W + M; c1.height = H;
+  const x1 = c1.getContext('2d'); x1.fillStyle = '#fff'; x1.fillRect(0, 0, W + M, H); x1.drawImage(c0, M, 0);
+  x1.fillStyle = '#d00'; x1.strokeStyle = '#d00'; x1.font = 'bold 26px Arial'; x1.textAlign = 'center'; x1.textBaseline = 'middle';
+  let n = 0;
+  for (let i = 0; i + 1 < orta.length; i++) {
+    const a = orta[i], b = orta[i + 1]; if (b - a < 10) continue;
+    n++; x1.fillText(String(n), M / 2, (a + b) / 2);
+    x1.beginPath(); x1.moveTo(0, b); x1.lineTo(M, b); x1.stroke();
+  }
+  if (n === 0) { x1.fillText('1', M / 2, H / 2); n = 1; }
+  return { blob: await new Promise(r => c1.toBlob(r, 'image/jpeg', 0.92)), bant: n };
+}
 function parcalaraBol(v1, enCok) {
   const asp = v1.width / v1.height;
   let nx = asp > 1.6 ? Math.ceil(asp / 1.4) : 1, ny = asp < 0.62 ? Math.ceil(1 / asp / 1.4) : 1;
@@ -667,37 +699,51 @@ Yalnız şu JSON'u döndür: {"malSahibi": str, "kullanim": str, "adres": str, "
     const satirYap = l => (Array.isArray(l) ? l : []).map(r => ({ bb: String(r.bb ?? '').trim(), tablo: String(r.tablo ?? '').trim(), kurulu: String(r.kurulu ?? '').replace(/\D/g, ''),
       baglanti: String(r.baglanti ?? '').replace(/\D/g, ''), sayac: String(r.sayac ?? '').trim(), kullanim: String(r.kullanim ?? '').trim(), tesis: String(r.tesis ?? '').trim(), onu: '' }));
     if (bolge.guc && ic.gucKaynak !== 'yazı') {
-      const im = await kes('guc');
-      const istem = `Ekteki resim bir elektrik iç tesisat projesindeki GÜÇ DAĞILIM / DAĞITIM TABLOSU. Tablonun HER veri satırını yukarıdan aşağı sırayla oku (TOPLAM, BG'ler toplamı, eş zamanlılık, diversite satırları HARİÇ).
-Yazanı aynen yaz, tahmin etme. "kurulu" ve "baglanti" W cinsinden tam sayı olsun (tabloda kW yazıyorsa 1000 ile çarp; "W" harfini yazma).
-Yalnız şu JSON'u döndür: {"satirlar": [ {"bb": bağımsız bölüm no, "tablo": enerji aldığı tablo adı, "kurulu": str, "baglanti": str, "sayac": sayaç tipi, "kullanim": kullanım amacı, "tesis": tesisat no (boşsa "")} ]}`;
-      // üç bağımsız okuma; her hücre için çoğunluk alınır, çoğunluk olmayan hücre "şüpheli" işaretlenir
-      const oku = async () => { try { return satirYap((await sample.json(istem, { images: [im], modelTier: 'default' }) || {}).satirlar); } catch (x) { return []; } };
+      // tablonun yatay çizgileri resimden ölçülür; her satır bandı kırmızı numarayla işaretlenir
+      const ham = await kes('guc'), { blob: im, bant } = await bantlariNumarala(ham);
+      const istem = `Ekteki resim bir elektrik iç tesisat projesindeki GÜÇ DAĞILIM / DAĞITIM TABLOSU. Solda kırmızı numaralar (1..${bant}) tablonun her satır bandını gösterir.
+HER bant için türünü ve içeriğini ver: tür "baslik" (tablo başlığı / sütun başlıkları), "veri" (bir bağımsız bölüm satırı; UMUMİ / ORTAK / ADP satırları da veridir), "toplam" (toplam, BG'ler toplamı, eş zamanlılık, diversite satırları) veya "bos".
+Veri bantlarında hücrelerde YAZANI aynen yaz (sayıları tabloda yazdığı gibi, birimi ve binlik ayırıcıyı yazmadan; birim çevirme YAPMA). Tahmin etme; okuyamadığın hücre için null.
+Yalnız şu JSON'u döndür: {"kuruluBirim": "W" | "kW" (kurulu güç sütun başlığında yazan), "bantlar": [ {"no": 1, "tur": "baslik"}, {"no": 3, "tur": "veri", "bb": str, "tablo": str, "kurulu": str, "baglanti": str, "sayac": str, "kullanim": str, "tesis": str} ... ]}`;
+      const oku = async () => { try { return await sample.json(istem, { images: [im], modelTier: 'default' }) || {}; } catch (x) { return {}; } };
+      const veriler = o => { const m = {}; (Array.isArray(o.bantlar) ? o.bantlar : []).forEach(b => { if (b && b.tur === 'veri' && +b.no) m[+b.no] = satirYap([b])[0]; }); return m; };
       const okumalar = [await oku()];
       durum('d-ro-ic', 'Güç dağıtım tablosu ikinci kez okunuyor (karşılaştırma)…'); okumalar.push(await oku());
-      const ayni = (p, q) => p.length === q.length && p.every((r, i) => SUTUN.every(([k]) => k === 'onu' || r[k] === q[i][k]));
-      if (!ayni(okumalar[0], okumalar[1])) { durum('d-ro-ic', 'İki okuma farklı; üçüncü kez okunuyor…'); okumalar.push(await oku()); }
-      const say = {}; okumalar.forEach(o => say[o.length] = (say[o.length] || 0) + 1);
-      const n = +Object.keys(say).sort((p, q) => say[q] - say[p] || q - p)[0];
-      const uygun = okumalar.filter(o => o.length === n), supheli = {};
-      const a = Array.from({ length: n }, (_, i) => {
-        const r = {};
+      const v0 = okumalar.map(veriler);
+      const ayni = (p, q) => Object.keys(p).join() === Object.keys(q).join() && Object.keys(p).every(n => SUTUN.every(([k]) => k === 'onu' || p[n][k] === q[n][k]));
+      if (!ayni(v0[0], v0[1])) { durum('d-ro-ic', 'İki okuma farklı; üçüncü kez okunuyor…'); okumalar.push(await oku()); v0.push(veriler(okumalar[2])); }
+      // bant bant, hücre hücre çoğunluk
+      const tumBant = [...new Set(v0.flatMap(m => Object.keys(m).map(Number)))].sort((p, q) => p - q);
+      const supheli = {}, a = [];
+      for (const no of tumBant) {
+        const olan = v0.filter(m => m[no]);
+        if (olan.length * 2 <= v0.length) continue;               // bandı çoğunluk veri saymadıysa alınmaz
+        const r = {}, i = a.length;
         for (const [k] of SUTUN) {
-          const sec = {}; uygun.forEach(o => { const v = o[i][k] || ''; sec[v] = (sec[v] || 0) + 1; });
+          const sec = {}; olan.forEach(m => { const v = m[no][k] || ''; sec[v] = (sec[v] || 0) + 1; });
           const [en, adet] = Object.entries(sec).sort((p, q) => q[1] - p[1])[0] || ['', 0];
           r[k] = en;
-          if (k !== 'onu' && (adet < 2 || okumalar.length - uygun.length > 0 && adet < uygun.length)) supheli[i + ':' + k] = 1;
+          if (k !== 'onu' && (adet < 2 || adet < v0.length && v0.length === 2)) supheli[i + ':' + k] = 1;
         }
-        return r;
-      });
-      if (okumalar.length < 2 || say[n] < 2) for (let i = 0; i < n; i++) supheli[i + ':kurulu'] = supheli[i + ':baglanti'] = 1;
-      // tek şüpheli kurulu güç hücresi varsa: adaylardan toplamı antetteki kurulu güce eşitleyeni seç (hücre yine işaretli kalır)
+        if (olan.length < v0.length) supheli[i + ':bb'] = 1;
+        r._aday = olan.map(m => m[no].kurulu);
+        a.push(r);
+      }
+      // birim: tabloda W mi kW mi yazdığına bakılmaz, antetteki kurulu güçle karşılaştırılarak hesaplanır
+      const top = l => l.reduce((t, r) => t + (parseFloat(r.kurulu) || 0), 0);
+      if (ic.kuruluW > 0 && a.length) {
+        const t = top(a);
+        if (Math.abs(t * 1000 - ic.kuruluW) <= Math.abs(t - ic.kuruluW) && Math.abs(t * 1000 - ic.kuruluW) < ic.kuruluW * 0.02)
+          a.forEach(r => { for (const k of ['kurulu', 'baglanti']) if (r[k]) r[k] = String(Math.round(parseFloat(r[k].replace(',', '.')) * 1000)); });
+      }
+      // tek şüpheli kurulu güç hücresi: adaylardan toplamı antete eşitleyen seçilir (hücre işaretli kalır)
       const sk = Object.keys(supheli).filter(x => x.endsWith(':kurulu'));
       if (sk.length === 1 && ic.kuruluW > 0) {
         const i = +sk[0].split(':')[0], digeri = a.reduce((t, r, j) => t + (j === i ? 0 : parseFloat(r.kurulu) || 0), 0);
-        const aday = uygun.map(o => o[i].kurulu).find(v => Math.abs(digeri + (parseFloat(v) || 0) - ic.kuruluW) <= 1);
-        if (aday) a[i].kurulu = aday;
+        const aday = a[i]._aday.find(v => Math.abs(digeri + (parseFloat(v) || 0) - ic.kuruluW) <= 1 || Math.abs(digeri + (parseFloat(v) || 0) * 1000 - ic.kuruluW) <= 1);
+        if (aday) a[i].kurulu = String(Math.abs(digeri + (+aday) - ic.kuruluW) <= 1 ? +aday : +aday * 1000);
       }
+      a.forEach(r => delete r._aday);
       D.supheli = supheli; D.gucFark = Object.keys(supheli).length > 0;
       D.gucResimUrl && URL.revokeObjectURL(D.gucResimUrl); D.gucResimUrl = URL.createObjectURL(im);
       // tek bağımsız bölümlü projede tablo okunmaz: satır antetten gelir (linye cetveli karışmasın)

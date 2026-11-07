@@ -181,8 +181,14 @@ Sahte cevaplarla akış denendi (test/resimden-oku-dene.js); GERÇEK claude.ai'd
 **v8.4:** kullanıcı "iç tesisat bilgileri çok önemli, kesin çözüm, yanlışsız" dedi. Güç tablosu resimden 2 kez (farklıysa 3 kez) okunur,
 her hücre çoğunlukla seçilir, çoğunluk yoksa hücre kırmızı (D.supheli); tek şüpheli kurulu hücrede toplamı antete eşitleyen aday seçilir;
 okunan tablonun KIRPILMIŞ RESMİ 4. bölümde gösterilir ve "karşılaştırdım, doğru" kutusu (gucOnay) işaretlenmeden İNDİR açılmaz.
-Kesin çözüm önerisi: iç tesisatı DWG olarak yüklemek (yazılar gerçek yazı; gömülü Excel tablosu OLE içinden okunabilir) — kullanıcıdan
+DWG yolu kullanıcı tarafından REDDEDİLDİ (DWG her zaman bulunmuyor; yalnız PDF). Eski öneri: iç tesisatı DWG olarak yüklemek (yazılar gerçek yazı; gömülü Excel tablosu OLE içinden okunabilir) — kullanıcıdan
 iç tesisat DWG'si istendi; gelince DWG yükleme eklenecek (libredwg-web tarayıcıda, OLE2FRAME binaryData → SheetJS ile Excel).
+
+**v8.5 — PDF'ten güç tablosu (DWG yok):** bantlariNumarala(): tablo resminde yatay çizgiler piksel taramasıyla bulunur (satırda genişliğin
+%45'inden uzun koyu çizgi; koyu = r+g+b < 510; 5 px'e kadar kesinti tolere; filigran ve ince gri çizgiler için), her bant soluna kırmızı numara
+yazılır. Okuyucu her bandı numarasıyla "baslik/veri/toplam/bos" ve hücreleriyle döndürür → okumalar bant numarasıyla birebir eşleşir, hücre
+çoğunluğu alınır. Birim (W/kW) okuyucuya bırakılmaz: Σ ile antet kurulu karşılaştırılıp ×1000 kararı verilir (bir dosyada başlık kW, değerler W).
+Kullanıcının 2 dosyasında bant bulma doğru çalıştı (6 ve 7 veri bandı). Gerçek claude.ai okuması kullanıcıda denenecek.
 
 **AÇIK KONULAR (sıradaki)**
 0. v7'yi kullanıcı AutoCAD'de görecek; montaj detayına ne eklenmesini istediği soruldu (onaylı projelerdeki detay aynen kondu).
