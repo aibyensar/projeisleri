@@ -8,6 +8,7 @@ Elektrik mühendisliği işlerini kolaylaştıran araçlar. Tarayıcıda çalı�
 ### Hesap araçları
 - [x] Kablo kesiti ve gerilim düşümü — `araclar/kablo-kesiti.html`
 - [x] İç tesisat hesabı — `araclar/ic-tesisat.html`
+- [x] AutoCAD komutu ICTESISAT — `autocad/ICTESISAT.lsp` (kurulum: `autocad/KURULUM.md`)
 - [ ] Kompanzasyon hesabı
 - [ ] Trafo gücü seçimi
 - [ ] Aydınlatma hesabı

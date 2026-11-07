@@ -1,0 +1,384 @@
+;;; ===========================================================================
+;;; ICTESISAT - İç tesisat akım kontrolü ve gerilim düşümü hesabı
+;;; Proje İşleri - AutoCAD 2021 ve sonrası (AutoLISP, UTF-8)
+;;;
+;;; Komutlar:
+;;;   ICTESISAT  Hesabı sorar, yazıları ve tek hat şemasını çizer
+;;;   ICTAYAR    Gerilim, k, cos fi, düşüm sınırı ayarları
+;;;
+;;; Bu dosya autocad/olustur.js ile üretilir. Kablo değerleri veri/katalog.js
+;;; içindeki Öznur Kablo tablolarından gelir. Elle değiştirmeyin; kaynak
+;;; dosyayı (autocad/kaynak/ictesisat-kaynak.lsp) değiştirip yeniden üretin.
+;;; ===========================================================================
+
+(vl-load-com)
+
+;;@@VERI@@
+
+;;; ---------------------------------------------------------------- ayarlar
+(defun ict:ayar (k d / v)
+  (setq v (getenv (strcat "ICT_" k)))
+  (if (and v (/= v "")) (atof v) d))
+(defun ict:ayar-yaz (k v) (setenv (strcat "ICT_" k) (rtos v 2 8)))
+
+;;; ---------------------------------------------------------------- yazı biçimi
+(defun ict:rep (s a b / i bas)
+  (setq bas 0)
+  (while (setq i (vl-string-search a s bas))
+    (setq s (strcat (substr s 1 i) b (substr s (+ i 1 (strlen a))))
+          bas (+ i (strlen b))))
+  s)
+(defun ict:trim0 (s)
+  (if (vl-string-search "." s)
+    (vl-string-right-trim "." (vl-string-right-trim "0" s))
+    s))
+(defun ict:n2 (x) (ict:rep (rtos x 2 2) "." ","))              ; 0,38
+(defun ict:n0 (x) (rtos x 2 0))                                 ; 12299
+(defun ict:ns (x) (ict:rep (ict:trim0 (rtos x 2 8)) "." ","))   ; 0,0000124
+
+;;; Katsayı: trifaze 100/(k·U²), monofaze 200/(k·U²).
+;;; 10⁻⁴ biriminde elle hesaptaki gibi yuvarlanır: 0,1237→0,124 ; 0,7379→0,74
+(defun ict:katsayi (faz il / k u ham)
+  (setq k (if (= il "cu") (ict:ayar "KCU" 56.0) (ict:ayar "KAL" 35.0))
+        u (if (= faz "3") (ict:ayar "U3" 380.0) (ict:ayar "U1" 220.0))
+        ham (* (/ (if (= faz "3") 100.0 200.0) (* k u u)) 1e4))
+  (/ (atof (rtos ham 2 (if (>= ham 0.5) 2 3))) 1e4))
+
+;;; ---------------------------------------------------------------- işlem çözücü
+;;; "(16220 * 0,45) + 5000" gibi yazıları hesaplar. + - * / ( ) destekler.
+(defun ict:ch ()
+  (if (<= *ict-p* (strlen *ict-s*)) (substr *ict-s* *ict-p* 1) ""))
+(defun ict:ilerle () (setq *ict-p* (1+ *ict-p*)))
+(defun ict:bosluk () (while (= (ict:ch) " ") (ict:ilerle)))
+(defun ict:rakam-mi (c) (and (/= c "") (or (wcmatch c "#") (= c "."))))
+(defun ict:sayi (/ bas)
+  (ict:bosluk)
+  (setq bas *ict-p*)
+  (while (ict:rakam-mi (ict:ch)) (ict:ilerle))
+  (if (> *ict-p* bas) (atof (substr *ict-s* bas (- *ict-p* bas))) nil))
+(defun ict:carpan (/ v c)
+  (ict:bosluk)
+  (setq c (ict:ch))
+  (cond
+    ((= c "(")
+     (ict:ilerle)
+     (setq v (ict:ifade))
+     (ict:bosluk)
+     (if (and v (= (ict:ch) ")")) (progn (ict:ilerle) v) nil))
+    ((= c "-") (ict:ilerle) (if (setq v (ict:carpan)) (- v) nil))
+    (T (ict:sayi))))
+(defun ict:terim (/ v w c)
+  (setq v (ict:carpan))
+  (while (and v (progn (ict:bosluk) (member (setq c (ict:ch)) '("*" "/" "x" "X"))))
+    (ict:ilerle)
+    (setq w (ict:carpan)
+          v (cond ((null w) nil)
+                  ((= c "/") (if (zerop w) nil (/ v w)))
+                  (T (* v w)))))
+  v)
+(defun ict:ifade (/ v w c)
+  (setq v (ict:terim))
+  (while (and v (progn (ict:bosluk) (member (setq c (ict:ch)) '("+" "-"))))
+    (ict:ilerle)
+    (setq w (ict:terim)
+          v (if w (if (= c "+") (+ v w) (- v w)) nil)))
+  v)
+(defun ict:coz (s / v)
+  (setq *ict-s* (ict:rep s "," ".") *ict-p* 1 v (ict:ifade))
+  (ict:bosluk)
+  (if (and v (> *ict-p* (strlen *ict-s*))) (float v) nil))
+(defun ict:sadece-sayi-mi (s / i ok c)
+  (setq i 1 ok (> (strlen s) 0))
+  (while (and ok (<= i (strlen s)))
+    (setq c (substr s i 1)
+          ok (or (wcmatch c "#") (member c '("." "," " ")))
+          i (1+ i)))
+  ok)
+;;; Yazılan işlemi projedeki gibi biçimler: (16220 * 0,45) + 5000
+(defun ict:islem-yaz (s / i c r)
+  (setq i 1 r "")
+  (while (<= i (strlen s))
+    (setq c (substr s i 1))
+    (cond ((member c '("+" "-" "*" "/")) (setq r (strcat (vl-string-right-trim " " r) " " c " ")))
+          ((= c " "))
+          (T (setq r (strcat r c))))
+    (setq i (1+ i)))
+  (ict:rep (vl-string-trim " " r) "." ","))
+(defun ict:parantezli (s)
+  (if (and (or (vl-string-search "+" s) (vl-string-search "-" s))
+           (not (and (= (substr s 1 1) "(") (= (substr s (strlen s) 1) ")"))))
+    (strcat "(" s ")")
+    s))
+
+;;; ---------------------------------------------------------------- sorular
+(defun ict:sor-kw (msg kws def / v)
+  (initget kws)
+  (setq v (getkword (strcat "\n" msg " [" (ict:rep kws " " "/") "] <" def ">: ")))
+  (if v v def))
+(defun ict:sor-real (msg def / v)
+  (initget 4)
+  (setq v (getreal (strcat "\n" msg " <" (ict:ns def) ">: ")))
+  (if v v def))
+(defun ict:sor-int (msg def / v)
+  (initget 6)
+  (setq v (getint (strcat "\n" msg " <" (itoa def) ">: ")))
+  (if v v def))
+(defun ict:sor-str (msg def / v)
+  (setq v (getstring T (strcat "\n" msg (if (/= def "") (strcat " <" def ">") "") ": ")))
+  (cond ((= v "") def) ((= v ".") "") (T v)))
+
+(defun ict:tipler () (mapcar 'car *ict-kablolar*))
+(defun ict:tip-kw () (vl-string-trim " " (apply 'strcat (mapcar '(lambda (x) (strcat x " ")) (ict:tipler)))))
+(defun ict:kablo (tip) (assoc tip *ict-kablolar*))
+(defun ict:normal (s)
+  (ict:rep (ict:rep (ict:rep (strcase s T) " " "") "," ".") "*" ""))
+(defun ict:sor-satir (tip def / satirlar e r)
+  (setq satirlar (cadddr (ict:kablo tip)))
+  (if (not (assoc def satirlar)) (setq def (car (car satirlar))))
+  (while (not r)
+    (setq e (ict:normal (ict:sor-str (strcat tip " kesit (örnek 4x6, 3x25/16, 2.5)") def))
+          r (assoc e satirlar))
+    (if (not r)
+      (progn
+        (princ (strcat "\n" tip " tablosunda \"" e "\" yok. Olanlar: "))
+        (foreach x satirlar (princ (strcat (car x) " "))))))
+  r)
+(defun ict:kablo-adi (tip etiket faz / et)
+  (setq et (strcase (ict:rep etiket "." ",")))
+  (if (not (vl-string-search "X" et)) (setq et (strcat (if (= faz "3") "5X" "3X") et)))
+  (strcat et " mm² " tip))
+
+;;; ---------------------------------------------------------------- çizim
+(setq *ict-stil* "ICT_ARIAL")
+(defun ict:stil ()
+  (if (not (tblsearch "STYLE" *ict-stil*))
+    (entmake (list '(0 . "STYLE") '(100 . "AcDbSymbolTableRecord") '(100 . "AcDbTextStyleTableRecord")
+                   (cons 2 *ict-stil*) '(70 . 0) '(40 . 0.0) '(41 . 1.0) '(50 . 0.0) '(71 . 0)
+                   '(42 . 2.5) '(3 . "arial.ttf") '(4 . "")))))
+(defun ict:yazi (p str h renk hiza)
+  ;; hiza: 1 sol üst, 2 orta üst, 4 sol orta, 5 orta, 8 orta alt
+  (entmakex (list '(0 . "MTEXT") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbMText")
+                  (cons 10 p) (cons 40 h) '(41 . 0.0) (cons 71 hiza) (cons 7 *ict-stil*) (cons 1 str))))
+(defun ict:cizgi (p1 p2 renk)
+  (entmakex (list '(0 . "LINE") (cons 62 renk) (cons 10 p1) (cons 11 p2))))
+(defun ict:dortgen (x1 y1 x2 y2 renk)
+  (entmakex (list '(0 . "LWPOLYLINE") '(100 . "AcDbEntity") (cons 62 renk) '(100 . "AcDbPolyline")
+                  '(90 . 4) '(70 . 1)
+                  (list 10 x1 y1) (list 10 x2 y1) (list 10 x2 y2) (list 10 x1 y2))))
+(defun ict:ucgen (p1 p2 p3 renk)
+  (entmakex (list '(0 . "SOLID") (cons 62 renk) (cons 10 p1) (cons 11 p2) (cons 12 p3) (cons 13 p3))))
+;; Pano sembolü: kırmızı dikdörtgen, köşegenler, mavi dolu iki üçgen
+(defun ict:pano (x y h / w v)
+  (setq w (* 1.2 h) v (* 1.8 h))
+  (ict:dortgen (- x w) (- y v) (+ x w) (+ y v) 1)
+  (ict:cizgi (list (- x w) (+ y v)) (list (+ x w) (- y v)) 1)
+  (ict:cizgi (list (- x w) (- y v)) (list (+ x w) (+ y v)) 1)
+  (ict:ucgen (list (- x w) (+ y v)) (list (- x w) (- y v)) (list x y) 5)
+  (ict:ucgen (list (+ x w) (+ y v)) (list (+ x w) (- y v)) (list x y) 5))
+;; Yük: aşağı inen çizgi ve dolu üçgen
+(defun ict:yuk (x y h guc)
+  (ict:cizgi (list x y) (list x (- y (* 3.0 h))) 7)
+  (ict:ucgen (list (- x h) (- y (* 3.0 h))) (list (+ x h) (- y (* 3.0 h))) (list x (- y (* 4.6 h))) 5)
+  (ict:yazi (list x (- y (* 5.2 h))) (strcat (ict:n0 guc) " W") h 7 2))
+;; Çift çerçeveli başlık
+(defun ict:baslik (x y str h / g)
+  (setq g (+ (* (strlen str) h 0.78) (* 3.0 h)))
+  (ict:dortgen x y (+ x g) (- y (* 2.6 h)) 4)
+  (ict:dortgen (+ x (* 0.3 h)) (- y (* 0.3 h)) (- (+ x g) (* 0.3 h)) (- y (* 2.3 h)) 6)
+  (ict:yazi (list (+ x (/ g 2.0)) (- y (* 1.3 h))) str (* 1.1 h) 6 5))
+
+;;; ---------------------------------------------------------------- komut
+(defun c:ICTESISAT (/ *error* eski-dz eski-ce mevcut kurulu-s kurulu talep-s nt
+                      btip bk bsatir bdos bdos-kw bL n i hat hatlar faz tip satir L P ad
+                      h pt x0 y u3 cosfi limit bolen In Iz akim-ok liste no c e eY toplam
+                      adlar degerler px seg ilk-pano son hat-ad)
+  (defun *error* (m)
+    (if eski-dz (setvar "DIMZIN" eski-dz))
+    (if eski-ce (setvar "CMDECHO" eski-ce))
+    (command-s "_.UNDO" "_E")
+    (if (not (member m '("Function cancelled" "quit / exit abort" "İşlev iptal edildi")))
+      (princ (strcat "\nHata: " m)))
+    (princ))
+  (setq eski-dz (getvar "DIMZIN") eski-ce (getvar "CMDECHO"))
+  (setvar "DIMZIN" 0)
+  (setvar "CMDECHO" 0)
+
+  ;; --- sorular
+  (setq mevcut (= (setq *ict-mod* (ict:sor-kw "Branşman mevcut mu?" "Evet Hayir" (if *ict-mod* *ict-mod* "Evet"))) "Evet"))
+
+  (setq kurulu nil)
+  (while (progn
+           (setq kurulu-s (ict:sor-str "Kurulu güç (W) - sayı veya işlem, yazılmayacaksa ." (if *ict-kurulu* *ict-kurulu* "")))
+           (and (/= kurulu-s "") (not (setq kurulu (ict:coz kurulu-s)))))
+    (princ "\nOkunamadı. Sayı veya + - * / ( ) ile işlem yazın."))
+  (setq *ict-kurulu* kurulu-s)
+
+  (while (progn
+           (setq talep-s (ict:sor-str "Talep güç (W) - sayı veya işlem, örnek (16220*0,45)+5000" (if *ict-talep* *ict-talep* "")))
+           (not (setq nt (ict:coz talep-s))))
+    (princ "\nOkunamadı. Sayı veya + - * / ( ) ile işlem yazın."))
+  (setq *ict-talep* talep-s)
+
+  (if mevcut
+    (progn
+      (setq btip (ict:sor-kw "Branşman kablo tipi" (ict:tip-kw) (if *ict-btip* *ict-btip* "NYY"))
+            *ict-btip* btip
+            bk (ict:kablo btip)
+            bsatir (ict:sor-satir btip (if *ict-bsatir* *ict-bsatir* "4x6"))
+            *ict-bsatir* (car bsatir)
+            bdos-kw (vl-string-trim " " (apply 'strcat (mapcar '(lambda (d) (strcat (cond ((= d "toprak") "Toprak") ((= d "hava") "Hava") (T "Boru")) " ")) (caddr bk))))
+            bdos (ict:sor-kw "Branşman döşeme" bdos-kw (if (and *ict-bdos* (vl-string-search *ict-bdos* bdos-kw)) *ict-bdos* (if (vl-string-search "Hava" bdos-kw) "Hava" (car (caddr bk)))))
+            *ict-bdos* bdos
+            bdos (vl-position (strcase bdos T) (caddr bk))
+            bL (ict:sor-real "Branşman uzunluğu (m)" (if *ict-bL* *ict-bL* 15.0))
+            *ict-bL* bL)))
+
+  (setq n (ict:sor-int "İç hat sayısı" (if *ict-n* *ict-n* 2)) *ict-n* n
+        hatlar '() i 0)
+  (while (< i n)
+    (setq hat (nth i *ict-hatlar*))
+    (princ (strcat "\n--- İç hat " (itoa (1+ i)) " / " (itoa n) " (%e" (itoa (+ i 2)) ") ---"))
+    (setq faz (ict:sor-kw "Faz" "Trifaze Monofaze" (if hat (nth 0 hat) (if (= i (1- n)) "Monofaze" "Trifaze")))
+          tip (ict:sor-kw "Kablo tipi" (ict:tip-kw) (if hat (nth 1 hat) (if (= faz "Monofaze") "NYA" "NYM")))
+          satir (ict:sor-satir tip (if hat (nth 2 hat) (if (= tip "NYA") "2.5" "5x6")))
+          L (ict:sor-real "Uzunluk (m)" (if hat (nth 3 hat) 5.0))
+          P (ict:sor-real "Güç (W)" (if hat (nth 4 hat) 2500.0))
+          ad (ict:sor-str "Açıklama (yoksa Enter, silmek için .)" (if hat (nth 5 hat) "")))
+    (setq hatlar (append hatlar (list (list faz tip satir L P ad))))
+    (setq i (1+ i)))
+  (setq *ict-hatlar* (mapcar '(lambda (x) (list (nth 0 x) (nth 1 x) (car (nth 2 x)) (nth 3 x) (nth 4 x) (nth 5 x))) hatlar))
+
+  (setq h (ict:sor-real "Yazı yüksekliği" (if *ict-h* *ict-h* 2.5)) *ict-h* h)
+  (setq pt (getpoint "\nHesabın yerleşeceği nokta (sol üst köşe): "))
+  (if (not pt) (exit))
+  (setq pt (trans pt 1 0))
+
+  ;; --- hesap
+  (setq u3 (ict:ayar "U3" 380.0) cosfi (ict:ayar "COSFI" 0.8) limit (ict:ayar "LIMIT" 1.5)
+        bolen (atof (rtos (* (sqrt 3.0) u3 cosfi) 2 3))
+        In (/ nt (* (sqrt 3.0) u3 cosfi)))
+
+  ;; --- çizim
+  (command "_.UNDO" "_BE")
+  (ict:stil)
+  (setq x0 (car pt) y (cadr pt))
+  (defun ict:satir (str renk) (ict:yazi (list x0 y) str h renk 1) (setq y (- y (* 1.8 h))))
+  (defun ict:bos () (setq y (- y (* 1.2 h))))
+
+  (if kurulu (ict:satir (strcat "KURULU GÜÇ = " (ict:n0 kurulu) " W") 7))
+  (ict:satir (strcat "TALEP GÜÇ = "
+                     (if (ict:sadece-sayi-mi talep-s) "" (strcat (ict:islem-yaz talep-s) " = "))
+                     (ict:n0 nt) " W") 7)
+  (ict:bos)
+
+  (setq akim-ok T)
+  (if mevcut
+    (progn
+      (setq Iz (nth bdos (caddr bsatir))
+            akim-ok (and Iz (<= In Iz)))
+      (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YÖNÜNDEN KONTROL" h)
+      (setq y (- y (* 4.0 h)))
+      (ict:satir (strcat "In = Nt / (√3 x U x CosQ) = " (ict:n0 nt) " W / " (ict:ns bolen) " = "
+                         (ict:n2 In) " A " (if akim-ok "<" ">") " " (if Iz (ict:ns Iz) "-") " A") 7)
+      (ict:satir (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) "3")
+                         (if akim-ok " UYGUNDUR." " UYGUN DEĞİLDİR.")) (if akim-ok 7 1))
+      ;; branşman şeması
+      (setq y (- y (* 3.5 h)) seg (max (* 26.0 h) (+ (* (strlen (ict:kablo-adi btip (car bsatir) "3")) h 0.75) (* 18.0 h))))
+      (ict:cizgi (list x0 y) (list (+ x0 seg) y) 7)
+      (ict:yazi (list (+ x0 (/ seg 2.0)) (+ y (* 0.6 h))) (strcat "MEVCUT BRANŞMAN " (ict:kablo-adi btip (car bsatir) "3")) h 3 8)
+      (ict:yazi (list (+ x0 (/ seg 2.0)) (- y (* 0.6 h))) (strcat (ict:ns bL) " m") h 3 2)
+      (ict:pano (+ x0 seg (* 1.2 h)) y h)
+      (ict:yazi (list (+ x0 seg (* 3.5 h)) y) (strcat "NT= " (ict:n0 nt) " W") h 7 4)
+      (setq y (- y (* 4.5 h))))
+    (progn
+      (ict:baslik (+ x0 (* 8.0 h)) y "AKIM YOĞUNLUĞU HESABI" h)
+      (setq y (- y (* 4.0 h)))
+      (ict:satir (strcat "In = Nk / (√3 x U x CosQ) = "
+                         (if (ict:sadece-sayi-mi talep-s) (ict:n0 nt) (ict:parantezli (ict:islem-yaz talep-s)))
+                         " / " (ict:ns bolen) " = " (ict:n2 In) " A") 7)
+      (ict:satir "BAĞLANTI HATTI İLERİDE PROJELENDİRİLECEKTİR." 1)
+      (ict:bos)))
+
+  (ict:baslik (+ x0 (* 8.0 h)) y "GERİLİM DÜŞÜMÜ HESABI" h)
+  (setq y (- y (* 4.0 h)))
+
+  ;; hat listesi: (no faz-kodu iletken S L P nt? açıklama ad)
+  (setq liste '() no (if mevcut 1 2))
+  (if mevcut
+    (setq liste (list (list no "3" (cadr bk) (cadr bsatir) bL nt T "" (ict:kablo-adi btip (car bsatir) "3")))
+          no (1+ no)))
+  (foreach x hatlar
+    (setq liste (append liste (list (list no (if (= (nth 0 x) "Trifaze") "3" "1") (cadr (ict:kablo (nth 1 x)))
+                                          (cadr (nth 2 x)) (nth 3 x) (nth 4 x) nil (nth 5 x)
+                                          (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1")))))
+          no (1+ no)))
+
+  (setq toplam 0.0 adlar "" degerler "")
+  (foreach x liste
+    (setq c (ict:katsayi (nth 1 x) (nth 2 x))
+          e (/ (* c (nth 5 x) (nth 4 x)) (nth 3 x))
+          eY (atof (rtos e 2 2))
+          toplam (+ toplam eY)
+          adlar (strcat adlar (if (= adlar "") "" " + ") "%e" (itoa (nth 0 x)))
+          degerler (strcat degerler (if (= degerler "") "" " + ") (ict:n2 eY)))
+    (if (/= (nth 7 x) "") (ict:satir (nth 7 x) 7))
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (if (nth 6 x) "Nt" "N") " x L / S") 7)
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:ns c) " x " (ict:n0 (nth 5 x)) " x " (ict:ns (nth 4 x)) " / " (ict:ns (nth 3 x))) 7)
+    (ict:satir (strcat "%e" (itoa (nth 0 x)) " = " (ict:n2 eY)) 7)
+    (ict:bos))
+  (setq toplam (atof (rtos toplam 2 2)))
+
+  ;; iç hatlar şeması
+  (setq y (- y (* 3.0 h)) px (+ x0 (* 1.2 h)))
+  (ict:pano px y h)
+  (if (not mevcut)
+    (progn
+      (ict:yazi (list px (+ y (* 2.4 h))) "AT" h 7 8)
+      (ict:yazi (list px (- y (* 2.4 h))) (strcat (if kurulu (strcat (ict:n0 kurulu) " W\\P") "") (ict:n0 nt) " W") h 7 2)))
+  (setq i 0)
+  (foreach x hatlar
+    (setq hat-ad (ict:kablo-adi (nth 1 x) (car (nth 2 x)) (if (= (nth 0 x) "Trifaze") "3" "1"))
+          seg (max (* 18.0 h) (+ (* (strlen hat-ad) h 0.75) (* 4.0 h)))
+          son (= i (1- (length hatlar))))
+    (ict:cizgi (list (+ px (* 1.2 h)) y) (list (+ px (* 1.2 h) seg) y) 7)
+    (ict:yazi (list (+ px (* 1.2 h) (/ seg 2.0)) (+ y (* 0.6 h))) hat-ad h 7 8)
+    (ict:yazi (list (+ px (* 1.2 h) (/ seg 2.0)) (- y (* 0.6 h))) (strcat (ict:ns (nth 3 x)) " m") h 7 2)
+    (if son
+      (ict:yuk (+ px (* 1.2 h) seg) y h (nth 4 x))
+      (progn
+        (setq px (+ px (* 2.4 h) seg))
+        (ict:pano px y h)
+        (ict:yazi (list px (- y (* 2.4 h))) (strcat (ict:n0 (nth 4 (nth (1+ i) hatlar))) " W") h 7 2)))
+    (setq i (1+ i)))
+  (setq y (- y (* 8.0 h)))
+
+  (ict:satir "TOPLAM" 7)
+  (ict:satir adlar 7)
+  (ict:satir (strcat degerler " = " (ict:n2 toplam) " " (if (<= toplam limit) "<" ">") " " (ict:ns limit)
+                     (if (<= toplam limit) "   UYGUNDUR." "   UYGUN DEĞİLDİR.")) (if (<= toplam limit) 7 1))
+  (if (and (not mevcut) (<= toplam limit))
+    (ict:satir (strcat "%et: " (ict:n2 toplam) " < " (ict:ns limit) " olduğundan kullanılan tüm kesitler uygundur.") 7))
+
+  (command "_.UNDO" "_E")
+  (setvar "DIMZIN" eski-dz)
+  (setvar "CMDECHO" eski-ce)
+  (princ (strcat "\nToplam gerilim düşümü %" (ict:n2 toplam)
+                 (if (and akim-ok (<= toplam limit)) " - UYGUN." " - UYGUN DEĞİL.")))
+  (princ))
+
+;;; ---------------------------------------------------------------- ayar komutu
+(defun c:ICTAYAR (/ v)
+  (setq v (ict:sor-real "Trifaze gerilim (V)" (ict:ayar "U3" 380.0))) (ict:ayar-yaz "U3" v)
+  (setq v (ict:sor-real "Monofaze gerilim (V)" (ict:ayar "U1" 220.0))) (ict:ayar-yaz "U1" v)
+  (setq v (ict:sor-real "Bakır k" (ict:ayar "KCU" 56.0))) (ict:ayar-yaz "KCU" v)
+  (setq v (ict:sor-real "Alüminyum k" (ict:ayar "KAL" 35.0))) (ict:ayar-yaz "KAL" v)
+  (setq v (ict:sor-real "cos fi" (ict:ayar "COSFI" 0.8))) (ict:ayar-yaz "COSFI" v)
+  (setq v (ict:sor-real "Toplam düşüm sınırı (%)" (ict:ayar "LIMIT" 1.5))) (ict:ayar-yaz "LIMIT" v)
+  (princ (strcat "\nKatsayılar: trifaze bakır " (ict:ns (ict:katsayi "3" "cu"))
+                 ", trifaze alüminyum " (ict:ns (ict:katsayi "3" "al"))
+                 ", monofaze bakır " (ict:ns (ict:katsayi "1" "cu"))
+                 ", monofaze alüminyum " (ict:ns (ict:katsayi "1" "al"))))
+  (princ))
+
+(princ "\nProje İşleri yüklendi. Komutlar: ICTESISAT (hesap), ICTAYAR (ayarlar).")
+(princ)
