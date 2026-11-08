@@ -1,10 +1,30 @@
-# Evrak Toplayıcı — kurgu (sürüm 3, 8 Kasım 2026)
+# Evrak Toplayıcı — kurgu (sürüm 4, 8 Kasım 2026)
 
 WhatsApp'tan (ve PC'deki WhatsApp'tan, kağıt taramadan) gelen evrakı en az el işiyle kaliteli PDF yapıp masaüstündeki
 **Çizilecek Projeler** listesine doğru adla koymak. Bu belge kurgudur; onaylanmadan kurulum yapılmaz.
 Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
 
 ---
+
+## Sürüm 4 değişiklikleri (kullanıcı kararları — aşağıdaki bölümlerde çelişen her şeyin yerine geçer)
+
+1. **Gerekli evrak listesi yok** ("her projede değişik evrak oluyor, sabiti yok"). Bu yüzden HAZIR / EKSİK EVRAK
+   durumları ve eksik evrak mesajları **kaldırıldı**. Klasör adında durum yalnız:
+   - `KONTROL` — bulanık / türü belirsiz / aynı türden iki evrak gibi bakılması gereken bir şey var,
+   - `YENİ EVRAK` — kullanıcının açmadığı yeni evrak eklendi (kullanıcı klasörü açıp içindeki `_YENİ` alt klasörünü
+     boşaltınca ya da program yeni evrakı yerine koyduktan 1 gün sonra kalkar — denemede seçilecek).
+   Bulanık evrak için "yeniden gönderin" hazır mesajı **kalır**.
+   Klasör adı: `[! ACİL · ]2026-11-08 · ELEKTRİKÇİ – Proje adı · Proje türü[ · KONTROL]`.
+2. **Çalışma akışı:** kullanıcı işi `Çizilecek Projeler`den **masaüstüne** alır, masaüstünde çizer, bitince **kendi
+   klasörüne** koyar. Program masaüstündeki ve kendi klasöründeki dosyalara **dokunmaz**; tek istisna:
+   - **Çizim sürerken aynı işe yeni evrak gelirse** (sık olur): program masaüstünde (yalnız ilk seviyede) `_bilgi.txt`
+     içindeki **iş kimliği** aynı olan klasörü bulur, yeni evrakı onun içine `_YENİ GELEN EVRAK/` alt klasörüne koyar
+     ve Windows bildirimi verir ("Masaüstündeki <iş> işine 2 yeni evrak eklendi"). Mevcut dosyaların üstüne yazmaz.
+   - Masaüstünde bulunamazsa iş `Çizilecek Projeler`de `REVİZYON` olarak yeniden açılır.
+   İş kimliği gizli dosyada değil `_bilgi.txt`nin ilk satırında durur (gizli dosyalar Drive eşitlemesinde ya da
+   taşımada kaybolabilir).
+3. **Saklama:** `9-Arşiv`deki orijinaller **1 yıl**; Drive dolunca kullanıcı kendisi siler. Program silmez.
+4. Uygulama ayrıntısı: şirket Drive'ı PC'de `H:\Drive'ım\AGY Evrak` (Drive masaüstü uygulaması, 2. hesap).
 
 ## 0. Kullanıcı kararları (8 Kasım 2026)
 
@@ -17,13 +37,13 @@ Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
 | Diğer kanallar | **PC'deki WhatsApp** ve **kağıt / tarama** (tarayıcı ya da CamScanner) |
 | Evrak türleri | Her çeşit: fotoğraf, müşteri PDF'i, CamScanner PDF'i, Word/Excel. Kalite şart |
 | Masaüstü | Yalnız **çizilecek projeler** görünür |
-| Listeye giriş | **İlk evrak gelince** (eksikse EKSİK EVRAK durumuyla) |
+| Listeye giriş | **İlk evrak gelince** |
 | Kestirmenin sorduğu | **Elektrikçi adı, proje adı, proje türü — üçünü de kullanıcı yazar** (ör. tür: İç Tesisat · Bağlantı Hattı · İç Tesisat + Bağlantı Hattı) |
 | Klasör adı | **Tarih · ELEKTRİKÇİ – Proje adı · Proje türü · Durum** |
 | Sıra | En eski en üstte; **ACİL** işaretli iş en üstte |
 | Gecikme uyarısı | **3 gün** |
 | PDF çıktısı | Her evrak türü **ayrı PDF + tek birleşik Tümü.pdf** |
-| İş bitince | Kullanıcı klasörü **masaüstündeki kendi proje klasörüne taşır**; listeden kalkar. Ayrı aşama takibi yok |
+| İş akışı | Çizilecek Projeler → kullanıcı **masaüstüne alır, çizer** → bitince **kendi klasörüne** koyar |
 | Bildirim | **Her paket** işlenince telefona özet |
 | PC açık kalma | Düzensiz; sabit saat yok |
 
@@ -269,11 +289,10 @@ saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 ## 13. Kullanıcıdan beklenenler (kalan)
 
 1. ~~Proje adı örnekleri~~ — kullanıcı her seferinde kendisi yazıyor; gerek kalmadı.
-2. **Proje türleri (İç Tesisat, Bağlantı Hattı, …) ve her biri için gerekli evrak listesi** (HAZIR / EKSİK kararı buna bağlı). Liste gelene kadar durum
-   yalnız YENİ / KONTROL olur.
-3. **Faz 0 için maskeli 15–20 örnek evrak.**
-4. `9-Arşiv`deki orijinaller ne kadar saklansın? (öneri: 1 yıl)
-5. Kendi proje klasörün nerede ve şahsi Drive yedeklemesi o klasörü kapsıyor mu? (iş bitince tek kopya orada kalır)
+2. ~~Gerekli evrak listeleri~~ — sabit liste yok (sürüm 4).
+3. ~~Maskeli örnek evrak~~ — kalite denemesi programın deneme modunda kullanıcının PC'sinde yapılacak; evrak dışarı çıkmaz.
+4. ~~Saklama~~ — 1 yıl, silme kullanıcıda.
+5. ~~Proje klasörü~~ — iş masaüstüne alınır, bitince kullanıcının kendi klasörüne; program dokunmaz.
 
 ## Faz 0 sonuçları (8 Kasım 2026)
 
