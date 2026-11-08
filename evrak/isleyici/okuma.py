@@ -5,6 +5,7 @@
   dosya adından tahmin edilir (program çalışmaya devam eder).
 - Okunan yazı hiçbir yere gönderilmez; yalnız tür bulmak ve _bilgi.txt'ye ada/parsel/adres yazmak için kullanılır.
 """
+import io
 import logging
 import os
 import re
@@ -103,7 +104,7 @@ def bilgi_cikar(metin: str) -> dict:
 def pdf_metni(yol, en_cok_sayfa=2) -> str:
     try:
         from pypdf import PdfReader
-        r = PdfReader(str(yol))
+        r = PdfReader(io.BytesIO(Path(yol).read_bytes()))   # dosya açık kalmasın (Windows taşıyamaz)
         if r.is_encrypted:
             return ''
         return '\n'.join((s.extract_text() or '') for s in r.pages[:en_cok_sayfa])
@@ -114,9 +115,11 @@ def pdf_metni(yol, en_cok_sayfa=2) -> str:
 def pdf_ilk_sayfa_resmi(yol, dpi=200):
     try:
         import pypdfium2 as pdfium
-        belge = pdfium.PdfDocument(str(yol))
-        sayfa = belge[0]
-        return sayfa.render(scale=dpi / 72).to_pil()
+        belge = pdfium.PdfDocument(Path(yol).read_bytes())   # dosya açık kalmasın
+        try:
+            return belge[0].render(scale=dpi / 72).to_pil()
+        finally:
+            belge.close()
     except Exception:
         return None
 

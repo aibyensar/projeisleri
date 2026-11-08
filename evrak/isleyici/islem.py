@@ -7,6 +7,7 @@ import datetime as dt
 import difflib
 import hashlib
 import json
+import io
 import logging
 import os
 import re
@@ -457,7 +458,7 @@ class Isleyici:
             try:
                 yazar = PdfWriter()
                 for e in liste:
-                    for sayfa in PdfReader(str(k / e['ad'])).pages:
+                    for sayfa in PdfReader(io.BytesIO((k / e['ad']).read_bytes())).pages:
                         yazar.add_page(sayfa)
                 gecici = k / f'.{liste[0]["ad"]}.tmp'
                 with open(gecici, 'wb') as fp:
@@ -624,7 +625,7 @@ def tumu_yap(k: Path, is_):
     pdfler = [k / a for a in sira if a and a.lower().endswith('.pdf') and (k / a).exists()]
     for p in pdfler:
         try:
-            r = PdfReader(str(p))
+            r = PdfReader(io.BytesIO(p.read_bytes()))
             if r.is_encrypted:
                 continue
             for sayfa in r.pages:
