@@ -150,8 +150,75 @@
     return r ? { tabloKW: r[0], Qmaks: r[1 + j], azalt: KORUMA_AZALT[devir] } : { tabloKW: null, Qmaks: null, azalt: KORUMA_AZALT[devir] };
   }
 
+
+  // ---------- Rezonans (paralel rezonans: şebeke / trafo endüktansı ↔ kondansatör bataryası) ----------
+  // h0 = √(Ssc / Q) (Schneider EIG, "Risk of resonance"); trafo beslemede Ssc ≈ Sn / uk (üst şebeke empedansı ihmal → h0 biraz büyük çıkar)
+  const ukTipik = Sn => (Sn > 630 ? 0.06 : 0.04);                                    // EN 50464-1 tipik kısa devre gerilimi
+  const HARMONIKLER = [5, 7, 11, 13];
+  function rezonans({ Ssc, toplamlar, h, baskin = 5 }) {
+    if (!(Ssc > 0) || !toplamlar || !toplamlar.length) return null;
+    const izle = baskin === 3 ? [3, ...HARMONIKLER] : HARMONIKLER;
+    const noktalar = toplamlar.filter(Q => Q > 0).map(Q => {
+      const h0 = Math.sqrt(Ssc / Q);
+      const yakin = izle.find(n => Math.abs(h0 - n) / n <= 0.07) || null;   // ±%7 bandı: rezonans tehlikesi
+      return { Q, h0, f0: 50 * h0, yakin };
+    });
+    const h0min = Math.min(...noktalar.map(x => x.h0)), h0max = Math.max(...noktalar.map(x => x.h0));
+    const riskli = noktalar.filter(x => x.yakin);
+    const aralikta = izle.filter(n => n >= h0min * 0.93 && n <= h0max * 1.07);
+    const korunmali = h && h.p > 0;                                             // reaktörlü: paralel rezonans ayar frekansının altına iner
+    return { Ssc, noktalar, h0min, h0max, f0min: 50 * h0min, f0max: 50 * h0max, riskli, aralikta, korunmali,
+      ayar: korunmali ? 1 / Math.sqrt(h.p) : null };
+  }
+  // kademe planından ulaşılabilen bütün toplam güçler (sabit kademe hep devrede)
+  function toplamlar(plan, sabit = 0) {
+    const ul = new Set([0]);
+    for (const q of plan.kademeler || []) for (const v of [...ul]) ul.add(+(v + q).toFixed(3));
+    return [...ul].map(v => v + sabit).filter(v => v > 0).sort((a, b) => a - b);
+  }
+
+  // ---------- Yük listesi (proje aşaması) ----------
+  // cos φ: Schneider EIG Fig. L7 "practical values"; LED / klima / UPS / sürücü / priz: üretici tipik değeri (kabul).
+  // eşzamanlılık: Elektrik İç Tesisleri Yönetmeliği (RG 22479, 1995 değişikliği) tablosu; "öneri" olanlar mühendis kabulü.
+  const YUK_TIPLERI = [
+    { k: 'motor', ad: 'Asenkron motor (pompa, fan, kompresör)', cos: 0.80, esz: 0.75, kaynak: 'cos: EIG L7 (%75 yük 0,80) · eşz: öneri' },
+    { k: 'motorBos', ad: 'Az yüklü motor (%25–50 yük)', cos: 0.65, esz: 0.75, kaynak: 'cos: EIG L7 (%25 0,55 · %50 0,73)' },
+    { k: 'surucu', ad: 'Hız kontrollü motor (sürücülü)', cos: 0.95, esz: 0.75, harm: true, kaynak: 'cos: sürücü giriş (temel bileşen) tipik' },
+    { k: 'led', ad: 'Aydınlatma · LED', cos: 0.90, esz: 1, kaynak: 'cos: >25 W sürücü tipik · eşz: İç Tes. %100' },
+    { k: 'floresan', ad: 'Aydınlatma · floresan (kompanzasyonlu)', cos: 0.93, esz: 1, kaynak: 'cos: EIG L7 · eşz: İç Tes. %100' },
+    { k: 'desarj', ad: 'Aydınlatma · sodyum / metal halide', cos: 0.50, esz: 1, kaynak: 'cos: EIG L7 (0,4–0,6)' },
+    { k: 'priz', ad: 'Priz devreleri', cos: 0.90, esz: 'priz', kaynak: 'eşz: İç Tes. ilk 10 kVA %100, kalanı %50 · cos: kabul' },
+    { k: 'mekanik', ad: 'Mekanik tesisat (klima, ısı pompası)', cos: 0.85, esz: 1, kaynak: 'eşz: İç Tes. %100 (kış/yaz büyüğü) · cos: kabul' },
+    { k: 'mutfak', ad: 'Mutfak cihazları', cos: 0.98, esz: 0.70, kaynak: 'eşz: İç Tes. %70 · cos: ağırlıklı rezistif' },
+    { k: 'asansor', ad: 'Asansör (konut / diğer)', cos: 0.80, esz: 0.55, kaynak: 'eşz: İç Tes. %55' },
+    { k: 'asansorO', ad: 'Asansör (okul / hastane)', cos: 0.80, esz: 0.85, kaynak: 'eşz: İç Tes. %85' },
+    { k: 'asansorB', ad: 'Asansör (büro / otel)', cos: 0.80, esz: 1, kaynak: 'eşz: İç Tes. %100' },
+    { k: 'isitici', ad: 'Rezistanslı ısıtıcı / fırın', cos: 1.00, esz: 1, kaynak: 'cos: EIG L7' },
+    { k: 'induksiyon', ad: 'Endüksiyon fırını', cos: 0.85, esz: 1, harm: true, kaynak: 'cos: EIG L7 (kompanzasyonlu)' },
+    { k: 'kaynak', ad: 'Kaynak makinesi (trafo-doğrultucu)', cos: 0.75, esz: 0.5, harm: true, kaynak: 'cos: EIG L7 (0,7–0,8) · eşz: öneri' },
+    { k: 'ark', ad: 'Ark kaynağı (tek fazlı)', cos: 0.50, esz: 0.5, kaynak: 'cos: EIG L7' },
+    { k: 'ups', ad: 'UPS (online)', cos: 0.99, esz: 1, harm: true, kaynak: 'cos: IGBT doğrultuculu UPS tipik' },
+    { k: 'elektronik', ad: 'Bilgisayar / elektronik yük', cos: 0.95, esz: 0.8, harm: true, kaynak: 'cos: kabul · 3. harmonik' },
+    { k: 'diger', ad: 'Diğer (elle)', cos: 0.85, esz: 1, kaynak: '' },
+  ];
+  const yukTipi = k => YUK_TIPLERI.find(t => t.k === k) || YUK_TIPLERI[YUK_TIPLERI.length - 1];
+  // priz eşzamanlılığı: ilk 10 kVA %100, kalan %50 (cos φ ile kVA'ya çevrilir)
+  function prizEsz(kW, cos = 0.9) { const S = kW / cos; return S <= 10 ? 1 : (10 + 0.5 * (S - 10)) / S; }
+  // satırlar: [{ tip, kW, esz (sayı ya da boş → tipin değeri), cos }] → toplamlar
+  function yukListesi(satirlar) {
+    let kurulu = 0, P = 0, Q = 0, Gh = 0;
+    const s = satirlar.filter(r => r.kW > 0).map(r => {
+      const t = yukTipi(r.tip), cos = r.cos > 0 ? r.cos : t.cos;
+      const esz = r.esz > 0 ? r.esz : t.esz === 'priz' ? prizEsz(r.kW, cos) : t.esz;
+      const p = r.kW * esz, q = p * tan(cos);
+      kurulu += r.kW; P += p; Q += q; if (t.harm) Gh += r.kW / 0.7;
+      return { ...r, ad: t.ad, cos, esz, P: p, Q: q, harm: !!t.harm };
+    });
+    return { satirlar: s, kurulu, P, Q, cos: P > 0 ? P / Math.hypot(P, Q) : 1, esz: kurulu > 0 ? P / kurulu : 0, Gh };
+  }
+
   // ---------- Hepsi bir arada ----------
-  // g: { P, cos1, cos2, trafoKVA, kuruluKVA, Gh, baskin, kademeN, duzen, yedek (0..), Pmin, InAna, U, Qkap }
+  // g: { P, cos1, cos2, trafoKVA, kuruluKVA, Gh, baskin, kademeN, duzen, yedek (0..), Pmin, InAna, U, Qkap, uk (0..1), Ssc (kVA) }
   function tasarla(g) {
     const U = g.U || 400;
     const q = gerekenQ(g.P, g.cos1, g.cos2);
@@ -169,19 +236,28 @@
     const ana = ekipman(Qtop, h, U);
     const at = atSec(g.InAna || 0);
     const reaktor = reaktorSec(g.Qkap || 0);
+    // rezonans: trafo varsa Ssc = Sn / uk; trafosuz abonede kullanıcı şebeke kısa devre gücünü girerse
+    const uk = g.uk > 0 ? g.uk : ukTipik(g.trafoKVA);
+    const Ssc = g.Ssc > 0 ? g.Ssc : g.trafoKVA > 0 ? g.trafoKVA / uk : 0;
+    const rez = rezonans({ Ssc, toplamlar: toplamlar(plan, sabit), h, baskin: g.baskin || 5 });
+    if (rez) rez.uk = g.Ssc > 0 ? null : uk;
     const uyarilar = [];
     if (g.Pmin > 0 && plan.q1 > 0.25 * g.Pmin) uyarilar.push(`En küçük kademe (${plan.q1} kVAr) en düşük yükün (${g.Pmin} kW) %25'inden büyük; düşük yükte kapasitife geçme riski. Kademe sayısını artırın ya da daha küçük ilk kademe seçin.`);
     if (h.sinif === 'filtre') uyarilar.push('Harmonik üreten yükler trafo gücünün yarısından fazla: harmonik ölçümü ve filtre etüdü yapılmadan kondansatör bataryası kurulmamalı.');
     if (g.cos2 >= 0.999) uyarilar.push('Hedef cos φ 1,00: küçük yük değişimlerinde kapasitife geçilir (kapasitif sınır %15). 0,98–0,99 önerilir.');
     if (q.Qc <= 0) uyarilar.push('Mevcut güç katsayısı hedeften iyi; kondansatör gerekmiyor.');
+    // uyarı yalnız genliği büyük harmoniklerde (5., 7.; baskın 3. ise 3.) — 11. ve 13. rezonans kartında bilgi olarak gösterilir
+    const buyukH = rez && !rez.korunmali ? [...new Set(rez.riskli.map(x => x.yakin))].filter(n => n <= 7) : [];
+    if (buyukH.length) uyarilar.push(`Rezonans riski: bazı kademe birleşimlerinde rezonans mertebesi h0, ${buyukH.join('. ve ')}. harmoniğe çok yakın (±%7).${(g.Gh || 0) > 0 ? ' Harmonik üreten yük olduğu için reaktörlü (%7) kademe kullanın.' : ' Tesiste harmonik kaynak yoksa sorun olmaz; ileride sürücü / UPS eklenirse reaktörlü kademeye geçin.'}`);
     if (plan.yetersiz) uyarilar.push(`Gereken güç ${Math.round(Qoto)} kVAr, ${plan.nMaks} kademeli röle için büyük: kademeler eşit ve ${plan.q1} kVAr oldu. Daha çok kademeli röle ya da iki ayrı kompanzasyon panosu düşünün.`);
     if (!plan.yetersiz && Qoto > KADEME_EN_BUYUK * plan.nMaks) uyarilar.push('Kademe sayısı sınırda; daha çok kademeli röle seçmek çözünürlüğü artırır.');
-    return { U, q, tr, sabit, Qhedef, Qoto, h, plan, kademeler, sabitEk, Qtop, ana, at, reaktor, uyarilar,
+    return { U, q, tr, sabit, Qhedef, Qoto, h, plan, kademeler, sabitEk, Qtop, ana, at, reaktor, uyarilar, rez,
       Ck: at && plan.q1 ? plan.q1 / at.oran : null, cos2Gercek: g.P > 0 ? cosDan(Math.abs(q.t1 - plan.toplam / g.P)) : null,
       kapasitifeGecer: g.P > 0 && q.t1 - plan.toplam / g.P < 0 };
   }
 
   const KOMP = { tan, cosDan, gerekenQ, faturadan, cezaSiniri, cezaKontrol, trafoReaktif, harmonikSinif, netGuc, etiketGuc,
-    kademePlani, kademeSayisiOner, ekipman, atSec, reaktorSec, motorKomp, tasarla, DUZENLER, TRAFO, MOTOR, KABLO, KADEME_KVAR };
+    kademePlani, kademeSayisiOner, ekipman, atSec, reaktorSec, motorKomp, tasarla, DUZENLER, TRAFO, MOTOR, KABLO, KADEME_KVAR,
+    rezonans, toplamlar, ukTipik, YUK_TIPLERI, yukTipi, prizEsz, yukListesi };
   if (typeof module !== 'undefined' && module.exports) module.exports = KOMP; else kok.KOMP = KOMP;
 })(typeof window !== 'undefined' ? window : globalThis);

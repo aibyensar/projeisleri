@@ -55,6 +55,19 @@
   @media (max-width: 1100px) { .ikili { grid-template-columns: minmax(0, 1fr); } }
   .ana-btn { font: inherit; font-size: .88rem; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--baslik); background: var(--baslik); color: #fff; }
   [data-yontem]:not(.acik) { display: none; }
+  .yuk { width: 100%; font-size: .84rem; border-collapse: collapse; margin-top: 10px; }
+  .yuk th { font-size: .7rem; color: var(--soluk); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; text-align: left; padding: 0 4px 4px; }
+  .yuk td { padding: 3px 4px; vertical-align: middle; } .yuk td.s { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .yuk select, .yuk input { width: 100%; min-width: 0; font: inherit; font-size: .84rem; padding: 5px 6px; }
+  .yuk { table-layout: fixed; } .yuk th:nth-child(1) { width: auto; } .yuk th:nth-child(2) { width: 64px; } .yuk th:nth-child(3), .yuk th:nth-child(4) { width: 52px; } .yuk th:nth-child(5), .yuk th:nth-child(6) { width: 52px; } .yuk th:nth-child(7) { width: 26px; }
+  .yuk input::-webkit-outer-spin-button, .yuk input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } .yuk input[type=number] { -moz-appearance: textfield; text-align: right; }
+  .yuk .sil { border: 0; background: none; color: var(--soluk); cursor: pointer; font-size: 1.1rem; padding: 2px 6px; }
+  .yuk tr.harm td:first-child select { border-left: 3px solid var(--vurgu); }
+  .ince-btn { font: inherit; font-size: .84rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  .yuk-ozet { font-size: .84rem; margin: 10px 0 0; display: flex; gap: 8px 16px; flex-wrap: wrap; align-items: center; }
+  .yuk-ozet b { font-variant-numeric: tabular-nums; }
+  input:disabled { opacity: .75; }
+  .rez svg { display: block; width: 100%; height: auto; color: var(--yazi); }
 </style>
 </head>
 <body>
@@ -65,7 +78,7 @@
       <h1>Kompanzasyon Hesabı</h1>
       <p>Kondansatör gücü, kademe planı, malzeme, röle ayarları ve EPDK reaktif sınır kontrolü · AG 400 V</p>
     </div>
-    <a class="ust-geri" href="../index.html">← Proje İşleri</a>
+    <div class="ust-baglar"><a class="ust-geri" href="kompanzasyon-rehber.html">Rehber · soru-cevap</a><a class="ust-geri" href="../index.html">← Proje İşleri</a></div>
   </div>
 </header>
 
@@ -84,7 +97,15 @@
           <label>Eşzamanlılık katsayısı<input id="esz" type="number" min="0.1" max="1" step="0.05" value="0.6"></label>
           <label>Mevcut cos φ<input id="cos1p" type="number" min="0.3" max="1" step="0.01" value="0.80"></label>
         </div>
-        <p class="ipucu acik" data-yontem="proje">Ölçüm yoksa mevcut cos φ = 0,80 alınır (Schneider kılavuzu, basit yöntem).</p>
+        <p class="ipucu acik" data-yontem="proje" id="projeIpucu">Ölçüm yoksa mevcut cos φ = 0,80 alınır (Schneider kılavuzu, basit yöntem). Yük grupları belliyse yük listesini açın.</p>
+        <div class="acik" data-yontem="proje">
+          <label class="kutu-sec" style="margin-top:10px"><input id="yukAc" type="checkbox"> Yük listesiyle hesapla (her grubun cos φ'si ve eşzamanlılığı ayrı)</label>
+          <div id="yukKutu" hidden>
+            <table class="yuk"><thead><tr><th>Yük grubu</th><th title="Kurulu güç">kW</th><th>Eşz.</th><th>cos φ</th><th style="text-align:right">P kW</th><th style="text-align:right">Q kVAr</th><th></th></tr></thead><tbody id="yukGovde"></tbody></table>
+            <div class="yuk-ozet"><button type="button" class="ince-btn" id="yukEkle">+ Yük grubu ekle</button><span id="yukOzet"></span></div>
+            <p class="ipucu">Eşz. ve cos φ boş bırakılırsa grubun tipik değeri kullanılır (üzerine gelince kaynağı görünür). Eşzamanlılıklar Elektrik İç Tesisleri Yönetmeliği tablosundan; cos φ değerleri Schneider kılavuzu Fig. L7'den. Turuncu çizgili gruplar harmonik üretir.</p>
+          </div>
+        </div>
         <div class="alanlar" data-yontem="fatura">
           <label>Aktif enerji (kWh)<input id="fKWh" type="number" min="0" step="any" value="42000"></label>
           <label>Endüktif reaktif (kVArh)<input id="fInd" type="number" min="0" step="any" value="15300"></label>
@@ -121,6 +142,8 @@
           <label>Harmonik üreten yükler (kVA)<input id="Gh" type="number" min="0" step="any" value="90"></label>
           <label>Baskın harmonik<select id="baskin"><option value="5">5. (sürücü, UPS, doğrultucu)</option><option value="3">3. (tek fazlı elektronik, LED, bilgisayar)</option></select></label>
           <label>Ana şalter (A) · akım trafosu için<input id="InAna" type="number" min="0" step="any" value="800"></label>
+          <label>Trafo uk (%) · rezonans için<input id="uk" type="number" min="1" max="15" step="0.5" placeholder="tipik %4 / %6"></label>
+          <label>Şebeke kısa devre gücü (kVA)<input id="Ssc" type="number" min="0" step="any" placeholder="trafosuzsa; dağıtım şirketinden"></label>
         </div>
         <p class="ipucu">Trafo 0 ise trafosuz AG abonesi sayılır: trafo sabit kademesi eklenmez, harmonik oranı tesisin kurulu gücüne (kVA) göre bulunur. Harmonik yük: hız kontrol cihazı, UPS, doğrultucu, kaynak makinesi, LED sürücü (yalnız kW biliniyorsa ÷ 0,7).</p>
       </div>
@@ -152,6 +175,11 @@
     <div class="kart-bas"><h2>Kademe ve malzeme listesi</h2><small id="listeAlt"></small></div>
     <div class="tablo-kutu"><table class="liste" id="liste"></table></div>
     <p class="ipucu" id="listeNot"></p>
+  </div>
+
+  <div class="kart">
+    <div class="kart-bas"><h2>Rezonans frekansı hesabı</h2><small>Proje Hazırlama Yönetmeliği'nin istediği hesap · h0 = √(Ssc / Q)</small></div>
+    <div id="rez"></div>
   </div>
 
   <div class="kart">
@@ -196,7 +224,9 @@
         <li><b>Zorunluluk ve hedef:</b> Elektrik İç Tesisleri Yönetmeliği md. 51/m; Güç Faktörünün İyileştirilmesi İle İlgili Tebliğ (50 kVA ve üstü zorunlu, hedef 0,95–1,00).</li>
         <li><b>Hesap, trafo, harmonik, koruma ve kablo tabloları:</b> Schneider Electric, Electrical Installation Guide, Power Factor Correction bölümü; IEC 60831-1/2.</li>
         <li><b>Röle ayarları:</b> ENTES RG3 / RGA &amp; RGSR reaktif güç kontrol rölesi kullanım kılavuzları.</li>
-        <li>Ayrıntılı notlar: depoda kompanzasyon/ARASTIRMA.md.</li>
+        <li><b>Rezonans:</b> Schneider EIG, Risk of resonance: h0 = √(Ssc / Q), Ssc ≈ Sn / uk; tipik uk %4 (≤630 kVA), %6 (üstü).</li>
+        <li><b>Yük listesi:</b> eşzamanlılıklar Elektrik İç Tesisleri Yönetmeliği (1995 değişikliği, RG 22479); cos φ değerleri Schneider EIG Fig. L7, LED / UPS / sürücü / priz / klima değerleri kabul.</li>
+        <li>Ayrıntılı notlar: depoda kompanzasyon/ARASTIRMA.md · soru-cevap: <a href="kompanzasyon-rehber.html">Kompanzasyon rehberi</a>.</li>
       </ul>
     </details>
   </div>
@@ -220,11 +250,58 @@ $('yontem').addEventListener('click', e => {
 });
 document.querySelectorAll('main input, main select').forEach(el => el.addEventListener('input', hesapla));
 
+// ---- yük listesi (proje yolu)
+let yukler = [{ tip: 'motor', kW: 180 }, { tip: 'surucu', kW: 45 }, { tip: 'led', kW: 25 }, { tip: 'priz', kW: 40 }, { tip: 'mekanik', kW: 30 }];
+const tipSec = k => KOMP.YUK_TIPLERI.map(t => `<option value="${t.k}"${t.k === k ? ' selected' : ''}>${t.ad}</option>`).join('');
+function yukCiz() {
+  $('yukGovde').innerHTML = yukler.map((r, i) => {
+    const t = KOMP.yukTipi(r.tip);
+    const eszYer = t.esz === 'priz' ? 'oto' : say(t.esz, 2);
+    return `<tr data-i="${i}" class="${t.harm ? 'harm' : ''}"><td><select data-a="tip" title="${t.kaynak}">${tipSec(r.tip)}</select></td>
+      <td><input data-a="kW" type="number" min="0" step="any" value="${r.kW ?? ''}"></td>
+      <td><input data-a="esz" type="number" min="0.05" max="1" step="0.05" placeholder="${eszYer}" value="${r.esz ?? ''}" title="${t.kaynak}"></td>
+      <td><input data-a="cos" type="number" min="0.3" max="1" step="0.01" placeholder="${say(t.cos, 2)}" value="${r.cos ?? ''}" title="${t.kaynak}"></td>
+      <td class="s" data-c="P"></td><td class="s" data-c="Q"></td><td><button type="button" class="sil" data-sil="${i}" aria-label="Satırı sil">×</button></td></tr>`;
+  }).join('');
+}
+$('yukGovde').addEventListener('input', e => {
+  const tr = e.target.closest('tr'), a = e.target.dataset.a; if (!tr || !a) return;
+  const r = yukler[+tr.dataset.i], v = e.target.value;
+  if (a === 'tip') { r.tip = v; r.esz = r.cos = undefined; yukCiz(); }
+  else r[a] = v === '' ? undefined : parseFloat(v.replace(',', '.'));
+  hesapla();
+});
+$('yukGovde').addEventListener('click', e => { const b = e.target.closest('[data-sil]'); if (!b) return; yukler.splice(+b.dataset.sil, 1); yukCiz(); hesapla(); });
+$('yukEkle').addEventListener('click', () => { yukler.push({ tip: 'motor' }); yukCiz(); hesapla(); $('yukGovde').lastElementChild.querySelector('[data-a="kW"]').focus(); });
+$('yukAc').addEventListener('change', () => {
+  $('yukKutu').hidden = !$('yukAc').checked;
+  ['kuruluKW', 'esz', 'cos1p'].forEach(id => { $(id).disabled = $('yukAc').checked; });
+  hesapla();
+});
+yukCiz();
+
 let sonRapor = '';
 function hesapla() {
   const yontem = secili('yontem');
   let P, cos1, kaynakYazi, fat = null;
-  if (yontem === 'proje') { P = num('kuruluKW') * num('esz'); cos1 = num('cos1p') || 0.8; kaynakYazi = `P = ${say(num('kuruluKW'), 0)} kW × ${say(num('esz'), 2)} = ${say(P, 1)} kW (talep gücü), cos φ1 = ${say(cos1, 2)}`; }
+  let yl = null;
+  if (yontem === 'proje' && $('yukAc').checked) {
+    yl = KOMP.yukListesi(yukler);
+    P = yl.P; cos1 = yl.cos;
+    $('kuruluKW').value = Math.round(yl.kurulu * 10) / 10; $('esz').value = Math.round(yl.esz * 100) / 100; $('cos1p').value = Math.round(yl.cos * 1000) / 1000;
+    let j = 0;
+    yukler.forEach((r, i) => {
+      const tr = $('yukGovde').children[i]; if (!tr) return;
+      const sat = r.kW > 0 ? yl.satirlar[j++] : null;
+      tr.querySelector('[data-c="P"]').textContent = sat ? say(sat.P, 1) : '—';
+      tr.querySelector('[data-c="Q"]').textContent = sat ? say(sat.Q, 1) : '—';
+      if (sat && KOMP.yukTipi(r.tip).esz === 'priz') tr.querySelector('[data-a="esz"]').placeholder = say(sat.esz, 2);
+    });
+    $('yukOzet').innerHTML = `Kurulu <b>${say(yl.kurulu, 1)} kW</b> · talep <b>${say(yl.P, 1)} kW</b> · Q <b>${say(yl.Q, 1)} kVAr</b> · cos φ1 <b>${say(yl.cos, 3)}</b>` +
+      (yl.Gh > 0 ? ` · harmonik yük ≈ <b>${say(yl.Gh, 0)} kVA</b> <button type="button" class="ince-btn" id="ghAktar">Harmonik alanına yaz</button>` : '');
+    const gb = $('ghAktar'); if (gb) gb.onclick = () => { $('Gh').value = Math.round(yl.Gh); hesapla(); };
+    kaynakYazi = `Yük listesi: ${yl.satirlar.map(r => `${r.ad} ${say(r.kW, 0)} kW × ${say(r.esz, 2)} (cos ${say(r.cos, 2)})`).join('; ')} ⇒ P = ΣP = ${say(P, 1)} kW, Q = Σ P·tan φ = ${say(yl.Q, 1)} kVAr, cos φ1 = P / √(P² + Q²) = ${say(cos1, 3)}`;
+  } else if (yontem === 'proje') { P = num('kuruluKW') * num('esz'); cos1 = num('cos1p') || 0.8; kaynakYazi = `P = ${say(num('kuruluKW'), 0)} kW × ${say(num('esz'), 2)} = ${say(P, 1)} kW (talep gücü), cos φ1 = ${say(cos1, 2)}`; }
   else if (yontem === 'fatura') {
     fat = KOMP.faturadan({ kWh: num('fKWh'), indKVArh: num('fInd'), saat: num('fSaat') });
     P = fat.P; cos1 = fat.cos1;
@@ -236,7 +313,7 @@ function hesapla() {
   const Qkap = $('Qkap').value !== '' ? num('Qkap')
     : (yontem === 'fatura' && num('fSaat') > 0 && kapOran > KOMP.cezaSiniri(num('kuruluKVA')).kapasitif / 2 ? num('fKap') / num('fSaat') : 0);
   const t = KOMP.tasarla({ P, cos1, cos2, trafoKVA: num('trafoKVA'), kuruluKVA: num('kuruluKVA'), Gh: num('Gh'), baskin: +$('baskin').value, kademeN: +$('kademeN').value || null,
-    duzen: $('duzen').value, yedek: +$('yedek').value, Pmin: num('Pmin'), InAna: num('InAna'), Qkap });
+    duzen: $('duzen').value, yedek: +$('yedek').value, Pmin: num('Pmin'), InAna: num('InAna'), Qkap, uk: num('uk') / 100, Ssc: num('Ssc') });
   const ceza = yontem === 'fatura' ? KOMP.cezaKontrol({ kWh: num('fKWh'), indKVArh: num('fInd'), kapKVArh: num('fKap'), kuruluKVA: num('kuruluKVA'),
     kuruluKW: yontem === 'proje' ? num('kuruluKW') : 0, muafTur: $('muaf').checked, birimTL: num('fBirim') }) : null;
   const sinir = KOMP.cezaSiniri(num('kuruluKVA'));
@@ -286,6 +363,9 @@ function hesapla() {
   $('listeNot').textContent = (reak ? `Reaktörlü kademede kondansatör gerilimi U/(1−p) = ${say(400 / (1 - h.p), 0)} V'a çıkar; ${h.UN} V kondansatör seçilir, etiket gücü Qnet · (${h.UN}/400)² · (1−p). Rezonans ${say(h.fr, 0)} Hz. ` : '') +
     'Kontaktörler kompanzasyon tipi (ön şarj dirençli) olmalı. Koruma katsayısı IEC 60831 akım dayanımı ve harmonik durumuna göre; kısa devre ayarı 10 × In. Kablo kesitleri havada, 30 °C, düzeltme katsayısız en küçük değerlerdir.';
 
+  // ---- rezonans
+  $('rez').innerHTML = rezCiz(t);
+
   // ---- tek hat şeması
   $('sema').innerHTML = sema(t);
 
@@ -323,7 +403,8 @@ function hesapla() {
   if (t.tr) ad.push(['4. Trafo sabit kademesi', `${t.tr.Sn} kVA trafo boşta ≈ ${say(t.tr.bos, 1)} kVAr (tam yükte ${say(t.tr.tam, 1)}) → sabit ${kv(t.sabit)} kVAr (aşağı yuvarlanır)`]);
   ad.push([`${t.tr ? 5 : 4}. Harmonik değerlendirmesi`, t.h.Sref > 0 ? `Gh / ${t.h.referans === 'trafo' ? 'Sn (trafo)' : 'S (kurulu güç, trafosuz AG abonesi)'} = ${say(num('Gh'), 0)} / ${say(t.h.Sref, 0)} = ${yuzde(t.h.oran)} → ${t.h.ad}${t.h.fr ? `; fr = 50 / √p = ${say(t.h.fr, 0)} Hz` : ''}` : `Trafo ve kurulu güç girilmedi; standart kondansatör kabul edildi.`]);
   ad.push([`${t.tr ? 6 : 5}. Kademe akımı ve koruma`, `In = Q / (√3 · 400) · ilk kademe ${kv(t.plan.q1)} kVAr → ${say(t.kademeler[0] ? t.kademeler[0].In : 0, 1)} A; koruma ${say(t.h.kKoruma, 2)} × In`]);
-  ad.push([`${t.tr ? 7 : 6}. Kurulu batarya ile`, `tüm kademeler devredeyken cos φ ≈ ${t.cos2Gercek ? say(t.cos2Gercek, 3) : '—'}${t.kapasitifeGecer ? ' (kapasitif)' : ''}; röle hedefe göre kademe seçer.`]);
+  if (t.rez) ad.push([`${t.tr ? 7 : 6}. Rezonans frekansı`, `Ssc = ${t.rez.uk ? `${say(num('trafoKVA'), 0)} / ${say(t.rez.uk, 2)}` : 'girilen'} = ${say(t.rez.Ssc, 0)} kVA; h0 = √(Ssc / Q): Q = ${kv(t.rez.noktalar[t.rez.noktalar.length - 1].Q)} kVAr → h0 = ${say(t.rez.h0min, 2)} (${say(t.rez.f0min, 0)} Hz) … Q = ${kv(t.rez.noktalar[0].Q)} kVAr → h0 = ${say(t.rez.h0max, 2)}${t.rez.korunmali ? `; reaktörlü kademe, seri ayar frekansı ${say(50 * t.rez.ayar, 0)} Hz (h = ${say(t.rez.ayar, 2)})` : ''}`]);
+  ad.push([`${t.tr ? (t.rez ? 8 : 7) : (t.rez ? 7 : 6)}. Kurulu batarya ile`, `tüm kademeler devredeyken cos φ ≈ ${t.cos2Gercek ? say(t.cos2Gercek, 3) : '—'}${t.kapasitifeGecer ? ' (kapasitif)' : ''}; röle hedefe göre kademe seçer.`]);
   $('adimlar').innerHTML = ad.map(([b, f]) => `<div class="adim"><b>${b}</b><div class="formul">${f}</div></div>`).join('');
   sonRapor = ['KOMPANZASYON HESABI', ...ad.map(([b, f]) => b + '\n   ' + f), '', 'KADEMELER: ' + parca.map(p => `${p[2]} ${kv(p[1])}`).join(', '),
     `Kondansatör: ${t.h.ad}`, `Akım trafosu: ${t.at ? t.at.ad : '-'}`, `Pano besleme: ${kv(t.Qtop)} kVAr, In ${say(t.ana.In, 1)} A, koruma ${t.ana.sigorta} A, kablo Cu ${t.ana.kablo.cu} mm²`].join('\n');
@@ -336,6 +417,35 @@ function motor() {
   const m = KOMP.motorKomp(num('mKW'), $('mDevir').value);
   $('motorSonuc').innerHTML = !m ? 'Motor gücünü girin.' : m.Qmaks == null ? 'Tablo 450 kW\'a kadar; daha büyük motorda üretici boşta akımıyla hesaplayın.'
     : `${m.tabloKW} kW, ${$('mDevir').value} d/d motor uçlarına en çok <b>${kv(m.Qmaks)} kVAr</b> bağlanır. Kompanzasyondan sonra motor aşırı akım rölesi ayarı × <b>${say(m.azalt, 2)}</b> küçültülür.`;
+}
+
+// ---- rezonans: her kademe birleşimindeki h0, harmonik mertebeleriyle birlikte (SVG eksen)
+function rezCiz(t) {
+  const r = t.rez;
+  if (!r) return `<p style="margin:0">Rezonans hesabı için özel trafo gücü ya da (trafosuz abonede) şebeke kısa devre gücü gerekir. Dağıtım şirketinden bağlantı noktasının kısa devre gücü istenebilir.</p>
+    <p class="ipucu">Proje Hazırlama Yönetmeliği, harmonikli yük bulunan tesislerde rezonans frekansı hesabını ve reaktör / kapasitör oranını uygulama projesinde ister.</p>`;
+  const k = (ad, d, s, cl = '') => `<div class="kontrol-k ${cl}"><b>${ad}</b><div class="d">${d}</div><div class="s">${s}</div></div>`;
+  const buyuk = [...new Set(r.riskli.map(x => x.yakin))].filter(n => n <= 7), kucuk = [...new Set(r.riskli.map(x => x.yakin))].filter(n => n > 7);
+  let sonuc, cl;
+  if (r.korunmali) { sonuc = ['Korunuyor', `reaktörlü kademe: paralel rezonans ${say(50 * r.ayar, 0)} Hz'in altında`]; cl = 'iyi'; }
+  else if (buyuk.length) { sonuc = [`${buyuk.join('. ve ')}. harmonik`, (num('Gh') > 0 ? 'harmonik yük var: reaktörlü kademe gerekli' : 'harmonik kaynak eklenirse tehlikeli')]; cl = num('Gh') > 0 ? 'kotu' : ''; }
+  else if (kucuk.length) { sonuc = [`${kucuk.join('. ve ')}. harmonik`, 'genliği küçük harmonikler; ölçümde takip edilir']; cl = ''; }
+  else { sonuc = ['Uzak', 'hiçbir birleşim 5., 7., 11., 13. harmoniğe yakın değil']; cl = 'iyi'; }
+  // eksen: h = 2 … hMaks
+  const hMaks = Math.min(Math.max(16, Math.ceil(r.h0max) + 1), 41), W = 720, H = 112, x0 = 24, x1 = W - 16, X = h => x0 + (h - 2) / (hMaks - 2) * (x1 - x0);
+  const izle = +$('baskin').value === 3 ? [3, 5, 7, 11, 13] : [5, 7, 11, 13];
+  let g = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Kademe birleşimlerine göre rezonans mertebeleri"><line x1="${x0}" y1="70" x2="${x1}" y2="70" stroke="currentColor" stroke-width="1"/>`;
+  for (let h = 2; h <= hMaks; h++) if (h % (hMaks > 25 ? 5 : 1) === 0 || h === 2) g += `<line x1="${X(h)}" y1="70" x2="${X(h)}" y2="74" stroke="currentColor"/><text x="${X(h)}" y="88" font-size="10" text-anchor="middle" fill="currentColor" opacity=".7">${h}</text>`;
+  izle.forEach(n => { if (n > hMaks) return; g += `<rect x="${X(n * 0.93)}" y="18" width="${X(n * 1.07) - X(n * 0.93)}" height="52" fill="var(--kotu)" opacity=".10"/><line x1="${X(n)}" y1="14" x2="${X(n)}" y2="70" stroke="var(--kotu)" stroke-dasharray="3 3"/><text x="${X(n)}" y="11" font-size="10" text-anchor="middle" fill="var(--kotu)" font-weight="700">${n}.</text>`; });
+  if (r.korunmali) g += `<line x1="${X(r.ayar)}" y1="14" x2="${X(r.ayar)}" y2="70" stroke="var(--iyi)" stroke-width="2"/><text x="${X(r.ayar) - 4}" y="44" font-size="10" text-anchor="end" fill="var(--iyi)">ayar ${say(50 * r.ayar, 0)} Hz</text>`;
+  r.noktalar.forEach(p => { if (p.h0 > hMaks) return; g += `<circle cx="${X(p.h0)}" cy="56" r="4" fill="${p.yakin && !r.korunmali ? 'var(--kotu)' : 'var(--baslik)'}" opacity=".85"><title>Q = ${kv(p.Q)} kVAr → h0 = ${say(p.h0, 2)} (${say(p.f0, 0)} Hz)</title></circle>`; });
+  g += `<text x="${x1}" y="104" font-size="10" text-anchor="end" fill="currentColor" opacity=".7">harmonik mertebesi h (× 50 Hz) · her nokta bir kademe birleşimi</text></svg>`;
+  return `<div class="kontroller" style="margin-top:0">
+      ${k('Kısa devre gücü', `${say(r.Ssc / 1000, 2)} MVA`, r.uk ? `Sn / uk = ${say(num('trafoKVA'), 0)} / ${say(r.uk, 2)}${num('uk') ? '' : ' (tipik uk)'}` : 'girilen değer')}
+      ${k(r.korunmali ? 'Reaktörsüz olsaydı' : 'Rezonans aralığı', `h0 ${say(r.h0min, 1)} … ${say(r.h0max, 1)}`, `${say(r.f0min, 0)} … ${say(r.f0max, 0)} Hz · tüm kademeler … yalnız ilk kademe`)}
+      ${k('Tehlikeli yakınlık', sonuc[0], sonuc[1], cl)}
+    </div><div class="rez" style="margin-top:12px">${g}</div>
+    <p class="ipucu">Kademeli bataryada rezonans mertebesi devredeki güçle değişir: güç arttıkça h0 düşer. Bir birleşimin h0'ı tesisteki bir harmoniğe (±%7) denk gelirse o harmonik akımı ve gerilimi büyür; kondansatör ısınır, sigorta atar, ömrü kısalır. Reaktörlü (%7, 189 Hz) kademede paralel rezonans ayar frekansının altına iner, 5. ve üstü harmoniklerle çakışmaz. Hesapta üst şebeke empedansı ihmal edildi (gerçek h0 biraz daha düşüktür).</p>`;
 }
 
 // ---- tek hat şeması (SVG): besleme → NH / şalter → bara → her kademe: sigorta, kontaktör, (reaktör), kondansatör

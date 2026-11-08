@@ -111,6 +111,67 @@ Sınırların cos φ karşılığı: tan φ = Q/P → %20 ⇒ cos φ ≥ 0,981; 
   200: 43/47/53/61 · 250: 52/57/63/71 · 280: 57/63/70/79 · 355: 67/76/86/98 · 400: 78/82/97/106 · 450: 87/93/107/117.
 - Kompanzasyon sonrası motor aşırı akım rölesi ayarı küçültülür: 750 d/d 0,88 · 1000: 0,90 · 1500: 0,91 · 3000: 0,93.
 
+## 9. Proje aşamasında yük listesi (eşzamanlılık ve tipik cos φ)
+
+- Elektrik İç Tesisleri Yönetmeliği, 1995 değişikliği (RG 22479; Resmî, Lexpera) eşzamanlılık tablosu:
+  daire ilk 8 kW %60, kalanı %40 · bina (daire sayısı) 3–5 %45, 5–10 %43, 11–15 %41, 16–20 %39, 21–25 %36, 26–30 %34, 31–35 %31,
+  36–40 %29, 41–45 %28, 46–50 %26, 51–55 %25, 56–61 %24, ≥62 %23; konutta eşzamanlı yük en az 2 kW · işyeri/idari/sosyal/sağlık:
+  mekanik (kış-yaz büyüğü) %100, mutfak %70 · aydınlatma: hastane ilk 50 kVA %40 kalan %20; otel ilk 20 kVA %50, 20–100 kVA %40,
+  kalan %30; depo ilk 12,5 kVA %100 kalan %50; diğer %100 · priz: ilk 10 kVA %100, kalan %50 · asansör: büro/otel %100,
+  okul/hastane %85, apartman/diğer %55.
+- Aynı yönetmelik: deşarj lambası, klima, motor vb. cihazlarda güç katsayısı en az 0,90 olacak şekilde yerel kompanzasyon.
+- Tipik cos φ (Schneider EIG Fig. L7): asenkron motor yükü %0/25/50/75/100 → 0,17/0,55/0,73/0,80/0,85; akkor ve rezistif 1,0;
+  floresan kompanzasyonsuz 0,5, kompanzasyonlu 0,93; deşarj lambası 0,4–0,6; endüksiyon fırını (komp.) 0,85; dielektrik 0,85;
+  direnç kaynak 0,8–0,9; tek fazlı ark kaynak 0,5; motor-generatör kaynak 0,7–0,9; trafo-doğrultucu kaynak 0,7–0,8; ark ocağı 0,8.
+- Araçta LED (0,90), sürücü girişi (0,95), UPS (0,99), priz (0,90), klima (0,85) değerleri **kabul**dür (üretici tipik), kaynaklı değildir.
+- Harmonik yük önerisi: harmonik üreten grupların kurulu kW'ı ÷ 0,7 ≈ kVA.
+
+## 10. Rezonans frekansı (Schneider EIG, Risk of resonance)
+
+- Paralel rezonans mertebesi h0 = √(Ssc / Q); trafo beslemede Ssc ≈ Sn / uk (üst şebeke empedansı ihmal edilir → gerçek h0 biraz daha düşük).
+- Kılavuz örneği: 630 kVA, uk %6 → Ssc ≈ 10 MVA; Q = 350 kVAr → h0 ≈ 5,5 (275 Hz): 5. harmoniğe çok yakın, tehlikeli. Araç 5,48 / 274 Hz buluyor.
+- Kademeli bataryada h0 devredeki güçle değişir; araç bütün kademe birleşimlerini kontrol eder, ±%7 bandında yakınlık işaretler.
+  Uyarı yalnız 5. ve 7. (baskın 3. ise 3.) için verilir; 11. ve 13. bilgi olarak gösterilir (genlikleri küçük).
+- Tipik uk: ≤630 kVA %4, üstü %6 (EN 50464-1 değerleri; trafo etiketinden girilmesi esas).
+- Reaktörlü kademede (p) paralel rezonans ayar frekansının (50/√p) altına iner; 5. ve üstü harmoniklerle çakışmaz.
+
+## 11. Faydalar (Schneider EIG, Why improve the power factor; L18)
+
+- Aynı kW için kablo kesit katsayısı cos φ 1 / 0,8 / 0,6 / 0,4 → 1 / 1,25 / 1,67 / 2,5. Akım %10 düşerse kayıp ≈ %20 düşer.
+- Trafo örneği: 630 kVA, 450 kW cos 0,8 + 100 kW cos 0,7 → trafo değiştirmemek için en az ≈132 kVAr.
+- Kompanzasyon kWh tüketimini yalnız kayıp kadar azaltır; "elektrik tasarrufu" satış iddiaları yanıltıcıdır.
+- Kurulum yeri: merkezi (ucuz, kablolar rahatlamaz), grup, bireysel (en etkili, pahalı). Bireysel motor kompanzasyonu ≈ motor kW'ının %25'i;
+  adımlı, ters çevrilen, kesik çalışan motorlar uçtan kompanze edilmez.
+
+## 12. Kondansatör, kontaktör, bakım
+
+- IEC 60831 (EIG Fig. L37): tolerans −5/+10 % (≤100 kVAr), −5/+5 % (>100 kVAr); sıcaklık sınıfı en düşük −50…+5 °C, en yüksek +40…+55 °C;
+  akım 1,3 × In; gerilim 1,1 × Un 8 saat/24 saat, 1,15 × Un 30 dk, 1,2 × Un 5 dk, 1,3 × Un 1 dk; deşarj 3 dk'da 75 V.
+- Sıcaklık sınıfı D: en yüksek 55 °C, 24 saat ortalaması 45 °C, yıllık ortalama 35 °C (üretici veri sayfası, IEC 60831 sınıf tablosu).
+- Self-healing film ve basınca duyarlı ayırıcı (iç arızada kapak şişer, bağlantı kopar) — EIG L35–L36.
+- Ani akım: back-to-back anahtarlamada kademe anma akımının 100 katına kadar (ABB); kompanzasyon kontaktörü (sönümleme dirençli, AC-6b);
+  ABB: Ue ≤ 440 V'ta 250 000 elektriksel çevrim. Reaktörsüz kontaktörlü pano için yıllık anahtarlama sayısı sınırlı (üretici).
+- Değişim eşiği için standartta yüzde bulunamadı; sahada kademe akımı ölçülüp etiketle karşılaştırılır (uygulama bilgisi, doğrulanmadı).
+- Pano sıcaklığı: ENTES RGA rölesinde sıcaklık alarmı ve fan rölesi (fan çalışma/kapanma 30–70 °C ayarlı).
+
+## 13. Röle bağlantısı, jeneratör, GES, modern çözümler
+
+- AT ana şalterden sonra, bütün yükler ve kompanzasyon panosu altında. Tek fazlı rölede gerilim AT'nin fazından; fazlar arası
+  bağlantılı rölede AT'nin olmadığı iki faz arasından (EMO / KTÜ ders notu). AT + röle + kablo yükü AT anma gücünün %25–120'si arasında.
+  Sekondere seri ampermetre vb. devreyi keserse röle kör kalır.
+- Jeneratör: ENTES RGA "jeneratör girişi" (110–250 V AC sinyal): pasif ya da jeneratör hedef cos φ. Sinyal şebeke hattına jeneratör
+  bağlantısından sonra alınmalı. Kapasitif yük jeneratör AVR'sini uyarmayı kısmaya zorlar; uyarma kaybı ve gerilim yükselmesi (Cummins PT-6001).
+- GES / üretici: md. 13 oranları "tüketime esas ve/veya üretime esas aktif enerji"ye göre; üretici sisteme enerji verirken verdiği
+  reaktif faturalanmaz; üretici aktif verirken kapasitif reaktif çekerse reaktif tarifesi uygulanır (Usul ve Esaslar, Resmî).
+  Öz tüketimli tesiste şebekeden çekilen kWh azalırken reaktif ihtiyaç kalır → oran büyür (mühendislik değerlendirmesi, kaynakta doğrudan yok).
+  2026'da lisanssız üretimde saatlik mahsuplaşmaya geçildi (Bloomberg HT, Nisan–Mayıs 2026); reaktif hükmünde değişiklik görülmedi.
+- Sayaç kodları (ikincil): 1.8.0 çekilen aktif, 5.8.0 endüktif reaktif, 8.8.0 kapasitif reaktif.
+- Hızlı / sürekli değişen yük: tristörlü kompanzasyon; SVG (IGBT, kademesiz, iki yönlü) tepki ~5–20 ms (Circutor <20 ms, TDK PQvar <15 ms;
+  üretici beyanı); kontaktörlü panoda kademe arası onlarca saniye. Gh/Sn > %50: aktif filtre etüdü.
+- Sürücü (VFD) çıkışına kondansatör konmaz; sürücü girişinin temel bileşen cos φ'si ≈ 0,95, düşük olan harmonik kaynaklı gerçek güç
+  faktörüdür; kondansatör onu düzeltmez, rezonans riski doğurur.
+- OG kondansatörler IEC 60871 kapsamındadır; çoğu tesiste AG kompanzasyon tercih edilir.
+
 ## Kaynaklar
 
 - EPDK Usul ve Esaslar ve değişiklikleri (Resmî Gazete metinleri): lexpera.com.tr/resmi-gazete/metin/… (5999-3; 10961; 5037)
@@ -118,3 +179,7 @@ Sınırların cos φ karşılığı: tan φ = Q/P → %20 ⇒ cos φ ≥ 0,981; 
 - Schneider Electric, Electrical Installation Guide, Power Factor Correction: electrical-installation.org/enwiki/…
 - ENTES RGA&RGSR ve RG3 reaktif güç kontrol rölesi kullanım kılavuzları: entes.com.tr
 - Tebliğ maddeleri ve 50 kVA zorunluluğu için ikincil kaynak: isguvenligi.net'teki tebliğ kopyası (arama özeti)
+- İç Tesisler Yönetmeliği 1995 değişikliği (RG 22479, eşzamanlılık tablosu): lexpera.com.tr
+- ABB, Contactors for capacitor switching (1SBC101140C0203); NITK back-to-back inrush çalışması
+- Cummins PT-6001 Impact of Power Factor Loads; Circutor SVG; TDK EPCOS PQvar; Bloomberg HT (saatlik mahsuplaşma, 2026)
+- Soru-cevap rehberi: araclar/kompanzasyon-rehber.html

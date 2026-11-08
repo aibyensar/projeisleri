@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kompanzasyon Rehberi</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../ortak/stil.css">
+<style>
+  .rehber { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
+  .icindekiler { position: sticky; top: 16px; font-size: .86rem; }
+  .icindekiler a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--yazi); text-decoration: none; }
+  .icindekiler a:hover { background: var(--ana-acik); }
+  .ezber { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .ezber div { border: 1px solid var(--cizgi); border-radius: 10px; padding: 10px 12px; }
+  .ezber b { display: block; font-size: 1.15rem; color: var(--baslik-yazi); font-variant-numeric: tabular-nums; }
+  .ezber small { color: var(--soluk); font-size: .8rem; }
+  .soru { border-top: 1px solid var(--cizgi); padding: 14px 0; }
+  .soru:first-of-type { border-top: 0; padding-top: 4px; }
+  .soru h3 { margin: 0 0 6px; font-size: 1rem; color: var(--baslik-yazi); }
+  .soru p, .soru li { line-height: 1.6; font-size: .93rem; }
+  .soru p { margin: 6px 0; }
+  .soru ul { margin: 6px 0; padding-left: 20px; }
+  .kisa { font-weight: 600; }
+  .kay { font-size: .78rem; color: var(--soluk); }
+  .kay::before { content: "Kaynak: "; font-weight: 600; }
+  .dikkat { border-left: 3px solid var(--vurgu); background: var(--vurgu-acik); padding: 8px 12px; border-radius: 0 8px 8px 0; font-size: .9rem; }
+  code, .f { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: .86rem; }
+  table.t { font-size: .86rem; margin: 8px 0; width: 100%; } table.t td, table.t th { padding: 5px 10px; white-space: normal; }
+  .kaynaklar li { font-size: .86rem; margin: 4px 0; }
+  @media (max-width: 900px) { .rehber { grid-template-columns: minmax(0, 1fr); } .icindekiler { position: static; } }
+</style>
+</head>
+<body>
+<header class="ust">
+  <div class="ust-ic">
+    <img class="ust-logo" src="../baglanti-hatti/logo/logo-beyaz.png" alt="AGY Enerji Mühendislik">
+    <div class="ust-baslik">
+      <h1>Kompanzasyon Rehberi</h1>
+      <p>Sorulduğunda kısa ve dayanaklı cevap · mevzuat, hesap, harmonik, pano, röle, saha</p>
+    </div>
+    <div class="ust-baglar"><a class="ust-geri" href="kompanzasyon.html">Hesap aracı</a><a class="ust-geri" href="../index.html">← Proje İşleri</a></div>
+  </div>
+</header>
+
+<main class="genis">
+<div class="rehber">
+  <nav class="kart icindekiler" aria-label="İçindekiler">
+    <a href="#ezber">Ezber kartı</a>
+    <a href="#temel">1. Temel kavramlar</a>
+    <a href="#mevzuat">2. Mevzuat ve ceza</a>
+    <a href="#hesap">3. Hesap</a>
+    <a href="#harmonik">4. Harmonik ve rezonans</a>
+    <a href="#ekipman">5. Pano ekipmanı</a>
+    <a href="#role">6. Röle, akım trafosu, devreye alma</a>
+    <a href="#ozel">7. Özel durumlar</a>
+    <a href="#ariza">8. Arıza belirtileri</a>
+    <a href="#kaynak">Kaynaklar</a>
+  </nav>
+
+  <div>
+  <section class="kart" id="ezber">
+    <div class="kart-bas"><h2>Ezber kartı</h2><small>En çok sorulan sayılar</small></div>
+    <div class="ezber">
+      <div><b>%20 / %15</b><small>50 kVA ve üstü: endüktif / kapasitif sınır (reaktif ÷ aktif)</small></div>
+      <div><b>%33 / %20</b><small>50 kVA altı (15 kW üstü): endüktif / kapasitif sınır</small></div>
+      <div><b>15 kW</b><small>Kurulu gücü 15 kW'a kadar olan, mesken, aydınlatma, tek faz: muaf</small></div>
+      <div><b>cos φ 0,981</b><small>%20 sınırının karşılığı · hedef 0,98–0,99</small></div>
+      <div><b>Qc = P(tan φ1 − tan φ2)</b><small>Kondansatör gücü, gerilimden bağımsız</small></div>
+      <div><b>%1,8 × Sn</b><small>Trafo boşta reaktifi ≈ sabit kademe (630 kVA → 10 kVAr)</small></div>
+      <div><b>%10 / %20 / %50</b><small>Gh/Sn: standart → ağır hizmet → reaktörlü → filtre etüdü</small></div>
+      <div><b>%7 → 189 Hz</b><small>Reaktörlü kademe, 480 V kondansatör · %14 → 134 Hz</small></div>
+      <div><b>h0 = √(Ssc / Q)</b><small>Paralel rezonans mertebesi · Ssc ≈ Sn / uk</small></div>
+      <div><b>3 dk → 75 V</b><small>IEC 60831 deşarj şartı · 1,3 × In sürekli akım</small></div>
+      <div><b>1,5 / 1,8 / 1,19</b><small>Koruma ayarı × In: standart / ağır hizmet / %7 reaktörlü</small></div>
+      <div><b>%25 motor kW</b><small>Motor bireysel kompanzasyonu için kaba değer</small></div>
+    </div>
+  </section>
+
+  <section class="kart" id="temel">
+    <div class="kart-bas"><h2>1. Temel kavramlar</h2></div>
+    <div class="soru"><h3>Reaktif güç nedir, kim çeker?</h3>
+      <p class="kisa">İşe dönüşmeyen ama hatta akım olarak dolaşan güçtür; manyetik alan kuran her cihaz çeker.</p>
+      <p>Motorlar, trafolar, bobinler ve balastlı deşarj lambaları manyetik alan için reaktif akım çeker. Bu akım bir yarım periyotta alınıp diğerinde geri verilir; ortalama iş yapmaz ama kabloyu, trafoyu ve şebekeyi yükler. Kondansatör tam tersi yönde (kapasitif) reaktif üretir; yükün yanına konunca reaktif ihtiyacı şebeke yerine kondansatörden karşılanır.</p>
+      <p class="kay">Schneider EIG, The nature of reactive power; Equipment requiring reactive energy (L6)</p></div>
+    <div class="soru"><h3>cos φ ile faturadaki oran arasındaki ilişki?</h3>
+      <p class="kisa">Faturadaki oran = reaktif kVArh ÷ aktif kWh = tan φ (dönem ortalaması).</p>
+      <p><span class="f">cos φ = 1 / √(1 + oran²)</span>. %20 → cos φ 0,981; %33 → 0,950; %15 kapasitif → 0,989 (kapasitif).</p></div>
+    <div class="soru"><h3>Hangi cihazın cos φ'si ne kadar? (pratik değerler)</h3>
+      <table class="t"><thead><tr><th>Yük</th><th>cos φ</th></tr></thead><tbody>
+        <tr><td>Asenkron motor, yükü %0 / %25 / %50 / %75 / %100</td><td>0,17 / 0,55 / 0,73 / 0,80 / 0,85</td></tr>
+        <tr><td>Akkor lamba, rezistanslı ısıtıcı / fırın</td><td>1,0</td></tr>
+        <tr><td>Floresan kompanzasyonsuz / kompanzasyonlu</td><td>0,5 / 0,93</td></tr>
+        <tr><td>Deşarj lambası (sodyum, metal halide)</td><td>0,4–0,6</td></tr>
+        <tr><td>Endüksiyon fırını (kompanzasyonlu), dielektrik ısıtma</td><td>0,85</td></tr>
+        <tr><td>Direnç kaynağı / tek fazlı ark kaynağı</td><td>0,8–0,9 / 0,5</td></tr>
+        <tr><td>Trafo-doğrultucu kaynak / ark ocağı</td><td>0,7–0,8 / 0,8</td></tr>
+      </tbody></table>
+      <p><b>Boşta çalışan motor en kötüsüdür</b> (0,17): fabrikada motorların boşta dönmesi cezanın en sık sebebidir. Motor tam yükte gücünün %65–75'i kadar, trafo %5–10'u kadar reaktif çeker.</p>
+      <p class="kay">Schneider EIG Fig. L7 "Practical values of power factor"</p></div>
+    <div class="soru"><h3>Kompanzasyonun faydası ne? Elektrik tasarrufu sağlar mı?</h3>
+      <p class="kisa">Asıl kazanç: ceza ödenmez, kablo ve trafo boşalır. Aktif enerji (kWh) faturası çok az düşer.</p>
+      <ul>
+        <li>Akım düşer: aynı kW için gereken kesit cos φ 1 / 0,8 / 0,6 / 0,4'te 1 / 1,25 / 1,67 / 2,5 katı.</li>
+        <li>Kayıp akımın karesiyle gider: akım %10 azalınca kayıp yaklaşık %20 azalır. Gerilim düşümü de azalır.</li>
+        <li>Trafo kapasitesi açılır: ör. 630 kVA trafo, 450 kW (cos 0,8) + 100 kW (cos 0,7) yükü kompanzasyonsuz taşıyamaz; en az ~132 kVAr ile trafo değiştirmeden yetiyor.</li>
+      </ul>
+      <div class="dikkat">"Kompanzasyon elektriği %30 düşürür" gibi satış iddiaları yanlıştır: kWh'e etkisi yalnız kablo / trafo kayıplarındaki azalmadır. Para cezadan ve kapasiteden kazanılır.</div>
+      <p class="kay">Schneider EIG, Why improve the power factor; Compensation to increase the available active power (L18)</p></div>
+  </section>
+
+  <section class="kart" id="mevzuat">
+    <div class="kart-bas"><h2>2. Mevzuat ve ceza</h2></div>
+    <div class="soru"><h3>Reaktif bedeli (ceza) kime uygulanır, sınırlar ne?</h3>
+      <ul>
+        <li><b>Muaf:</b> mesken, aydınlatma, tek fazlı tüketiciler ve kurulu gücü <b>15 kW'a (dahil)</b> kadar olanlar.</li>
+        <li><b>50 kVA altı:</b> endüktif %33, kapasitif %20.</li>
+        <li><b>50 kVA ve üstü:</b> endüktif %20, kapasitif %15.</li>
+      </ul>
+      <p class="kay">EPDK Tarife Uygulamalarına İlişkin Usul ve Esaslar md. 13 (Kurul kararı 28.04.2022/10961, RG 30.04.2022/31825) — Resmî metin</p></div>
+    <div class="soru"><h3>Sınır aşılınca ne kadar ödenir?</h3>
+      <ul>
+        <li>Yalnız aşan kısım değil, <b>ölçülen reaktifin tamamı</b> × reaktif birim bedeli.</li>
+        <li>İki sınır birden aşılırsa en yüksek kaydeden reaktif sayacın tamamı.</li>
+        <li>Bir takvim yılındaki <b>ilk ihlal affedilir</b> (faturada gösterilir, aynı faturada düşülür); sonrakiler ödenir.</li>
+        <li>35 günü aşan okumada bedel 35 günle sınırlı.</li>
+        <li>Kullanıcı kusuruyla iki reaktif sayaç da sıfır yazarsa aktif enerjinin 0,90 katı reaktif üzerinden fatura edilir.</li>
+      </ul>
+      <p class="kay">Usul ve Esaslar md. 13 (Resmî metin)</p></div>
+    <div class="soru"><h3>Kompanzasyon zorunlu mu? Hedef değer ne?</h3>
+      <p class="kisa">50 kVA ve üstü tesiste zorunlu; cos φ 0,95 ile 1,00 arasına getirilir. Pratikte 0,98–0,99 hedeflenir.</p>
+      <p>İç Tesisler Yönetmeliği md. 51/m, AG kompanzasyonu "Güç Faktörünün İyileştirilmesi İle İlgili Tebliğ"e bağlar. Tebliğ: 50 kVA ve üstü zorunlu, hedef 0,95–1,00, önce yerinde (bireysel) kompanzasyon. 0,95 tebliği karşılar ama %20 sınırı için 0,981 gerekir; bu yüzden 0,99 seçilir. 1,00 seçilmez çünkü küçük yük düşüşünde kapasitife geçilir.</p>
+      <p>İç Tesisler Yönetmeliği ayrıca deşarj lambası, klima, motor gibi cihazlarda güç katsayısının en az 0,90 olacak şekilde yerel kompanzasyon yapılmasını ister.</p>
+      <p class="kay">İç Tesisler Yön. md. 51/m (Resmî) · Tebliğ RG 01.12.1988/20006 (ikincil kaynak) · İç Tesisler Yön. 1995 değişikliği (RG 22479)</p></div>
+    <div class="soru"><h3>Projede kompanzasyon için neler istenir?</h3>
+      <p>Kompanzasyon hesabı; harmonikli yük varsa toplam yük akımı hesabı, <b>rezonans frekansı hesabı ve reaktör / kapasitör oranı</b>; kompanzasyon panosu tek hat şeması; pano yerleşim, kesit ve görünüşü. (Araç bunların hepsini veriyor: hesap adımları, rezonans kartı, tek hat taslağı.)</p>
+      <p class="kay">Elektrik İç Tesisleri Proje Hazırlama Yönetmeliği (Resmî)</p></div>
+    <div class="soru"><h3>Sayaçta hangi değerlere bakılır?</h3>
+      <p>Yaygın OBIS kodları: <span class="f">1.8.0</span> çekilen aktif, <span class="f">5.8.0</span> endüktif reaktif, <span class="f">8.8.0</span> kapasitif reaktif. İki okuma arası fark × sayaç çarpanı alınır, oran hesaplanır. Sayaç markasına göre ekran kodları değişebilir.</p>
+      <p class="kay">İkincil kaynak (kompanzasyonpanosu.com); IEC 62056 OBIS dörtlü bölge tanımı</p></div>
+    <div class="soru"><h3>Kapasitif ceza neden gelir?</h3>
+      <p>Tesis yükü düştüğünde devrede kalan kondansatör, uzun yeraltı kabloları, LED sürücüleri, UPS ve bilgisayar güç kaynakları kapasitif reaktif verir. Gece, hafta sonu ve tatilde tesis boşken röle kademe çıkarsa bile sabit kademe ve kablo kapasitesi kalır. Çözüm: sabit kademeyi küçültmek, ilk kademeyi küçük seçmek, <b>şönt reaktör</b> kademesi eklemek.</p></div>
+  </section>
+
+  <section class="kart" id="hesap">
+    <div class="kart-bas"><h2>3. Hesap</h2></div>
+    <div class="soru"><h3>Yeni tesiste (henüz fatura yok) nasıl hesaplanır?</h3>
+      <p>Yük listesi yapılır: her grup için kurulu kW × eşzamanlılık = talep P; Q = P · tan φ. Toplam P ve Q'dan cos φ1 bulunur, Qc = P(tan φ1 − tan φ2). Yük grupları bilinmiyorsa cos φ1 = 0,80 kabul edilir.</p>
+      <p>İç Tesisler Yönetmeliği eşzamanlılıkları: priz ilk 10 kVA %100, kalanı %50 · mekanik tesisat %100 · mutfak %70 · aydınlatma genelde %100 (hastane ilk 50 kVA %40 kalan %20; otel ilk 20 kVA %50, 20–100 kVA %40, kalan %30; depo ilk 12,5 kVA %100 kalan %50) · asansör büro/otel %100, okul/hastane %85, konut/diğer %55 · konut dairesi ilk 8 kW %60 kalan %40, bina 3–5 daire %45 … 62+ daire %23.</p>
+      <p class="kay">Elektrik İç Tesisleri Yönetmeliği 1995 değişikliği (RG 22479) · Schneider EIG L7</p></div>
+    <div class="soru"><h3>Mevcut tesiste nasıl hesaplanır?</h3>
+      <p><b>Faturadan:</b> en yüklü ay seçilir; P = kWh ÷ yüklü çalışma saati, tan φ1 = kVArh ÷ kWh. Kaba yol: Qc ≈ endüktif kVArh ÷ saat. <b>Analizörden:</b> en ağır yük anındaki P ve Q okunur. Ölçüm en güvenilir yoldur; harmonik (THD) de aynı ölçümde görülür.</p>
+      <p class="kay">Schneider EIG L "How to determine the optimum level of compensation"</p></div>
+    <div class="soru"><h3>Trafo için ayrıca kondansatör gerekir mi?</h3>
+      <p>OG'den ölçülen (trafosu kendine ait) tesiste trafonun reaktifi de sayaçtan geçer. Mıknatıslanma (boşta) reaktifi yükten bağımsız ≈ %1,8 Sn; bunu sabit (sürekli devrede) kademe karşılar ve aşağı yuvarlanır. Kaçak reaktansın reaktifi yükün karesiyle artar (tam yükte ≈ uk × Sn); onu otomatik kademeler karşılar. Tablo (kVAr, boşta / tam): 250: 5,3/14,7 · 400: 7,6/22,9 · 630: 11,3/35,7 · 1000: 23,9/72,4 · 1600: 31,9/126.</p>
+      <p class="kay">Schneider EIG L20–L22</p></div>
+    <div class="soru"><h3>Kaç kademe, hangi düzen?</h3>
+      <p>Pratikte 6–18 kademe. İlk kademe en küçük yükün yaklaşık %25'inden küçük olmalı (gece kapasitife geçmesin). Bir kademe kendinden önceki kademelerin toplamını aşmamalı. 1-2-2-2 düzeni ayarlanabilir basamak sayısını katlar; 1-2-4-8 en çok basamağı verir ama büyük kademeler daha sık anahtarlanır. Tek kademe pratikte 50 kVAr'ı geçmez (kontaktör ve ani akım).</p>
+      <p class="kay">ENTES RG3 / RGA kılavuzları · akademik kademe çalışmaları</p></div>
+    <div class="soru"><h3>Neden %10–20 yedek pay?</h3>
+      <p>Kondansatör zamanla kapasite kaybeder, tesis büyür, ölçüm bir anı gösterir. Ayrıca röledeki boş çıkışlar sonradan kademe eklemek içindir.</p></div>
+  </section>
+
+  <section class="kart" id="harmonik">
+    <div class="kart-bas"><h2>4. Harmonik ve rezonans</h2></div>
+    <div class="soru"><h3>Harmonik nedir, kaynağı ne?</h3>
+      <p>Sinüs olmayan akım çeken (doğrusal olmayan) yüklerin ürettiği 50 Hz'in katı frekanslı akımlar. Üç fazlı sürücü / UPS / doğrultucu 5., 7., 11., 13. harmonik; tek fazlı elektronik (bilgisayar, LED sürücü) 3. harmonik üretir.</p></div>
+    <div class="soru"><h3>Kondansatör harmonikte neden sorun çıkarır?</h3>
+      <p class="kisa">Kondansatörün empedansı frekansla düşer, şebeke endüktansıyla birlikte bir frekansta paralel rezonans yapar.</p>
+      <p><span class="f">h0 = √(Ssc / Q)</span>; trafo beslemede Ssc ≈ Sn / uk. Örnek: 630 kVA, uk %6 → Ssc ≈ 10,5 MVA; Q = 350 kVAr → h0 ≈ 5,5 (275 Hz), 5. harmoniğe çok yakın: harmonik akım ve gerilim büyür, kondansatör ısınır, sigorta atar, ömrü kısalır. Kademeli bataryada devredeki güç değiştikçe h0 da değişir; araç her birleşimi tek tek kontrol eder.</p>
+      <p class="kay">Schneider EIG, Risk of resonance due to power-system harmonics</p></div>
+    <div class="soru"><h3>Ne zaman standart, ne zaman reaktörlü?</h3>
+      <p>Gh = harmonik üreten yüklerin toplam kVA'sı, Sn = trafo gücü: Gh ≤ %10 Sn standart · %10–20 ağır hizmet (%10 yüksek gerilimli) · %20–50 reaktörlü (detuned) · %50 üstü harmonik etüdü / filtre. Trafosuz AG abonesinde araç Sn yerine kurulu kVA'yı kullanır (daha temkinli).</p>
+      <p class="kay">Schneider EIG L33–L34</p></div>
+    <div class="soru"><h3>%7 mi %14 mü? Neden 480 V kondansatör?</h3>
+      <p>Reaktör oranı p ayar frekansını belirler: fr = 50 / √p → %5,7: 210 Hz, %7: 189 Hz, %14: 134 Hz. 5. harmonik (250 Hz) baskınsa %7; 3. harmonik (150 Hz) varsa %14. Seri reaktör kondansatör gerilimini U / (1 − p) kadar yükseltir: 400 / 0,93 ≈ 430 V, harmoniklerle daha da artar; bu yüzden 480 V kondansatör konur. Net güç = etiket × (400/480)² / (1 − p) ≈ 0,75 × etiket.</p>
+      <p class="kay">Schneider EIG L29–L33 · EMO örneği</p></div>
+    <div class="soru"><h3>Reaktörlü kompanzasyon harmonikleri yok eder mi?</h3>
+      <p>Hayır. Detuned (ayarlı olmayan) reaktör rezonansı engeller ve kondansatörü korur; harmoniği az da olsa süzer ama asıl amacı filtre değildir. Harmoniği gerçekten azaltmak için pasif (ayarlı) filtre ya da aktif filtre gerekir.</p></div>
+    <div class="soru"><h3>Aktif filtre, SVG, tristörlü kompanzasyon ne zaman?</h3>
+      <ul>
+        <li><b>Kontaktörlü pano:</b> ucuz; kademe arası onlarca saniye (deşarj + gecikme). Yavaş değişen yükler için.</li>
+        <li><b>Tristörlü (statik) kompanzasyon:</b> kondansatörleri ani akımsız, periyot mertebesinde anahtarlar. Punto kaynak, vinç, asansör, pres gibi hızlı değişen yükler.</li>
+        <li><b>SVG (statik VAr jeneratörü):</b> IGBT eviriciyle reaktifi kademesiz, iki yönde (endüktif / kapasitif) üretir; tepki ~5–20 ms; rezonans yapmaz, dengesiz yükü dengeleyebilir. Pahalı; çoğu zaman kondansatörle karma (hibrit) kullanılır.</li>
+        <li><b>Aktif harmonik filtre:</b> harmonik akımı ölçüp tersini basar; Gh/Sn %50'yi aşan tesislerde.</li>
+      </ul>
+      <p class="kay">Üretici dokümanları: Circutor SVG (&lt;20 ms), TDK EPCOS PQvar (&lt;15 ms) — üretici beyanı</p></div>
+  </section>
+
+  <section class="kart" id="ekipman">
+    <div class="kart-bas"><h2>5. Pano ekipmanı</h2></div>
+    <div class="soru"><h3>Neden normal kontaktör değil kompanzasyon kontaktörü?</h3>
+      <p>Boş kondansatör devreye girerken kısa devre gibi davranır; diğer kademeler devredeyken (back-to-back) ani akım kademe anma akımının <b>100 katına</b> çıkabilir. Kompanzasyon kontaktöründe ön temaslı sönümleme dirençleri bu tepeyi keser. Normal kontaktörün kontakları yapışır, kondansatör zarar görür. Kategori AC-6b; seçim kademe kVAr'ına göre.</p>
+      <p class="kay">ABB kondansatör anahtarlama kontaktörleri kataloğu · IEC 60831-1 ani akım sınırı (NITK çalışması)</p></div>
+    <div class="soru"><h3>Kondansatörün standart özellikleri?</h3>
+      <ul>
+        <li>Kapasite toleransı −%5/+%10 (≤100 kVAr).</li>
+        <li>Sürekli akım 1,3 × In; gerilim 1,1 × Un günde 8 saat, 1,15 × Un 30 dk, 1,2 × Un 5 dk, 1,3 × Un 1 dk.</li>
+        <li><b>Deşarj: 3 dakika içinde 75 V'a.</b> Röle deşarj süresi bundan kısa olmamalı (deşarj bobini yoksa); yüklü kondansatöre kapama 3 kata varan gerilim darbesi yapar.</li>
+        <li>Kendi kendini onaran (self-healing) film; iç arızada basınçla ayrılan güvenlik düzeni (kapak şişer, bağlantı kopar).</li>
+        <li>Sıcaklık sınıfı ör. −25/D: en yüksek 55 °C, 24 saat ortalaması 45 °C, yıllık ortalama 35 °C. Pano içinde fan / termostat şart; ömür sıcaklıkla hızla kısalır.</li>
+      </ul>
+      <p class="kay">IEC 60831-1/2, Schneider EIG Fig. L37 · üretici veri sayfaları (sıcaklık sınıfları)</p></div>
+    <div class="soru"><h3>Sigorta / şalter ve kablo nasıl seçilir?</h3>
+      <p>In = Q / (√3 · U); 400 V'ta 1 kVAr ≈ 1,44 A. Aşırı yük ayarı = In × katsayı: standart 1,5, ağır hizmet 1,8, %5,7 reaktörlü 1,31, %7 reaktörlü 1,19, %14 reaktörlü 1,12. Kısa devre ayarı ≈ 10 × In. Kablo 1,3–1,5 × In'e göre (ör. 50 kVAr: Cu 16 mm²; 100 kVAr: Cu 50 mm²).</p>
+      <p class="kay">Schneider EIG L38–L39</p></div>
+    <div class="soru"><h3>Kondansatör ne zaman değiştirilir? Bakımda ne yapılır?</h3>
+      <p>Pens ampermetreyle her kademenin üç faz akımı ölçülür ve etiket akımıyla karşılaştırılır; fazlar arasında belirgin fark ya da etiketten belirgin düşük akım kapasite kaybıdır. Şişmiş kapak, yanık sigorta, ısınmış kontaktör, fan ve filtre kontrol edilir. Değişim eşiği üretici kataloğuna göre belirlenir; standartta tek bir yüzde bulamadım, sahada genelde %10 civarı kayıp değişim için yeterli sebep sayılır (doğrulanmamış uygulama bilgisi).</p></div>
+  </section>
+
+  <section class="kart" id="role">
+    <div class="kart-bas"><h2>6. Röle, akım trafosu, devreye alma</h2></div>
+    <div class="soru"><h3>Akım trafosu nereye takılır?</h3>
+      <p class="kisa">Ana şalterden hemen sonra; tesisin bütün yükleri <i>ve</i> kompanzasyon panosu AT'nin altında kalacak şekilde.</p>
+      <p>Kompanzasyon panosu AT'nin önünden (şebeke tarafından) beslenirse röle kondansatörün etkisini göremez: sürekli kademe ekler, tesis kapasitife geçer. Bir yük grubu AT'yi atlarsa onun reaktifi görülmez, ceza devam eder. AT sınıf 1, en az 5 VA; röleye ayrı AT kullanmak hatayı azaltır. AT sekonderi asla açık bırakılmaz (yüksek gerilim çıkar); sekondere seri bağlı ampermetre devreyi bozarsa röle kör kalır.</p>
+      <p class="kay">ENTES kılavuzları · EMO yayınları</p></div>
+    <div class="soru"><h3>Faz eşleşmesi neden önemli?</h3>
+      <p>Tek AT'li rölede ölçüm, AT'nin bulunduğu faz akımı ile doğru gerilim referansı arasındaki açıya göre yapılır. Üç fazlı röle bağlantısında referans gerilim AT'nin olmadığı iki faz arasından alınır. AT ters (P1/P2) ya da yanlış faza takılırsa röle cos φ'yi yanlış görür: kapasitif gösterir, kademe almaz ya da hepsini alır. Yeni rölelerin çoğu bağlantı hatasını otomatik bulur / uyarır.</p></div>
+    <div class="soru"><h3>Röle ayarları?</h3>
+      <p>Hedef cos φ 0,98–0,99 endüktif · çekme/bırakma gecikmesi fabrika 10 s · deşarj süresi kondansatöre göre (fabrika 14 s, deşarj bobini yoksa uzun) · referans (1.) kademe <b>mutlaka üç fazlı kondansatör</b> · şönt reaktör referans dışındaki kademede · eski rölelerde C/k = 1. kademe kVAr ÷ AT oranı · düşük / aşırı kompanzasyon alarmları sınırların biraz altında.</p>
+      <p class="kay">ENTES RG3 / RGA kullanım kılavuzları</p></div>
+    <div class="soru"><h3>Jeneratörle çalışırken ne olur?</h3>
+      <p class="kisa">Kondansatörler jeneratörü kapasitif yükler; jeneratör uyarmayı kısar, gerilim kaçar ya da uyarma kaybıyla düşer.</p>
+      <p>Jeneratörler kapasitif yüke (öne geçen akım) şebekeden çok daha hassastır. Yük aniden düşüp kondansatör devrede kalırsa jeneratör uç gerilimi yükselir, AVR zarar görebilir. Çözüm: rölenin <b>jeneratör girişi</b> kullanılır; jeneratör devredeyken ya kompanzasyon pasif olur ya da ayrı (daha düşük) hedef cos φ uygulanır. Jeneratör giriş sinyali, şebeke tarafından jeneratör kontaktörü sonrası alınmalı; yoksa şebekedeyken bakım için jeneratör çalıştırıldığında röle yanlış konuma geçer.</p>
+      <p class="kay">ENTES RGA kılavuzu (jeneratör girişi) · Cummins PT-6001 "Impact of power factor loads"</p></div>
+  </section>
+
+  <section class="kart" id="ozel">
+    <div class="kart-bas"><h2>7. Özel durumlar</h2></div>
+    <div class="soru"><h3>Trafosuz (AG'den beslenen) abonede kompanzasyon?</h3>
+      <p>Ceza sınırları aynen geçerli; 15 kW üstü ve muaf olmayan her abone. Trafo sabit kademesi olmaz. Harmonik oranı için trafo yerine kurulu kVA kullanılır. Rezonans hesabı için bağlantı noktasının kısa devre gücü dağıtım şirketinden istenir.</p></div>
+    <div class="soru"><h3>GES kurduktan sonra reaktif ceza geldi, neden?</h3>
+      <p class="kisa">GES şebekeden çekilen kWh'i düşürür ama motorların reaktif ihtiyacı aynı kalır; oran (reaktif ÷ aktif) büyür.</p>
+      <p>2022 değişikliğiyle oran "tüketime esas ve/veya üretime esas aktif enerji"ye göre hesaplanıyor ve üretici sisteme enerji verirken verdiği reaktif faturalamada dikkate alınmıyor; yine de öz tüketimli tesislerde oran büyüyebilir. Çözüm: röle dört bölgeli (çift yönlü) ölçmeli; AT, GES bağlantı noktası ile yüklerin konumuna göre doğru yere konmalı; kademeler küçük yükte de dengeleyebilecek kadar ince olmalı; inverterlerin reaktif güç ayarı (cos φ / Q modu) dağıtım şirketinin bağlantı şartlarına uygun ayarlanmalı. Mahsuplaşma kuralları 2026'da saatlik oldu; reaktif kuralı ayrıca takip edilmeli.</p>
+      <p class="kay">Usul ve Esaslar md. 13/(2)-(5) (Resmî metin) · neden-sonuç açıklaması mühendislik değerlendirmesi · Bloomberg HT, Mayıs 2026 (saatlik mahsuplaşma)</p></div>
+    <div class="soru"><h3>Motoru tek tek kompanze etmek?</h3>
+      <p>Motor uçlarına bağlanan kondansatör en çok 0,9 · √3 · Un · I0 olur (I0 boşta akım); daha büyüğü motor kesildiğinde motoru jeneratör gibi uyarıp tehlikeli gerilim yapar. Örnek 400 V, 1500 d/d: 22 kW 8 · 55 kW 17 · 75 kW 22 · 110 kW 29 kVAr. Kompanzasyondan sonra motor termik ayarı küçültülür (1500 d/d × 0,91). Ters çevrilen, kesik kesik çalıştırılan (inching), frenlenen ya da adımlı motorlar uçtan kompanze edilmez; yıldız-üçgen yol alan motorda kondansatör kontaktörlere göre özel bağlanır.</p>
+      <p class="kay">Schneider EIG L25–L26</p></div>
+    <div class="soru"><h3>Hız kontrol cihazlı motora kondansatör konur mu?</h3>
+      <p class="kisa">Sürücünün çıkışına (motor tarafına) asla. Girişte de genelde gerekmez.</p>
+      <p>Sürücünün girişi zaten ~0,95 temel bileşen cos φ ile çalışır; düşük olan harmonik yüzünden "gerçek" güç faktörüdür, onu kondansatör düzeltmez, aksine rezonans riski doğurur. Sürücülü tesiste merkezi pano reaktörlü seçilir.</p></div>
+    <div class="soru"><h3>LED, UPS, bilgisayar ağırlıklı binalar?</h3>
+      <p>Bu yükler genelde kapasitife yakın ya da kapasitiftir ve 3. harmonik üretir. Endüktif kondansatör yerine şönt reaktör, harmonik için %14 reaktörlü kademe ya da aktif filtre düşünülür. EN 61000-3-2 25 W üstü aydınlatmada harmonik sınırı (dolayısıyla PFC) getirir.</p></div>
+    <div class="soru"><h3>OG kompanzasyon ne zaman?</h3>
+      <p>OG motorları olan ya da çok büyük (birkaç MVA üstü) tesislerde OG kondansatör bataryası kurulabilir; ama AG kompanzasyon trafoyu ve AG kabloları da boşalttığı için çoğu tesiste tercih AG'dir. OG kondansatör için IEC 60871 geçerlidir.</p></div>
+  </section>
+
+  <section class="kart" id="ariza">
+    <div class="kart-bas"><h2>8. Arıza belirtileri ve ilk bakılacaklar</h2></div>
+    <div class="soru"><h3>Pano var ama ceza geliyor</h3>
+      <ul><li>Kademe sigortaları atık mı, kontaktör çekiyor mu?</li><li>Kondansatör akımı etiketin altında mı (kapasite kaybı)?</li><li>AT yeri doğru mu, bütün yükler AT'nin altında mı? Yeni eklenen bir tali pano AT'yi atlıyor mu?</li><li>Kurulu güç büyümüş, kademe yetmiyor mu? Röle "düşük kompanzasyon" alarmında mı?</li><li>Ceza kapasitif mi? (gece / tatil, sabit kademe büyük, LED / kablo)</li></ul></div>
+    <div class="soru"><h3>Kademeler sürekli girip çıkıyor (pompalama)</h3>
+      <p>İlk kademe yükün değişimine göre büyük, gecikme kısa, hedef cos φ 1,00'e çok yakın ya da hızlı değişen yük (kaynak, vinç) var. Gecikmeyi artır, ilk kademeyi küçült, gerekiyorsa tristörlü kademe.</p></div>
+    <div class="soru"><h3>Sigortalar sık atıyor, kondansatör şişiyor, pano ısınıyor</h3>
+      <p>Harmonik ve rezonans şüphesi: THD ölçülür. Standart kondansatör harmonikli tesiste ise reaktörlü sisteme geçilir. Pano havalandırması ve aşırı gerilim de kontrol edilir.</p></div>
+    <div class="soru"><h3>Röle kapasitif gösteriyor, hiç kademe almıyor</h3>
+      <p>AT yönü (P1/P2) ters ya da faz referansı yanlış; ya da kompanzasyon AT'nin önünden besleniyor. Bağlantı kontrol edilir, röle otomatik bağlantı tanıma çalıştırılır.</p></div>
+  </section>
+
+  <section class="kart" id="kaynak">
+    <div class="kart-bas"><h2>Kaynaklar</h2></div>
+    <ul class="kaynaklar">
+      <li>EPDK, Tarife Uygulamalarına İlişkin Usul ve Esaslar md. 13 ve değişiklikleri — Resmî Gazete metinleri (<a href="https://www.lexpera.com.tr" target="_blank" rel="noopener">lexpera.com.tr</a>)</li>
+      <li>Elektrik İç Tesisleri Yönetmeliği, 1995 değişikliği (eşzamanlılık), Proje Hazırlama Yönetmeliği — Resmî metin</li>
+      <li>Schneider Electric, <a href="https://www.electrical-installation.org/enwiki/Power_factor_correction" target="_blank" rel="noopener">Electrical Installation Guide — Power Factor Correction</a> (Fig. L7, L16, L18, L20–L39)</li>
+      <li>IEC 60831-1/2 (AG kendinden onarımlı şönt kondansatörler) — kılavuz özeti üzerinden</li>
+      <li>ENTES RG3 / RGA &amp; RGSR reaktif güç kontrol rölesi kullanım kılavuzları (<a href="https://www.entes.com.tr" target="_blank" rel="noopener">entes.com.tr</a>)</li>
+      <li>ABB, <a href="https://library.e.abb.com/public/ada5d05647748834c1257bcf003aa307/1SBC101140C0203%20ContactorsCapacitorSwitching_BR.pdf" target="_blank" rel="noopener">Contactors for capacitor switching</a></li>
+      <li>Cummins, <a href="https://incal.cummins.com/www/literature/technicalpapers/PT-6001-ImpactofPowerFactorLoads-en.pdf" target="_blank" rel="noopener">PT-6001 Impact of power factor loads</a> (jeneratör ve kapasitif yük)</li>
+      <li>Circutor <a href="https://circutor.com/docs/DP_SVG_EN.pdf" target="_blank" rel="noopener">SVG</a>, TDK EPCOS <a href="https://en.tdk.eu/download/2206558/8c3dfad11cdfdd8fc9bf7cc73c693c74/pfc-pqvar-pb.pdf" target="_blank" rel="noopener">PQvar</a> ürün dokümanları (tepki süreleri — üretici beyanı)</li>
+      <li>NITK, <a href="https://idr.nitk.ac.in/handle/123456789/11715" target="_blank" rel="noopener">Inrush current parameters associated with back-to-back switching of capacitors</a></li>
+      <li>Ayrıntılı notlar: depoda kompanzasyon/ARASTIRMA.md</li>
+    </ul>
+  </section>
+  </div>
+</div>
+</main>
+</body>
+</html>

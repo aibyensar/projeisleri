@@ -76,6 +76,7 @@ header.ust { background: var(--kart); color: var(--yazi); border-bottom: 1px sol
 .ust-baslik p { margin: 2px 0 0; font-size: .85rem; color: var(--soluk); opacity: 1; }
 .ust-geri { margin-left: auto; color: var(--soluk) !important; font-size: .85rem; text-decoration: none; white-space: nowrap; }
 .ust-geri:hover { color: var(--yazi) !important; }
+.ust-baglar { margin-left: auto; display: flex; gap: 18px; align-items: center; } .ust-baglar .ust-geri { margin-left: 0; }
 /* ---- Geniş sayfa düzeni (bilgisayar) ---- */
 main.genis { max-width: 1500px; padding-block: 24px 48px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
 .iki-sutun { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 24px; align-items: start; }
