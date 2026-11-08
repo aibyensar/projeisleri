@@ -84,7 +84,10 @@ function kurulum() {
 function bildirimGonder() {
   const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
   const k = klasorAl(kok, BILDIRIM);
-  const alici = ALICI || Session.getEffectiveUser().getEmail();
+  // getEffectiveUser().getEmail() ek izin olmadan boş dönebiliyor: klasör sahibinin adresi yedek
+  let alici = ALICI || Session.getEffectiveUser().getEmail();
+  if (!alici) { try { alici = k.getOwner().getEmail(); } catch (x) { alici = ''; } }
+  if (!alici) { console.error('Alıcı adresi bulunamadı: Kod.gs içindeki ALICI satırına e-posta adresini yazın.'); return; }
   const dosyalar = [];
   const it = k.getFiles();
   while (it.hasNext()) { const f = it.next(); if (/\.json$/i.test(f.getName())) dosyalar.push(f); }
