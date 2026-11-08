@@ -25,6 +25,12 @@
   #acil:checked + .renk { color: var(--vurgu); }
   button.gonder { width: 100%; font: inherit; font-size: 18px; font-weight: 700; padding: 14px; border: 0; border-radius: 12px; background: var(--ana); color: #fff; }
   button.gonder:disabled { opacity: .6; }
+  .alan { position: relative; }
+  .oneri { position: absolute; left: 0; right: 0; top: 100%; z-index: 5; margin-top: 4px; background: var(--kart); border: 1px solid var(--cizgi); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.18); overflow: hidden; }
+  .oneri button { display: block; width: 100%; text-align: left; font: inherit; font-size: 16px; padding: 11px 12px; border: 0; border-top: 1px solid var(--cizgi); background: none; color: var(--yazi); }
+  .oneri button:first-child { border-top: 0; }
+  .oneri button small { color: var(--soluk); margin-left: 6px; }
+  .oneri mark { background: none; color: var(--ana); font-weight: 700; }
   .mesaj { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; font-weight: 600; }
   .mesaj.iyi { background: color-mix(in srgb, var(--iyi) 15%, transparent); color: var(--iyi); }
   .mesaj.kotu { background: color-mix(in srgb, var(--kotu) 15%, transparent); color: var(--kotu); }
@@ -42,12 +48,11 @@
     </div>
     <div class="kart">
       <label for="elektrikci">Elektrikçi adı</label>
-      <input type="text" id="elektrikci" list="lElektrikci" required>
+      <div class="alan"><input type="text" id="elektrikci" required autocapitalize="words" spellcheck="false"><div class="oneri" hidden></div></div>
       <label for="proje">Proje adı</label>
-      <input type="text" id="proje" list="lProje" required>
+      <div class="alan"><input type="text" id="proje" required autocapitalize="words" spellcheck="false"><div class="oneri" hidden></div></div>
       <label for="tur">Proje türü</label>
-      <input type="text" id="tur" list="lTur" required>
-      <datalist id="lElektrikci"></datalist><datalist id="lProje"></datalist><datalist id="lTur"></datalist>
+      <div class="alan"><input type="text" id="tur" required spellcheck="false"><div class="oneri" hidden></div></div>
     </div>
     <div class="kart">
       <div class="anahtar"><span class="renk">ACİL<small>İş listenin en üstüne çıkar</small></span><input type="checkbox" id="acil"></div>
@@ -61,12 +66,41 @@
   </form>
 </main>
 <script>
-  const DURUM = <?!= durum ?>, ISLER = <?!= isler ?>, TURLER = <?!= turler ?>;
+  const DURUM = <?!= durum ?>, ISLER = <?!= isler ?>, ELEKTRIKCILER = <?!= elektrikciler ?>, TURLER = <?!= turler ?>;
   const $ = id => document.getElementById(id);
   const mesaj = (t, iyi) => { $('mesaj').innerHTML = '<div class="mesaj ' + (iyi ? 'iyi' : 'kotu') + '">' + t + '</div>'; };
   const kacis = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const tekil = a => [...new Set(a.filter(Boolean))];
-  const doldurListe = (id, a) => { $(id).innerHTML = tekil(a).map(v => '<option value="' + kacis(v) + '">').join(''); };
+  const B = s => String(s || '').toLocaleUpperCase('tr-TR').replace(/\s+/g, ' ').trim();   // karşılaştırma için
+  const tekil = a => { const g = new Set(); return a.filter(v => v && !g.has(B(v)) && g.add(B(v))); };
+
+  // yazarken öneri: kelime başı eşleşenler önce, sonra içinde geçenler; en çok 6
+  function oneriKur(id, kaynak, sec) {
+    const inp = $(id), kutu = inp.nextElementSibling;
+    let gizleT = null;
+    const goster = () => {
+      clearTimeout(gizleT);
+      const q = B(inp.value), adaylar = tekil(kaynak());
+      let l = q ? adaylar.filter(v => B(v).split(' ').some(w => w.startsWith(q)) || B(v).startsWith(q))
+                  .concat(adaylar.filter(v => B(v).includes(q) && !(B(v).split(' ').some(w => w.startsWith(q)) || B(v).startsWith(q))))
+                : adaylar;
+      l = l.filter(v => B(v) !== q).slice(0, 6);
+      if (!l.length) { kutu.hidden = true; return; }
+      kutu.innerHTML = l.map(v => {
+        const t = kacis(v), i = q ? B(v).indexOf(q) : -1;
+        const vurgu = i >= 0 ? kacis(v.slice(0, i)) + '<mark>' + kacis(v.slice(i, i + q.length)) + '</mark>' + kacis(v.slice(i + q.length)) : t;
+        return '<button type="button" data-v="' + t + '">' + vurgu + '</button>';
+      }).join('');
+      kutu.hidden = false;
+    };
+    inp.addEventListener('input', goster);
+    inp.addEventListener('focus', goster);
+    inp.addEventListener('blur', () => { gizleT = setTimeout(() => { kutu.hidden = true; }, 150); });
+    kutu.addEventListener('mousedown', e => e.preventDefault());
+    kutu.addEventListener('click', e => {
+      const b = e.target.closest('[data-v]'); if (!b) return;
+      inp.value = b.dataset.v; kutu.hidden = true; if (sec) sec(b.dataset.v);
+    });
+  }
 
   if (DURUM.yok) {
     $('alt').textContent = 'Paket: ' + DURUM.paket;
@@ -74,9 +108,11 @@
     $('f').hidden = true;
   } else {
     $('alt').textContent = DURUM.dosyaSayisi + ' evrak alındı · paket ' + DURUM.paket;
-    doldurListe('lElektrikci', ISLER.map(x => x.elektrikci));
-    doldurListe('lProje', ISLER.map(x => x.proje));
-    doldurListe('lTur', TURLER.concat(ISLER.map(x => x.tur)));
+    oneriKur('elektrikci', () => ELEKTRIKCILER.concat(ISLER.map(x => x.elektrikci)), () => $('proje').focus());
+    // proje önerisi: yazılan elektrikçinin işleri önce
+    oneriKur('proje', () => { const e = B($('elektrikci').value); return ISLER.filter(x => !e || B(x.elektrikci) === e).map(x => x.proje); },
+      v => { const e = B($('elektrikci').value); const is = ISLER.find(x => B(x.proje) === B(v) && (!e || B(x.elektrikci) === e)); if (is && !$('tur').value) $('tur').value = is.tur; });
+    oneriKur('tur', () => TURLER.concat(ISLER.map(x => x.tur)));
     if (ISLER.length) {
       $('sonKart').hidden = false;
       $('cipler').innerHTML = ISLER.slice(0, 6).map((x, i) => '<button type="button" class="cip" data-i="' + i + '"><b>' + kacis(x.elektrikci) + '</b> – ' + kacis(x.proje) + '</button>').join('');

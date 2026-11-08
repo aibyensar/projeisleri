@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.0. Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.1 (yazarken öneri). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -41,7 +41,8 @@ function doGet(e) {
   const t = HtmlService.createTemplateFromFile('Form');
   t.durum = JSON.stringify(k ? paketDurumu(k) : { yok: true, paket: paket });
   t.isler = JSON.stringify(sonIsler());
-  t.turler = JSON.stringify(TURLER);
+  t.elektrikciler = JSON.stringify(liste('elektrikciler'));
+  t.turler = JSON.stringify(TURLER.concat(liste('turler')));
   return t.evaluate().setTitle('AGY Evrak')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1');
 }
@@ -64,6 +65,8 @@ function bilgiKaydet(paket, b) {
   while (eski.hasNext()) eski.next().setTrashed(true);          // düzeltme: eski bilgi çöpe, yenisi yazılır
   k.createFile('paket.json', JSON.stringify(bilgi, null, 2), 'application/json');
   isEkle({ elektrikci: elektrikci, proje: proje, tur: tur });
+  listeyeEkle('elektrikciler', elektrikci, 500);
+  if (TURLER.indexOf(tur) < 0) listeyeEkle('turler', tur, 50);
   return { tamam: true, dosyaSayisi: bilgi.dosyaSayisi };
 }
 
@@ -88,13 +91,20 @@ function dosyaSayisi(k) {
   return n;
 }
 
-// son kullanılan işler (formda hızlı seçim için), en yeni başta, en çok 40
-function sonIsler() {
-  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('sonIsler') || '[]'); } catch (x) { return []; }
+// son kullanılan işler (formda hızlı seçim ve proje önerisi için), en yeni başta, en çok 200
+function sonIsler() { return liste('sonIsler'); }
+function liste(ad) {
+  try { return JSON.parse(PropertiesService.getScriptProperties().getProperty(ad) || '[]'); } catch (x) { return []; }
+}
+// hafızaya ekle: en son kullanılan başa; büyük/küçük harf ve boşluk farkı aynı sayılır
+function listeyeEkle(ad, deger, enCok) {
+  const k = x => String(x).toLocaleUpperCase('tr-TR').replace(/\s+/g, ' ').trim();
+  const l = [deger].concat(liste(ad).filter(x => k(x) !== k(deger))).slice(0, enCok);
+  PropertiesService.getScriptProperties().setProperty(ad, JSON.stringify(l));
 }
 function isEkle(is) {
   const anahtar = x => (x.elektrikci + '|' + x.proje).toLocaleUpperCase('tr-TR').replace(/\s+/g, ' ');
-  const liste = [is].concat(sonIsler().filter(x => anahtar(x) !== anahtar(is))).slice(0, 40);
+  const liste = [is].concat(sonIsler().filter(x => anahtar(x) !== anahtar(is))).slice(0, 200);
   PropertiesService.getScriptProperties().setProperty('sonIsler', JSON.stringify(liste));
 }
 
