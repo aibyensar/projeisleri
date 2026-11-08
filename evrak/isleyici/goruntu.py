@@ -53,8 +53,50 @@ def _acilar_uygun(p):
     return True
 
 
+def _kose4(noktalar):
+    """Dışbükey gövdeden dört köşe: sol-üst=min(x+y), sağ-alt=max(x+y), sağ-üst=max(x−y), sol-alt=min(x−y)."""
+    p = noktalar.reshape(-1, 2).astype('float32')
+    t, f = p.sum(axis=1), p[:, 0] - p[:, 1]
+    return np.array([p[np.argmin(t)], p[np.argmax(f)], p[np.argmax(t)], p[np.argmin(f)]], dtype='float32')
+
+
+def kagit_bul(bgr):
+    """En büyük açık renkli ve doygunluğu düşük bölge = kağıt. Kumaş / masa / halı zeminde kenar yönteminden sağlam."""
+    h, w = bgr.shape[:2]
+    s = 900 / max(h, w)
+    k = cv2.resize(bgr, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if s < 1 else bgr.copy()
+    s = min(s, 1)
+    hsv = cv2.cvtColor(cv2.GaussianBlur(k, (7, 7), 0), cv2.COLOR_BGR2HSV)
+    v, sat = hsv[..., 2], hsv[..., 1]
+    esik, _ = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    maske = ((v >= max(esik, 120)) & (sat < 60)).astype(np.uint8) * 255
+    maske = cv2.morphologyEx(maske, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8))   # yazıları kapat
+    maske = cv2.morphologyEx(maske, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))      # kumaş benekleri at
+    sayi, etiket, ist, _ = cv2.connectedComponentsWithStats(maske)
+    if sayi < 2:
+        return None
+    en = 1 + int(np.argmax(ist[1:, cv2.CC_STAT_AREA]))
+    alan = ist[en, cv2.CC_STAT_AREA]
+    toplam = k.shape[0] * k.shape[1]
+    if alan < 0.12 * toplam or alan > 0.97 * toplam:
+        return None
+    kont = cv2.findContours((etiket == en).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+    govde = cv2.convexHull(max(kont, key=cv2.contourArea))
+    kose = _kose4(govde)
+    if not _acilar_uygun(kose) or cv2.contourArea(kose) < 0.85 * cv2.contourArea(govde):
+        kose = _sirala(cv2.boxPoints(cv2.minAreaRect(govde)))
+    return kose / s
+
+
 def sayfa_bul(bgr):
-    """Sayfanın 4 köşesi (orijinal ölçekte) ya da None."""
+    """Sayfanın 4 köşesi (orijinal ölçekte) ya da None. Önce kağıt bölgesi, olmazsa kenar yöntemi."""
+    k = kagit_bul(bgr)
+    if k is not None:
+        return k
+    return kenar_bul(bgr)
+
+
+def kenar_bul(bgr):
     h, w = bgr.shape[:2]
     s = 1000 / max(h, w)
     k = cv2.resize(bgr, None, fx=s, fy=s, interpolation=cv2.INTER_AREA) if s < 1 else bgr.copy()
@@ -117,8 +159,9 @@ def renkli_mi(bgr) -> bool:
     m = int(0.04 * min(h, w))
     bgr = bgr[m:h - m, m:w - m]
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-    maske = (hsv[..., 1] > 70) & (hsv[..., 2] > 60)
-    return float(maske.mean()) > 0.004
+    maske = ((hsv[..., 1] > 90) & (hsv[..., 2] > 60)).astype(np.uint8)
+    maske = cv2.morphologyEx(maske, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))   # tek tük renkli gürültü sayılmasın
+    return float(maske.mean()) > 0.0012                                          # küçük bir kaşe / imza bile yeter
 
 
 def _boyutla(bgr):
@@ -151,9 +194,9 @@ def iyilestir(bgr, kalite='tam'):
         if not bilgi['renkli']:
             return Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)), bilgi
         return Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)), bilgi
-    if bilgi['renkli']:
-        return Image.fromarray(cv2.cvtColor(tarama_renkli(bgr), cv2.COLOR_BGR2RGB)), bilgi
-    return Image.fromarray(tarama_gri(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY))), bilgi
+    # Her zaman "sihirli renk": kağıt beyaz, yazı siyah, kaşe / imza / mühür kendi renginde (soluk olsa bile).
+    # Renk hiç yoksa sonuç zaten gri görünür; ayrıca griye çevirmek soluk kırmızı kaşeyi kaybettiriyordu.
+    return Image.fromarray(cv2.cvtColor(tarama_renkli(bgr), cv2.COLOR_BGR2RGB)), bilgi
 
 
 # ---------- tarayıcı görünümü: kağıt bembeyaz, yazı koyu, kenarlar keskin
@@ -188,7 +231,9 @@ def tarama_renkli(bgr):
     out = [np.clip((c.astype(np.float32) - siyah) * (255.0 / (212 - siyah)), 0, 255).astype(np.uint8) for c in kanallar]
     bgr = cv2.merge([cv2.LUT(c, _KOYULASTIR) for c in out])
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
-    hsv[..., 1] = np.clip(hsv[..., 1] * 1.25, 0, 255)       # renkler biraz canlansın
+    doy = hsv[..., 1]
+    # çok düşük doygunluk = JPEG renk gürültüsü → gri; gerisi (soluk kaşe, mavi imza) belirginleşsin
+    hsv[..., 1] = np.where(doy < 28, 0, np.clip(doy * 1.6, 0, 255))
     bgr = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
     return _keskinlestir(bgr, 0.5)
 
