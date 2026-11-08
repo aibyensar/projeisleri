@@ -837,6 +837,11 @@ function guncelle() {
   else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (5. bölüm)');
   else if ((D.isaret.sinir || []).length < 2) uyari.push('vaziyet planında parsel sınırı işaretlenmedi, sayaç panosu yatay çizilecek (5. bölüm)');
   $('indir').disabled = eksik.length > 0;
+  if (!D.icDoc) {                                            // iç tesisat yüklenmeden ayrıntılı tablo maddeleri gösterilmez
+    for (let i = eksik.length - 1; i >= 0; i--) if (/güç dağıtım|sayaç önü|sayaç panosu|ana kesici/.test(eksik[i])) eksik.splice(i, 1);
+    eksik.push('iç tesisat projesi (2. bölüm)');
+  }
+  $('indir').disabled = eksik.length > 0;
   const liste = l => '<ul>' + l.map(t => `<li>${kac(t)}</li>`).join('') + '</ul>';
   $('d-indir').className = 'indir-durum ' + (eksik.length ? 'kotu' : uyari.length ? '' : 'iyi');
   $('d-indir').innerHTML = eksik.length ? '<b>İndirmek için şunlar gerekli:</b>' + liste(eksik) + (uyari.length ? '<b>Dikkat:</b>' + liste(uyari) : '')
