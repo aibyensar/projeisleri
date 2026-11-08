@@ -1,7 +1,7 @@
 """AGY Evrak İşleyici — Windows'ta arka planda çalışır (saatin yanında simge).
 
 - Şirket Drive'ındaki 0-Gelen'i yoklar, paketleri işler, "Çizilecek Projeler"e koyar (islem.py).
-- Masaüstündeki "Evrak Bırak" klasörüne bırakılan dosyalar için küçük bir pencere açar (PC'deki WhatsApp, tarayıcı, e-Devlet).
+- Masaüstündeki "Evrak Bırak" klasörüne bırakılan dosyalar için telefondaki formun aynısını açar (yerel_form.py).
 - Sağ tık → Gönder → AGY Evrak ile gönderilen dosyalar da "Evrak Bırak"a kopyalanır.
 Kayıt (log): %APPDATA%\\AGY Evrak\\islem.log (kişisel veri yazılmaz).
 """
@@ -10,7 +10,6 @@ import json
 import logging
 import logging.handlers
 import os
-import queue
 import re
 import shutil
 import subprocess
@@ -105,14 +104,15 @@ def ac(yol):
 class Uygulama:
     def __init__(self):
         self.ayar = ayarlar.yukle()
-        self.kuyruk_q = queue.Queue()          # arka plandan arayüze iş
         self.durum = 'başlıyor'
         self.isleyici = None
         self.dur = threading.Event()
         self.simdi_tara = threading.Event()
         self.birak = Path(self.ayar['masaustu']) / BIRAK
-        self._birak_boyut = {}
-        self.pencere_acik = False
+        self.form = None
+        self._izlenen = None          # (imza, ilk görülme)
+        self._acilan = None           # form açılmış içerik imzası (aynı içerik için tekrar açılmaz)
+        self.simge = None
 
     # ---------- kurulum işleri (ilk açılış)
     def hazirla(self):
@@ -135,7 +135,7 @@ class Uygulama:
                 bayrak.write_text(dt.datetime.now().isoformat())
         return True
 
-    # ---------- arka plan döngüsü
+    # ---------- Drive döngüsü
     def dongu(self):
         while not self.dur.is_set():
             try:
@@ -144,7 +144,6 @@ class Uygulama:
                 else:
                     self.durum = 'işliyor…'
                     n = self.isleyici.tur()
-                    self.birak_kontrol()
                     self.durum = f"çalışıyor · son kontrol {dt.datetime.now():%H:%M}" + (f' · {n} paket işlendi' if n else '')
             except Exception:
                 log.exception('döngü hatası')
@@ -152,26 +151,41 @@ class Uygulama:
             self.simdi_tara.wait(self.ayar['yokla_sn'])
             self.simdi_tara.clear()
 
-    def birak_kontrol(self):
-        if self.pencere_acik or not self.birak.exists():
-            return
-        dosyalar = [f for f in self.birak.iterdir() if f.is_file() and not f.name.startswith(('~$', '.')) and f.suffix.lower() not in ('.tmp', '.crdownload', '.part')]
-        imza = tuple(sorted((f.name, f.stat().st_size) for f in dosyalar))
-        if not dosyalar:
-            self._birak_boyut = {}
-            return
-        if imza == getattr(self, '_iptal_imza', None):      # "Vazgeç" denmiş: içerik değişene kadar sorma
-            return
-        if self._birak_boyut.get('imza') != imza:
-            self._birak_boyut = {'imza': imza, 'zaman': time.time()}
-            return
-        if time.time() - self._birak_boyut['zaman'] >= 3:
-            self.pencere_acik = True
-            self._acik_imza = imza
-            self.kuyruk_q.put(('birak', sorted(dosyalar, key=lambda f: f.stat().st_mtime)))
+    # ---------- "Evrak Bırak" izleyici (saniyede bir; 1,5 sn sabit kalınca form açılır)
+    def birak_izle(self):
+        while not self.dur.is_set():
+            try:
+                self.birak_kontrol()
+            except Exception:
+                log.exception('Evrak Bırak izleme hatası')
+            self.dur.wait(1)
 
-    # ---------- "Evrak Bırak" penceresi → 0-Gelen'e paket
-    def paket_olustur(self, dosyalar, bilgi):
+    def birak_dosyalari(self):
+        if not self.birak.exists():
+            return []
+        return sorted((f for f in self.birak.iterdir() if f.is_file() and not f.name.startswith(('~$', '.', 'desktop.ini'))
+                       and f.suffix.lower() not in ('.tmp', '.crdownload', '.part', '.partial')), key=lambda f: f.stat().st_mtime)
+
+    def birak_kontrol(self):
+        dosyalar = self.birak_dosyalari()
+        if not dosyalar:
+            self._izlenen = self._acilan = None
+            return
+        imza = tuple((f.name, f.stat().st_size) for f in dosyalar)
+        if imza == self._acilan or self.isleyici is None or self.form is None:
+            return
+        if not self._izlenen or self._izlenen[0] != imza:
+            self._izlenen = (imza, time.time())
+            return
+        if time.time() - self._izlenen[1] >= 1.5:
+            self._acilan = imza
+            self.form.ac([str(f) for f in dosyalar], self.oneriler())
+
+    def form_kaydet(self, oturum, bilgi):
+        """Formdan gelen bilgiyle dosyaları 0-Gelen'e paket olarak taşır."""
+        dosyalar = [Path(f) for f in oturum['dosyalar'] if Path(f).exists()]
+        if not dosyalar:
+            return False, 'Dosyalar Evrak Bırak klasöründe bulunamadı (taşınmış ya da silinmiş).'
         ad = dt.datetime.now().strftime('%Y%m%d-%H%M%S') + '-pc'
         p = Path(self.ayar['kok']) / islem.GELEN / ad
         p.mkdir(parents=True)
@@ -179,49 +193,35 @@ class Uygulama:
             shutil.move(str(f), str(p / f'{i:02d}_{f.name}'))
         bilgi = dict(bilgi, surum=1, paket=ad, dosyaSayisi=len(dosyalar), kayit=dt.datetime.now().isoformat(), kaynak='pc')
         (p / 'paket.json').write_text(json.dumps(bilgi, ensure_ascii=False, indent=2), encoding='utf-8')
+        self._acilan = None
         self.simdi_tara.set()
+        return True, None
+
+    def formu_yeniden_ac(self):
+        self._acilan = self._izlenen = None
 
     def oneriler(self):
         isler = list(self.isleyici.kayit.isler.values()) if self.isleyici else []
         isler.sort(key=lambda x: x.get('son_evrak') or x['olusturma'], reverse=True)
         return isler
 
-    # ---------- arayüz (ana iş parçacığı: tkinter + saat yanı simgesi)
+    # ---------- çalıştır: arka plan iş parçacıkları + saat yanı simgesi (ana iş parçacığı)
     def calistir(self):
-        import tkinter as tk
-        import pencere
-        self.kok_tk = tk.Tk()
-        self.kok_tk.withdraw()
-        simge = self.simge_kur()
+        import yerel_form
+        self.form = yerel_form.FormSunucusu(self.form_kaydet)
         threading.Thread(target=self.dongu, daemon=True).start()
+        threading.Thread(target=self.birak_izle, daemon=True).start()
+        self.simge = self.simge_kur()
+        if self.simge is None:                 # simge kurulamazsa (ör. sunucu ortamı) yine çalışsın
+            self.dur.wait()
+            return
+        self.simge.run()                       # Çıkış'a kadar bekler
 
-        def bak():
-            try:
-                while True:
-                    tur, veri = self.kuyruk_q.get_nowait()
-                    if tur == 'birak':
-                        pencere.EvrakPenceresi(self.kok_tk, veri, self.oneriler(), self._pencere_sonuc)
-                    elif tur == 'cikis':
-                        self.dur.set(); self.simdi_tara.set()
-                        if simge:
-                            simge.stop()
-                        self.kok_tk.destroy()
-                        return
-            except queue.Empty:
-                pass
-            self.kok_tk.after(400, bak)
-        self.kok_tk.after(400, bak)
-        self.kok_tk.mainloop()
-
-    def _pencere_sonuc(self, dosyalar, bilgi):
-        try:
-            if bilgi:
-                self.paket_olustur(dosyalar, bilgi)
-            else:
-                self._iptal_imza = getattr(self, '_acik_imza', None)
-        finally:
-            self.pencere_acik = False
-            self._birak_boyut = {}
+    def cikis(self):
+        self.dur.set()
+        self.simdi_tara.set()
+        if self.simge:
+            self.simge.stop()
 
     def simge_kur(self):
         try:
@@ -232,25 +232,25 @@ class Uygulama:
         resim = Image.new('RGBA', (64, 64), (0, 0, 0, 0))
         d = ImageDraw.Draw(resim)
         d.rounded_rectangle((2, 2, 62, 62), 14, fill=(21, 40, 75))
-        d.rectangle((18, 16, 46, 22), fill='white'); d.rectangle((18, 29, 40, 35), fill='white'); d.rectangle((18, 42, 46, 48), fill='white')
+        for y0, x1 in ((16, 46), (29, 40), (42, 46)):
+            d.rectangle((18, y0, x1, y0 + 6), fill='white')
         d.rectangle((18, 16, 24, 48), fill='white')
         kok = lambda: Path(self.ayar['kok'])
         menu = pystray.Menu(
             pystray.MenuItem(lambda _: f'AGY Evrak {ayarlar.SURUM} — {self.durum}', None, enabled=False),
             pystray.MenuItem("Çizilecek Projeler'i aç", lambda: ac(kok() / islem.KUYRUK), default=True),
             pystray.MenuItem('Evrak Bırak klasörünü aç', lambda: ac(self.birak)),
+            pystray.MenuItem('Evrak Bırak formunu yeniden aç', lambda: self.formu_yeniden_ac()),
             pystray.MenuItem('Şimdi kontrol et', lambda: self.simdi_tara.set()),
             pystray.MenuItem('Kontrol Et klasörü', lambda: ac(kok() / islem.KONTROL)),
             pystray.MenuItem('Kayıt (Excel)', lambda: ac(kok() / 'Kayıt.csv')),
             pystray.Menu.SEPARATOR,
-            pystray.MenuItem("Windows açılışında başlat", lambda: acilista_baslat(not acilista_mi()), checked=lambda _: acilista_mi()),
+            pystray.MenuItem('Windows açılışında başlat', lambda: acilista_baslat(not acilista_mi()), checked=lambda _: acilista_mi()),
             pystray.MenuItem('Ayar dosyası', lambda: ac(ayarlar.veri_klasoru() / 'ayar.json')),
             pystray.MenuItem('Program kaydı (log)', lambda: ac(ayarlar.veri_klasoru() / 'islem.log')),
-            pystray.MenuItem('Çıkış', lambda: self.kuyruk_q.put(('cikis', None))),
+            pystray.MenuItem('Çıkış', lambda: self.cikis()),
         )
-        simge = pystray.Icon('AGY Evrak', resim, 'AGY Evrak', menu)
-        simge.run_detached()
-        return simge
+        return pystray.Icon('AGY Evrak', resim, 'AGY Evrak', menu)
 
 
 def kayit_kur():

@@ -31,7 +31,8 @@
   .ozet { background: var(--kart); border-radius: 18px; box-shadow: var(--golge); padding: 16px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px; border: 1px solid var(--cizgi); }
   .ozet .ikon { width: 48px; height: 48px; border-radius: 14px; background: var(--iyi-acik); color: var(--iyi); display: grid; place-items: center; flex: none; }
   .ozet b { display: block; font-size: 1.15rem; font-weight: 800; letter-spacing: -.01em; }
-  .ozet small { color: var(--soluk); font: 500 .78rem "JetBrains Mono", ui-monospace, monospace; }
+  .ozet small { color: var(--soluk); font: 500 .78rem "JetBrains Mono", ui-monospace, monospace; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+  .ozet > div:last-child { min-width: 0; }
 
   /* bölümler */
   .bolum { background: var(--kart); border-radius: 18px; box-shadow: var(--golge); border: 1px solid var(--cizgi); padding: 16px 18px 18px; margin-bottom: 14px; }
@@ -219,7 +220,7 @@
     $('f').hidden = true;
   } else {
     $('ozetBaslik').textContent = DURUM.dosyaSayisi + ' evrak alındı';
-    $('ozetAlt').textContent = paketSaati(DURUM.paket);
+    $('ozetAlt').textContent = DURUM.dosyalar ? DURUM.dosyalar.slice(0, 3).join(' · ') + (DURUM.dosyalar.length > 3 ? ' …' : '') : paketSaati(DURUM.paket);
     oneriKur('elektrikci', () => ELEKTRIKCILER.concat(ISLER.map(x => x.elektrikci)), () => $('proje').focus());
     // proje önerisi: yazılan elektrikçinin işleri
     oneriKur('proje', () => { const e = B($('elektrikci').value); return ISLER.filter(x => !e || B(x.elektrikci) === e).map(x => x.proje); },

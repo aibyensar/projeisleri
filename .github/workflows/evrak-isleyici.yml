@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'evrak/isleyici/**'
+      - 'evrak/apps-script/Form.html'
       - '.github/workflows/evrak-isleyici.yml'
   workflow_dispatch:
 
@@ -29,13 +30,13 @@ jobs:
       - name: Görüntü ve akış denemesi
         shell: bash
         run: |
-          python -c "import sys; sys.path.insert(0,'.'); import goruntu, islem, ayar, pencere; print('modüller tamam', ayar.SURUM)"
+          python -c "import sys; sys.path.insert(0,'.'); import goruntu, islem, ayar, yerel_form, agy_evrak; print('modüller tamam', ayar.SURUM)"
           python test/ornek_uret.py "$RUNNER_TEMP/ornek"
           python test/akis_dene.py "$RUNNER_TEMP/ornek"
       - name: Derle
         run: |
           python simge_yap.py
-          pyinstaller --noconfirm --onefile --windowed --name AGY-Evrak --icon simge.ico --hidden-import pystray._win32 agy_evrak.py
+          pyinstaller --noconfirm --onefile --windowed --name AGY-Evrak --icon simge.ico --hidden-import pystray._win32 --add-data "../apps-script/Form.html;." --exclude-module tkinter agy_evrak.py
       - name: Sürüm kontrolü
         shell: bash
         run: ls -la dist && test -s dist/AGY-Evrak.exe
