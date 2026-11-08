@@ -177,6 +177,15 @@
     return [...ul].map(v => v + sabit).filter(v => v > 0).sort((a, b) => a - b);
   }
 
+  // ---------- Harmonikli toplam yük akımı (Schneider EIG, Definition of harmonics: Irms = I1 · √(1 + THDi²)) ----------
+  // tesisin temel bileşen akımı (kompanzasyon sonrası) + harmonik yüklerin harmonik akımı
+  function harmonikAkim({ P, cos2 = 0.99, Gh = 0, thdi = 0, U = 400 }) {
+    if (!(P > 0)) return null;
+    const I1 = P * 1000 / (K3 * U * cos2), I1h = Gh * 1000 / (K3 * U), Ih = I1h * thdi;
+    const Irms = Math.hypot(I1, Ih);
+    return { I1, I1h, Ih, Irms, thdTesis: I1 > 0 ? Ih / I1 : 0, oran: I1 > 0 ? Irms / I1 : 1 };
+  }
+
   // ---------- Yük listesi (proje aşaması) ----------
   // cos φ: Schneider EIG Fig. L7 "practical values"; LED / klima / UPS / sürücü / priz: üretici tipik değeri (kabul).
   // eşzamanlılık: Elektrik İç Tesisleri Yönetmeliği (RG 22479, 1995 değişikliği) tablosu; "öneri" olanlar mühendis kabulü.
@@ -258,6 +267,6 @@
 
   const KOMP = { tan, cosDan, gerekenQ, faturadan, cezaSiniri, cezaKontrol, trafoReaktif, harmonikSinif, netGuc, etiketGuc,
     kademePlani, kademeSayisiOner, ekipman, atSec, reaktorSec, motorKomp, tasarla, DUZENLER, TRAFO, MOTOR, KABLO, KADEME_KVAR,
-    rezonans, toplamlar, ukTipik, YUK_TIPLERI, yukTipi, prizEsz, yukListesi };
+    rezonans, toplamlar, ukTipik, harmonikAkim, YUK_TIPLERI, yukTipi, prizEsz, yukListesi };
   if (typeof module !== 'undefined' && module.exports) module.exports = KOMP; else kok.KOMP = KOMP;
 })(typeof window !== 'undefined' ? window : globalThis);

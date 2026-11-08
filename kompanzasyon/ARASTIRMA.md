@@ -172,7 +172,14 @@ Sınırların cos φ karşılığı: tan φ = Q/P → %20 ⇒ cos φ ≥ 0,981; 
   faktörüdür; kondansatör onu düzeltmez, rezonans riski doğurur.
 - OG kondansatörler IEC 60871 kapsamındadır; çoğu tesiste AG kompanzasyon tercih edilir.
 
-## Kaynaklar
+## 14. Harmonikli toplam yük akımı (Proje Hazırlama Yön. istenen ii. kalem)
+
+- Schneider EIG (Definition of harmonics / THD): Irms = I1 · √(1 + THDi²); THDi %40 → Irms ≈ 1,08 I1.
+- Araç: I1 = P / (√3 · 400 · cos φ2); Ih = (Gh kVA → A) × THDi; Irms = √(I1² + Ih²). Tesis THDi ≈ Ih / I1.
+- Tipik sürücü THDi (üretici): 6 darbeli, şoksuz %80–115 (Schneider kaynaklı) ya da %35–45 (Fuji); DC şok / %3 hat reaktörü ile %25–40.
+  Kesin değer ölçüm ya da katalogdan. Araç varsayılanı %40.
+- Projede ayrıca istenen (araç çizmez): kondansatör / pano yerleşim, kesit, görünüş; kablo güzergâhlarında EMU uyarıları.
+
 
 - EPDK Usul ve Esaslar ve değişiklikleri (Resmî Gazete metinleri): lexpera.com.tr/resmi-gazete/metin/… (5999-3; 10961; 5037)
 - Elektrik İç Tesisleri Yönetmeliği ve Proje Hazırlama Yönetmeliği: lexpera.com.tr/mevzuat/yonetmelikler/…

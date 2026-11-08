@@ -133,8 +133,8 @@
       <p>İç Tesisler Yönetmeliği ayrıca deşarj lambası, klima, motor gibi cihazlarda güç katsayısının en az 0,90 olacak şekilde yerel kompanzasyon yapılmasını ister.</p>
       <p class="kay">İç Tesisler Yön. md. 51/m (Resmî) · Tebliğ RG 01.12.1988/20006 (ikincil kaynak) · İç Tesisler Yön. 1995 değişikliği (RG 22479)</p></div>
     <div class="soru"><h3>Projede kompanzasyon için neler istenir?</h3>
-      <p>Kompanzasyon hesabı; harmonikli yük varsa toplam yük akımı hesabı, <b>rezonans frekansı hesabı ve reaktör / kapasitör oranı</b>; kompanzasyon panosu tek hat şeması; pano yerleşim, kesit ve görünüşü. (Araç bunların hepsini veriyor: hesap adımları, rezonans kartı, tek hat taslağı.)</p>
-      <p class="kay">Elektrik İç Tesisleri Proje Hazırlama Yönetmeliği (Resmî)</p></div>
+      <p>Uygulama projesinde: (i) kompanzasyon hesabı, (ii) harmonikli yükler için toplam yük akımı hesabı, (iii) rezonans frekansı hesabı ve reaktör / kapasitör oranı, (iv) kompanzasyon panosu tek hat şeması, (v) kondansatör ve pano yerleşim planı, kesit ve görünüşleri, (vi) kablo güzergâhlarında elektromanyetik uyumluluk açısından kritik devreler ve uyarılar. Araç (i)–(iv)'ü veriyor; (v) yerleşim / görünüş ve (vi) EMU notları projede ayrıca çizilir / yazılır (kompanzasyon kabloları, AT sekonder ve röle kumanda kabloları güç kablolarından ayrı güzergâhta).</p>
+      <p class="kay">Elektrik İç Tesisleri Proje Hazırlama Yönetmeliği, uygulama projesi kapsamı (Resmî)</p></div>
     <div class="soru"><h3>Sayaçta hangi değerlere bakılır?</h3>
       <p>Yaygın OBIS kodları: <span class="f">1.8.0</span> çekilen aktif, <span class="f">5.8.0</span> endüktif reaktif, <span class="f">8.8.0</span> kapasitif reaktif. İki okuma arası fark × sayaç çarpanı alınır, oran hesaplanır. Sayaç markasına göre ekran kodları değişebilir.</p>
       <p class="kay">İkincil kaynak (kompanzasyonpanosu.com); IEC 62056 OBIS dörtlü bölge tanımı</p></div>
@@ -169,6 +169,9 @@
       <p class="kisa">Kondansatörün empedansı frekansla düşer, şebeke endüktansıyla birlikte bir frekansta paralel rezonans yapar.</p>
       <p><span class="f">h0 = √(Ssc / Q)</span>; trafo beslemede Ssc ≈ Sn / uk. Örnek: 630 kVA, uk %6 → Ssc ≈ 10,5 MVA; Q = 350 kVAr → h0 ≈ 5,5 (275 Hz), 5. harmoniğe çok yakın: harmonik akım ve gerilim büyür, kondansatör ısınır, sigorta atar, ömrü kısalır. Kademeli bataryada devredeki güç değiştikçe h0 da değişir; araç her birleşimi tek tek kontrol eder.</p>
       <p class="kay">Schneider EIG, Risk of resonance due to power-system harmonics</p></div>
+    <div class="soru"><h3>"Harmonikli toplam yük akımı" nasıl hesaplanır?</h3>
+      <p><span class="f">Irms = I1 · √(1 + THDi²)</span>. I1 tesisin temel bileşen (50 Hz) akımı; harmonik akım ≈ harmonik yüklerin akımı × THDi. Örnek: THDi %40 → akım 1,08 katı. Hız kontrol cihazında THDi DC şoklu / hat reaktörlü ≈ %30–40, şoksuz %80–115 (üretici değerleri). Ana şalter, kablo ve trafo bu toplam akıma göre kontrol edilir; nötr iletkeninde 3. harmonik toplandığı için tek fazlı elektronik yük ağırlıklı tesiste nötr ayrıca kontrol edilir.</p>
+      <p class="kay">Schneider EIG, Definition of harmonics / THD · Fuji Electric ve ABB sürücü harmonik kılavuzları</p></div>
     <div class="soru"><h3>Ne zaman standart, ne zaman reaktörlü?</h3>
       <p>Gh = harmonik üreten yüklerin toplam kVA'sı, Sn = trafo gücü: Gh ≤ %10 Sn standart · %10–20 ağır hizmet (%10 yüksek gerilimli) · %20–50 reaktörlü (detuned) · %50 üstü harmonik etüdü / filtre. Trafosuz AG abonesinde araç Sn yerine kurulu kVA'yı kullanır (daha temkinli).</p>
       <p class="kay">Schneider EIG L33–L34</p></div>

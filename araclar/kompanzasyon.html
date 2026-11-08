@@ -142,6 +142,7 @@
           <label>Harmonik üreten yükler (kVA)<input id="Gh" type="number" min="0" step="any" value="90"></label>
           <label>Baskın harmonik<select id="baskin"><option value="5">5. (sürücü, UPS, doğrultucu)</option><option value="3">3. (tek fazlı elektronik, LED, bilgisayar)</option></select></label>
           <label>Ana şalter (A) · akım trafosu için<input id="InAna" type="number" min="0" step="any" value="800"></label>
+          <label>Harmonik yüklerin THDi (%)<input id="thdi" type="number" min="0" max="200" step="1" value="40" title="Sürücü DC şoklu / hat reaktörlü ≈ %30–40, şoksuz %80–115; ölçüm ya da üretici değeri esastır"></label>
           <label>Trafo uk (%) · rezonans için<input id="uk" type="number" min="1" max="15" step="0.5" placeholder="tipik %4 / %6"></label>
           <label>Şebeke kısa devre gücü (kVA)<input id="Ssc" type="number" min="0" step="any" placeholder="trafosuzsa; dağıtım şirketinden"></label>
         </div>
@@ -178,7 +179,7 @@
   </div>
 
   <div class="kart">
-    <div class="kart-bas"><h2>Rezonans frekansı hesabı</h2><small>Proje Hazırlama Yönetmeliği'nin istediği hesap · h0 = √(Ssc / Q)</small></div>
+    <div class="kart-bas"><h2>Rezonans frekansı ve harmonikli toplam akım</h2><small>Proje Hazırlama Yönetmeliği'nin istediği hesaplar · h0 = √(Ssc / Q) · Irms = I1 √(1 + THDi²)</small></div>
     <div id="rez"></div>
   </div>
 
@@ -363,8 +364,13 @@ function hesapla() {
   $('listeNot').textContent = (reak ? `Reaktörlü kademede kondansatör gerilimi U/(1−p) = ${say(400 / (1 - h.p), 0)} V'a çıkar; ${h.UN} V kondansatör seçilir, etiket gücü Qnet · (${h.UN}/400)² · (1−p). Rezonans ${say(h.fr, 0)} Hz. ` : '') +
     'Kontaktörler kompanzasyon tipi (ön şarj dirençli) olmalı. Koruma katsayısı IEC 60831 akım dayanımı ve harmonik durumuna göre; kısa devre ayarı 10 × In. Kablo kesitleri havada, 30 °C, düzeltme katsayısız en küçük değerlerdir.';
 
-  // ---- rezonans
-  $('rez').innerHTML = rezCiz(t);
+  // ---- rezonans ve harmonikli toplam akım
+  const ha = KOMP.harmonikAkim({ P, cos2, Gh: num('Gh'), thdi: num('thdi') / 100 });
+  $('rez').innerHTML = rezCiz(t) + (ha && num('Gh') > 0 ? `<div class="kontroller">
+      ${k('Temel bileşen akımı', `${say(ha.I1, 0)} A`, `I1 = P / (√3 · 400 · cos φ2) = ${say(P, 1)} kW / (0,693 · ${say(cos2, 2)})`)}
+      ${k('Harmonik akım', `${say(ha.Ih, 0)} A`, `harmonik yük ${say(num('Gh'), 0)} kVA → ${say(ha.I1h, 0)} A × THDi %${say(num('thdi'), 0)}`)}
+      ${k('Toplam yük akımı', `${say(ha.Irms, 0)} A`, `Irms = √(I1² + Ih²) = I1 × ${say(ha.oran, 3)} · tesis THDi ≈ ${yuzde(ha.thdTesis)}`, ha.thdTesis > 0.2 ? 'kotu' : '')}
+    </div><p class="ipucu">Harmonikli yükler için toplam yük akımı (Proje Hazırlama Yönetmeliği). Ana şalter, kablo ve trafo bu akıma göre kontrol edilir. Irms = I1 · √(1 + THDi²) (Schneider EIG). THDi: hız kontrol cihazı DC şoklu / hat reaktörlü ≈ %30–40, şoksuz %80–115; kesin değer ölçümden ya da cihaz kataloğundan.</p>` : '');
 
   // ---- tek hat şeması
   $('sema').innerHTML = sema(t);
@@ -403,8 +409,10 @@ function hesapla() {
   if (t.tr) ad.push(['4. Trafo sabit kademesi', `${t.tr.Sn} kVA trafo boşta ≈ ${say(t.tr.bos, 1)} kVAr (tam yükte ${say(t.tr.tam, 1)}) → sabit ${kv(t.sabit)} kVAr (aşağı yuvarlanır)`]);
   ad.push([`${t.tr ? 5 : 4}. Harmonik değerlendirmesi`, t.h.Sref > 0 ? `Gh / ${t.h.referans === 'trafo' ? 'Sn (trafo)' : 'S (kurulu güç, trafosuz AG abonesi)'} = ${say(num('Gh'), 0)} / ${say(t.h.Sref, 0)} = ${yuzde(t.h.oran)} → ${t.h.ad}${t.h.fr ? `; fr = 50 / √p = ${say(t.h.fr, 0)} Hz` : ''}` : `Trafo ve kurulu güç girilmedi; standart kondansatör kabul edildi.`]);
   ad.push([`${t.tr ? 6 : 5}. Kademe akımı ve koruma`, `In = Q / (√3 · 400) · ilk kademe ${kv(t.plan.q1)} kVAr → ${say(t.kademeler[0] ? t.kademeler[0].In : 0, 1)} A; koruma ${say(t.h.kKoruma, 2)} × In`]);
+  if (ha && num('Gh') > 0) ad.push(['Harmonikli toplam yük akımı', `I1 = ${say(ha.I1, 1)} A; Ih = ${say(ha.I1h, 1)} × ${say(num('thdi') / 100, 2)} = ${say(ha.Ih, 1)} A; Irms = √(I1² + Ih²) = ${say(ha.Irms, 1)} A`]);
   if (t.rez) ad.push([`${t.tr ? 7 : 6}. Rezonans frekansı`, `Ssc = ${t.rez.uk ? `${say(num('trafoKVA'), 0)} / ${say(t.rez.uk, 2)}` : 'girilen'} = ${say(t.rez.Ssc, 0)} kVA; h0 = √(Ssc / Q): Q = ${kv(t.rez.noktalar[t.rez.noktalar.length - 1].Q)} kVAr → h0 = ${say(t.rez.h0min, 2)} (${say(t.rez.f0min, 0)} Hz) … Q = ${kv(t.rez.noktalar[0].Q)} kVAr → h0 = ${say(t.rez.h0max, 2)}${t.rez.korunmali ? `; reaktörlü kademe, seri ayar frekansı ${say(50 * t.rez.ayar, 0)} Hz (h = ${say(t.rez.ayar, 2)})` : ''}`]);
   ad.push([`${t.tr ? (t.rez ? 8 : 7) : (t.rez ? 7 : 6)}. Kurulu batarya ile`, `tüm kademeler devredeyken cos φ ≈ ${t.cos2Gercek ? say(t.cos2Gercek, 3) : '—'}${t.kapasitifeGecer ? ' (kapasitif)' : ''}; röle hedefe göre kademe seçer.`]);
+  ad.forEach((x, i) => { x[0] = `${i + 1}. ` + x[0].replace(/^\d+\.\s*/, ''); });
   $('adimlar').innerHTML = ad.map(([b, f]) => `<div class="adim"><b>${b}</b><div class="formul">${f}</div></div>`).join('');
   sonRapor = ['KOMPANZASYON HESABI', ...ad.map(([b, f]) => b + '\n   ' + f), '', 'KADEMELER: ' + parca.map(p => `${p[2]} ${kv(p[1])}`).join(', '),
     `Kondansatör: ${t.h.ad}`, `Akım trafosu: ${t.at ? t.at.ad : '-'}`, `Pano besleme: ${kv(t.Qtop)} kVAr, In ${say(t.ana.In, 1)} A, koruma ${t.ana.sigorta} A, kablo Cu ${t.ana.kablo.cu} mm²`].join('\n');

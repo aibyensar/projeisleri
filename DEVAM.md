@@ -276,6 +276,8 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    prizEsz), rezonans hesabı (KOMP.rezonans: h0 = √(Ssc/Q), Ssc = Sn/uk, tipik uk %4/%6, bütün kademe birleşimleri, ±%7 bandı; uyarı yalnız
    5./7. (baskın 3 ise 3.)), trafo uk ve şebeke Ssc girişleri, rezonans SVG ekseni. Yeni sayfa: araclar/kompanzasyon-rehber.html
    (ezber kartı + 8 bölüm soru-cevap, kaynaklı). Doğrulama: EIG örneği 630 kVA %6 350 kVAr → h0 5,48 (kaynak 5,5).
+   Son ek: harmonikli toplam yük akımı (KOMP.harmonikAkim, Irms = I1·√(1+THDi²), THDi girişi varsayılan %40); hesap adımları otomatik
+   numaralanıyor. Kompanzasyon aracı tamamlandı; kullanıcı onayıyla main'e birleştirildi (8 Kasım 2026).
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
