@@ -202,6 +202,14 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    web: okunan değerler ve elle girilen kutular (change) düzeltilir, faz değişince hepsi yeniden yazılır; bhp-cizim kesiciEtiket(k, faz).
    GDZ kontrolü: bütün sayfalar değil, yalnız gerekli kısımlar (gdzKirpBul: bilgi tablosu etiketleri, enerji noktası + alt satırı,
    AG bağlantı hattı satırı + başlığı; 70 pt'den uzak kümeler ayrı parça) alt alta tek resim; yazı yoksa 1. sayfa.
+1n. (8 Kasım 2026) Ana kesici: her kesiciye "tek hat yazısı — elle" (k1yazi/k2yazi; satırlar "/" ile; doluysa aynen basılır) ve tür
+   "Diğer (yazdığım gibi)" (diger: düzeltme yok, devre kesici sembolü). Güç tablosu altı: TOPLAM KURULU = kapaktaki (antet) kurulu, BAĞLANTI
+   = talep (kapak). Zip/klasör/DXF adı "MÜŞTERİ ADI BHP" (mal sahibi büyük harf; yoksa BHP-başvuruno), resimler uydu.jpg / vaziyet.jpg
+   (zip adları UTF-8 bayraklı; Windows 10+ doğru açar). Montaj detayı kullanıcının onaylı detayına göre: BETON KAİDE YOK; box kendi alt
+   çerçevesinde, pano dolu pano ayağında, kazık "DAL.GAL.TOP.KAZ. L=2m 65x65x7 mm" (box işinde iki uçta, direkte pano tarafında);
+   direkte "beton temel" yok. Vaziyet planında enerji alınan box/direk adı 3 mm kalın etiket. DXF denetimi (ezdxf audit) 0 hata.
+   YKŞ sembolü: kullanıcı "tutturamamışsın" dedi; fotoğraf elde yok → kullanıcıdan sembolün DXF'i (WBLOCK) istendi, gelince blok olarak
+   birebir konacak.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

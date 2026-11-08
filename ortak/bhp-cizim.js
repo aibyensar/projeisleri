@@ -491,7 +491,7 @@
       const dolu = [];
       const kesisir = (r, q) => !(r[2] < q[0] || r[0] > q[2] || r[3] < q[1] || r[1] > q[3]);
       const etiket = (p, satirlar, yon) => {
-        const h = 2.4, w = Math.max(...satirlar.map(s => genislik(s, h))) + 3, hh = satirlar.length * h * 1.45 + 2;
+        const h = 3.0, w = Math.max(...satirlar.map(s => genislik(s, h))) + 3, hh = satirlar.length * h * 1.45 + 2;   // okunaklı: 3 mm
         const adaylar = [[6, 5], [6, -5 - hh], [-6 - w, 5], [-6 - w, -5 - hh], [6, 14], [-6 - w, 14], [6, -14 - hh], [-6 - w, -14 - hh], [-w / 2, 9], [-w / 2, -9 - hh]];
         if (yon < 0) adaylar.sort((m, n) => m[0] - n[0]);
         let sec = null;
@@ -512,14 +512,15 @@
       // işaret noktalarının çevresi de dolu sayılır (etiket sembolün üstüne binmesin)
       for (const q of [a, b]) dolu.push([q[0] - 5, q[1] - 4, q[0] + 5, q[1] + 4]);
       const sol = a[0] < b[0];
-      etiket(a, [v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Bağlantı noktası: AG box (GDZ)' : 'Bağlantı noktası: AG direği (GDZ)'], sol ? -1 : 1);
+      // enerji alınan box / direk adı (GDZ'deki "Enerji Alınacak Şebeke Noktası")
+      etiket(a, [v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Enerji alınan AG box (GDZ)' : 'Enerji alınan AG direği (GDZ)'], sol ? -1 : 1);
       etiket(b, ['SAYAÇ PANOSU', `Ada ${v.ada} / Parsel ${v.parsel}`], sol ? 1 : -1);
       const ort = yol[Math.floor(yol.length / 2) - (yol.length % 2 ? 0 : 1)], son = yol[Math.floor(yol.length / 2)];
       const mx = (ort[0] + son[0]) / 2, my = (ort[1] + son[1]) / 2;
       etiket([mx, my], [`${v.kablo.yazi}`, `L = ${sayiYaz(v.L)} m, YERALTI`], sol ? 1 : -1);
     } else {
       // işaretlenmediyse: resmin köşesine bilgi kutusu
-      const h = 2.6, s = [v.baglanti === 'box' ? 'Bağlantı noktası (AG box):' : 'Bağlantı noktası (AG direği):', v.kaynakAd || '',
+      const h = 3.0, s = [v.baglanti === 'box' ? 'Enerji alınan AG box (GDZ):' : 'Enerji alınan AG direği (GDZ):', v.kaynakAd || '',
         `Kablo: ${v.kablo.yazi}, L = ${sayiYaz(v.L)} m yeraltı`, `Ada ${v.ada} / Parsel ${v.parsel}`];
       const w = Math.max(...s.map(t => genislik(t, h))) + 4, hh = s.length * h * 1.45 + 3;
       c.kutu(x0 + 2, y0 + 2, x0 + 2 + w, y0 + 2 + hh, K);
