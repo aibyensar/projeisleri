@@ -342,29 +342,20 @@ class Isleyici:
         ad = f"{buyuk(is_['elektrikci'])} – {is_['proje']}"
         if masaustu_klasoru and not eklenen:
             self.bildir('Evrak zaten var', f'{ad}: gönderilen evrak işte zaten vardı')
-            self.eposta(f'{ad}: evrak zaten vardı', [f'{ad} işine gönderilen evrakın hepsi işte zaten vardı; yeni dosya eklenmedi.'])
+            self.eposta(f'{ad} · evrak zaten vardı', ['Gönderilen evrak bu işte zaten vardı, yeni dosya eklenmedi.'])
         elif masaustu_klasoru:
             bilgi_yaz(masaustu_klasoru / YENI_ALT, is_, sadece=eklenen)
             self.bildir('Masaüstündeki işe yeni evrak', f"{ad}: {len(eklenen)} evrak '{YENI_ALT}' klasörüne kondu")
-            self.eposta(f'{ad}: masaüstündeki işe {len(eklenen)} yeni evrak',
-                        [f'İş masaüstündeyken yeni evrak geldi. Klasördeki "{YENI_ALT}" alt klasörüne kondu.', ''] + self._evrak_satirlari(eklenen))
+            self.eposta(f'{ad} · {len(eklenen)} yeni evrak (masaüstündeki iş)',
+                        [f'Masaüstündeki iş klasörüne, "{YENI_ALT}" içine kondu.'] + self._bulanik_satiri(eklenen))
         else:
             tumu_yap(k, is_)
             bilgi_yaz(k, is_)
             k = self.adlandir(is_, k) if not k.name.startswith('.') else self._ilk_ad(is_, k)
             durum = 'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'
             self.bildir('Evrak işlendi', f"{ad}: {len(eklenen)} evrak · {durum}" + (' · KONTROL' if is_['uyarilar'] else ''))
-            satir = [f'Durum: {("ACİL · " if is_["acil"] else "") + ("EVRAK TAMAM — çizime hazır" if is_["tamam"] else "EVRAK EKSİK — bekliyor")}',
-                     f"Proje türü: {is_['tur']}", f'Klasör: Çizilecek Projeler\\{k.name}', '', f'Bu gönderimde {len(eklenen)} evrak:']
-            satir += self._evrak_satirlari(eklenen)
-            if is_['uyarilar']:
-                satir += ['', 'KONTROL EDİLECEKLER:'] + [f'  • {u}' for u in is_['uyarilar']]
-            if any(e.get('uyari', '').startswith('bulanık') for e in eklenen):
-                satir += ['', 'Bulanık evrak var: müşteriye gönderilecek hazır mesaj iş klasöründeki _bilgi.txt dosyasında.']
-            gec = [x for x in self.gecikenler(self.kuyruktaki_isler()) if x['id'] != is_['id']]
-            if gec:
-                satir += ['', f'{self.a["gecikme_gun"]} günü geçen işler:'] + [f"  • {buyuk(x['elektrikci'])} – {x['proje']}" for x in gec]
-            konu = f"{ad}: {len(eklenen)} evrak · {'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'}" + (' · KONTROL' if is_['uyarilar'] else '') + (' · ACİL' if is_['acil'] else '')
+            satir = [f"{len(eklenen)} evrak geldi, Çizilecek Projeler'e kondu."] + self._bulanik_satiri(eklenen)
+            konu = f"{ad} · {len(eklenen)} evrak · {'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'}" + (' · ACİL' if is_['acil'] else '')
             self.eposta(konu, satir)
 
         arsiv = benzersiz(self.kok / ARSIV / p.name)
@@ -372,6 +363,11 @@ class Isleyici:
         self._boyutlar.pop(p.name, None)
         self.kayit_yaz(kayitlar)
         self.kayit.kaydet()
+
+    @staticmethod
+    def _bulanik_satiri(evraklar):
+        n = sum(1 for e in evraklar if e.get('uyari'))
+        return [f'{n} evrak bulanık olabilir, kontrol edin (müşteriye hazır mesaj _bilgi.txt dosyasında).'] if n else []
 
     @staticmethod
     def _evrak_satirlari(evraklar):
@@ -428,7 +424,7 @@ class Isleyici:
         (hedef / 'NEDEN.txt').write_text(neden + '\n', encoding='utf-8')
         self._boyutlar.pop(p.name, None)
         self.bildir('Evrak kontrol bekliyor', f'Bir paket "8-Kontrol Et" klasörüne kondu: {neden}')
-        self.eposta('Evrak kontrol bekliyor', [f'Bir paket "8-Kontrol Et" klasörüne kondu.', f'Sebep: {neden}', f'Paket: {p.name}'])
+        self.eposta('1 gönderim kontrol bekliyor', [f'"8-Kontrol Et" klasörüne kondu. Sebep: {neden}'])
 
     # ---------- kayıt ve liste
     def kayit_yaz(self, satirlar):

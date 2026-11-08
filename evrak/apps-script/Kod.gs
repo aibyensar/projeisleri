@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.3 (e-posta özeti, sabah özeti, telefon durumu). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.4 (sade e-postalar). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -117,7 +117,7 @@ function bekleyenler() {
   }
   isler.sort((a, b) => b.gun - a.gun);
   const geciken = isler.filter(x => x.gun >= GECIKME_GUN).length;
-  const satir = x => (x.gun >= GECIKME_GUN ? '⚠ ' : '   ') + x.gun + ' gündür: ' + x.is + (x.durum ? ' (' + x.durum + ')' : '');
+  const satir = x => x.is + ' · ' + x.gun + ' gün' + (x.durum ? ' · ' + x.durum : '') + (x.gun >= GECIKME_GUN ? ' · GECİKİYOR' : '');
   return { isler: isler, geciken: geciken, satirlar: isler.map(satir),
     kisa: isler.length ? isler.length + ' iş bekliyor' + (geciken ? ', ' + geciken + "'si " + GECIKME_GUN + ' günü geçti' : '') : 'Bekleyen iş yok' };
 }
@@ -138,35 +138,11 @@ function sabahOzeti() {
   const alici = aliciBul();
   if (!alici) { console.error('Alıcı adresi bulunamadı: ALICI satırına e-posta adresini yazın.'); return; }
   if (!d.isler.length) {
-    MailApp.sendEmail({ to: alici, subject: 'AGY Evrak — Bugün bekleyen iş yok', name: 'AGY Evrak',
-      body: 'Çizilecek Projeler — ' + Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy') + '\n\nBekleyen iş yok; liste boş.' });
+    MailApp.sendEmail({ to: alici, subject: 'AGY Evrak — Bekleyen iş yok', body: 'Bugün çizilecek iş yok.', name: 'AGY Evrak' });
     return;
   }
-  const konu = 'AGY Evrak — Bugün bekleyen işler: ' + d.isler.length + (d.geciken ? ' (' + d.geciken + "'si gecikiyor)" : '');
-  const metin = ['Çizilecek Projeler — ' + Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy'), ''].concat(d.satirlar)
-    .concat(['', '⚠ = ' + GECIKME_GUN + ' günü geçen iş.']).join('\n');
-  MailApp.sendEmail({ to: alici, subject: konu, body: metin, name: 'AGY Evrak' });
-}
-
-function bildirimGonder() {
-  const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
-  const k = klasorAl(kok, BILDIRIM);
-  const alici = aliciBul();
-  if (!alici) { console.error('Alıcı adresi bulunamadı: Kod.gs içindeki ALICI satırına e-posta adresini yazın.'); return; }
-  const dosyalar = [];
-  const it = k.getFiles();
-  while (it.hasNext()) { const f = it.next(); if (/\.json$/i.test(f.getName())) dosyalar.push(f); }
-  dosyalar.sort((a, b) => a.getName() < b.getName() ? -1 : 1);
-  dosyalar.slice(0, 40).forEach(f => {
-    try {
-      const b = JSON.parse(f.getBlob().getDataAsString('UTF-8'));
-      MailApp.sendEmail({ to: alici, subject: String(b.konu || 'AGY Evrak'), body: String(b.metin || ''), name: 'AGY Evrak' });
-      f.setTrashed(true);
-    } catch (hata) {
-      console.error('bildirim gönderilemedi: ' + f.getName() + ' ' + hata);
-      if ((Date.now() - f.getDateCreated().getTime()) > 3 * 86400000) f.setTrashed(true);   // 3 günden eski bozuk dosya
-    }
-  });
+  const konu = 'AGY Evrak — ' + d.isler.length + ' iş bekliyor' + (d.geciken ? ' (' + d.geciken + ' gecikiyor)' : '');
+  MailApp.sendEmail({ to: alici, subject: konu, body: d.satirlar.join('\n'), name: 'AGY Evrak' });
 }
 
 // ---------- Yardımcılar ----------
