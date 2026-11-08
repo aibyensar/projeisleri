@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<style>
+  :root { --zemin: #f4f6fa; --kart: #fff; --yazi: #1a2233; --soluk: #5b6678; --cizgi: #d5dbe5; --ana: #1f3a6d; --iyi: #1b8a4b; --kotu: #c0392b; --vurgu: #f28c28; }
+  @media (prefers-color-scheme: dark) { :root { --zemin: #10151f; --kart: #182030; --yazi: #e6ebf3; --soluk: #9aa5b8; --cizgi: #2c3850; --ana: #5b8fe0; --iyi: #3fbf78; --kotu: #ff6b5b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--zemin); color: var(--yazi); font: 16px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 16px 16px 40px; }
+  h1 { font-size: 1.25rem; margin: 4px 0 2px; } .alt { color: var(--soluk); font-size: .9rem; margin: 0 0 14px; }
+  .kart { background: var(--kart); border: 1px solid var(--cizgi); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+  label { display: block; font-size: .85rem; color: var(--soluk); font-weight: 600; margin: 10px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], textarea { width: 100%; font: inherit; font-size: 17px; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); }
+  textarea { min-height: 64px; resize: vertical; }
+  .cipler { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cip { font: inherit; font-size: .88rem; padding: 7px 11px; border-radius: 99px; border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); text-align: left; }
+  .cip b { font-weight: 600; }
+  .anahtar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--cizgi); }
+  .anahtar:first-of-type { border-top: 0; padding-top: 0; }
+  .anahtar span { font-weight: 600; } .anahtar small { display: block; color: var(--soluk); font-weight: 400; font-size: .8rem; }
+  .anahtar input { width: 52px; height: 30px; accent-color: var(--ana); }
+  #acil:checked + .renk { color: var(--vurgu); }
+  button.gonder { width: 100%; font: inherit; font-size: 18px; font-weight: 700; padding: 14px; border: 0; border-radius: 12px; background: var(--ana); color: #fff; }
+  button.gonder:disabled { opacity: .6; }
+  .mesaj { padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; font-weight: 600; }
+  .mesaj.iyi { background: color-mix(in srgb, var(--iyi) 15%, transparent); color: var(--iyi); }
+  .mesaj.kotu { background: color-mix(in srgb, var(--kotu) 15%, transparent); color: var(--kotu); }
+</style>
+</head>
+<body>
+<main>
+  <h1>AGY Evrak</h1>
+  <p class="alt" id="alt"></p>
+  <div id="mesaj"></div>
+  <form id="f" autocomplete="off">
+    <div class="kart" id="sonKart" hidden>
+      <label>Son işler (dokun, doldursun)</label>
+      <div class="cipler" id="cipler"></div>
+    </div>
+    <div class="kart">
+      <label for="elektrikci">Elektrikçi adı</label>
+      <input type="text" id="elektrikci" list="lElektrikci" required>
+      <label for="proje">Proje adı</label>
+      <input type="text" id="proje" list="lProje" required>
+      <label for="tur">Proje türü</label>
+      <input type="text" id="tur" list="lTur" required>
+      <datalist id="lElektrikci"></datalist><datalist id="lProje"></datalist><datalist id="lTur"></datalist>
+    </div>
+    <div class="kart">
+      <div class="anahtar"><span class="renk">ACİL<small>İş listenin en üstüne çıkar</small></span><input type="checkbox" id="acil"></div>
+      <div class="anahtar"><span>Evrak tamam<small>Bütün evrak geldiyse işaretle; iş HAZIR olur</small></span><input type="checkbox" id="tamam"></div>
+    </div>
+    <div class="kart">
+      <label for="not">Not (isteğe bağlı)</label>
+      <textarea id="not"></textarea>
+    </div>
+    <button class="gonder" id="gonder" type="submit">Kaydet</button>
+  </form>
+</main>
+<script>
+  const DURUM = <?!= durum ?>, ISLER = <?!= isler ?>, TURLER = <?!= turler ?>;
+  const $ = id => document.getElementById(id);
+  const mesaj = (t, iyi) => { $('mesaj').innerHTML = '<div class="mesaj ' + (iyi ? 'iyi' : 'kotu') + '">' + t + '</div>'; };
+  const kacis = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const tekil = a => [...new Set(a.filter(Boolean))];
+  const doldurListe = (id, a) => { $(id).innerHTML = tekil(a).map(v => '<option value="' + kacis(v) + '">').join(''); };
+
+  if (DURUM.yok) {
+    $('alt').textContent = 'Paket: ' + DURUM.paket;
+    mesaj('Bu paket bulunamadı. Dosyalar gönderilememiş olabilir; kestirmeyi yeniden çalıştırın.', false);
+    $('f').hidden = true;
+  } else {
+    $('alt').textContent = DURUM.dosyaSayisi + ' evrak alındı · paket ' + DURUM.paket;
+    doldurListe('lElektrikci', ISLER.map(x => x.elektrikci));
+    doldurListe('lProje', ISLER.map(x => x.proje));
+    doldurListe('lTur', TURLER.concat(ISLER.map(x => x.tur)));
+    if (ISLER.length) {
+      $('sonKart').hidden = false;
+      $('cipler').innerHTML = ISLER.slice(0, 6).map((x, i) => '<button type="button" class="cip" data-i="' + i + '"><b>' + kacis(x.elektrikci) + '</b> – ' + kacis(x.proje) + '</button>').join('');
+      $('cipler').addEventListener('click', e => {
+        const b = e.target.closest('[data-i]'); if (!b) return;
+        const x = ISLER[+b.dataset.i]; $('elektrikci').value = x.elektrikci; $('proje').value = x.proje; $('tur').value = x.tur;
+      });
+    }
+    const b = DURUM.bilgi;
+    if (b) {                                         // daha önce kaydedilmiş: düzeltme
+      $('elektrikci').value = b.elektrikci; $('proje').value = b.proje; $('tur').value = b.tur;
+      $('acil').checked = !!b.acil; $('tamam').checked = !!b.evrakTamam; $('not').value = b.not || '';
+      mesaj('Bu paketin bilgisi daha önce kaydedildi. Değiştirip yeniden kaydedebilirsiniz.', true);
+    }
+  }
+
+  $('f').addEventListener('submit', e => {
+    e.preventDefault();
+    $('gonder').disabled = true; $('gonder').textContent = 'Kaydediliyor…';
+    const veri = { elektrikci: $('elektrikci').value, proje: $('proje').value, tur: $('tur').value, acil: $('acil').checked, tamam: $('tamam').checked, not: $('not').value };
+    google.script.run
+      .withSuccessHandler(r => {
+        mesaj('✓ Kaydedildi: ' + r.dosyaSayisi + ' evrak → ' + kacis(veri.elektrikci) + ' – ' + kacis(veri.proje) + (veri.tamam ? ' · EVRAK TAMAM' : ''), true);
+        $('gonder').disabled = false; $('gonder').textContent = 'Düzelt ve yeniden kaydet';
+        window.scrollTo(0, 0);
+      })
+      .withFailureHandler(err => {
+        mesaj('Kaydedilemedi: ' + kacis(err.message || err), false);
+        $('gonder').disabled = false; $('gonder').textContent = 'Kaydet';
+      })
+      .bilgiKaydet(DURUM.paket, veri);
+  });
+</script>
+</body>
+</html>
