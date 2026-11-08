@@ -1,0 +1,54 @@
+name: Evrak İşleyici (Windows programı)
+
+on:
+  push:
+    paths:
+      - 'evrak/isleyici/**'
+      - '.github/workflows/evrak-isleyici.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  derle:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
+    defaults:
+      run:
+        working-directory: evrak/isleyici
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Bağımlılıklar
+        run: pip install -r requirements.txt
+      - name: Görüntü ve akış denemesi
+        shell: bash
+        run: |
+          python -c "import sys; sys.path.insert(0,'.'); import goruntu, islem, ayar, pencere; print('modüller tamam', ayar.SURUM)"
+          python test/ornek_uret.py "$RUNNER_TEMP/ornek"
+          python test/akis_dene.py "$RUNNER_TEMP/ornek"
+      - name: Derle
+        run: |
+          python simge_yap.py
+          pyinstaller --noconfirm --onefile --windowed --name AGY-Evrak --icon simge.ico --hidden-import pystray._win32 agy_evrak.py
+      - name: Sürüm kontrolü
+        shell: bash
+        run: ls -la dist && test -s dist/AGY-Evrak.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AGY-Evrak
+          path: evrak/isleyici/dist/AGY-Evrak.exe
+      - name: Yayın (en son sürüm)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SURUM=$(python -c "import ayar; print(ayar.SURUM)")
+          gh release delete evrak-isleyici --yes --cleanup-tag || true
+          gh release create evrak-isleyici dist/AGY-Evrak.exe --target "${{ github.sha }}" --prerelease \
+            --title "AGY Evrak İşleyici $SURUM" --notes "Windows programı. Kurulum: evrak/KURULUM.md"
