@@ -8,8 +8,9 @@
 - AutoCAD 2022 (tam sürüm) kullanır. Proje işlerini (BHP aracı) yalnız bilgisayardan yapar; telefon düzeni gerekmez.
 
 ## Nerede ne var
-- Depo: `aibyensar/projeisleri` (eski adı deneme). Bütün iş **`claude/laughing-dijkstra-5c7tbv`** dalında, **main'e henüz birleştirilmedi**.
-  Yeni oturumda kullanıcıya sorup bu dalı main'e birleştirin (PR açıp onayla birleştirme).
+- Depo: `aibyensar/projeisleri` (eski adı deneme). İş **`claude/laughing-dijkstra-5c7tbv`** dalında yapılır; kullanıcı "birleştir"
+  deyince main'e alınır (8 Kasım 2026'da birleştirildi).
+- Ana sayfa kartları (index.html) araç durumu değişince güncellenmeli ve ana sayfa artifact'ına da yayınlanmalı (BHP "Hazır").
 - Yayındaki web uygulaması (claude.ai artifact, özel): https://claude.ai/artifact/7ozTZyAZtsX2Yng1KXgvk5
   Yayın kopyası oturumun geçici klasöründeydi; yeni oturumda depodan aynı yapıyla yeniden kurulup aynı URL'ye yayınlanmalı
   (`index.html` artifact iskeletine uygun: doctype/html/head/body etiketsiz; diğer dosyalar `files` ile).
