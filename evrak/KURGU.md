@@ -14,7 +14,7 @@ Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
    - `YENİ EVRAK` — kullanıcının açmadığı yeni evrak eklendi (kullanıcı klasörü açıp içindeki `_YENİ` alt klasörünü
      boşaltınca ya da program yeni evrakı yerine koyduktan 1 gün sonra kalkar — denemede seçilecek).
    Bulanık evrak için "yeniden gönderin" hazır mesajı **kalır**.
-   Klasör adı: `[! ACİL · ]2026-11-08 · ELEKTRİKÇİ – Proje adı · Proje türü[ · KONTROL]`.
+   Klasör adı (5. maddeyle): `<0 ACİL | 1 HAZIR | 2 BEKLİYOR> · 2026-11-08 · ELEKTRİKÇİ – Proje adı · Proje türü[ · KONTROL][ · YENİ EVRAK]`.
 2. **Çalışma akışı:** kullanıcı işi `Çizilecek Projeler`den **masaüstüne** alır, masaüstünde çizer, bitince **kendi
    klasörüne** koyar. Program masaüstündeki ve kendi klasöründeki dosyalara **dokunmaz**; tek istisna:
    - **Çizim sürerken aynı işe yeni evrak gelirse** (sık olur): program masaüstünde (yalnız ilk seviyede) `_bilgi.txt`
@@ -24,6 +24,14 @@ Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
    İş kimliği gizli dosyada değil `_bilgi.txt`nin ilk satırında durur (gizli dosyalar Drive eşitlemesinde ya da
    taşımada kaybolabilir).
 3. **Saklama:** `9-Arşiv`deki orijinaller **1 yıl**; Drive dolunca kullanıcı kendisi siler. Program silmez.
+5. **Evrak tamamlanması kullanıcının onayıyla** (kullanıcı: "bütün gerekli evraklar tamam olmadan proje çizilmez";
+   seçim: "sadece senin onayın"). Yeni iş `EVRAK BEKLENİYOR` durumuyla açılır. Kestirme her gönderimde
+   **"Evrak tamam mı?"** diye sorar (Evet / Hayır, varsayılan Hayır); **Evet** denince iş `HAZIR` olur. Program tek başına
+   HAZIR demez. Sonradan tamamlandığı anlaşılırsa PC'de klasör adının sonundaki `EVRAK BEKLENİYOR` → `HAZIR` elle
+   değiştirilebilir, program bunu kabul eder. HAZIR bir işe yeni evrak gelirse durum `HAZIR · YENİ EVRAK` olur
+   (HAZIR'dan düşmez; kullanıcı bakar). Sıra: ACİL, sonra HAZIR'lar en eskiden, sonra EVRAK BEKLENİYOR'lar —
+   ad sırasının bunu sağlaması için durum klasör adının **başında**: `1 HAZIR · …`, `2 BEKLİYOR · …` (ACİL: `0 ACİL · …`).
+   Durum yalnız değişince ad güncellenir (açık dosya varsa ertelenir).
 4. Uygulama ayrıntısı: şirket Drive'ı PC'de `H:\Drive'ım\AGY Evrak` (Drive masaüstü uygulaması, 2. hesap).
 
 ## 0. Kullanıcı kararları (8 Kasım 2026)
