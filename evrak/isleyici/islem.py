@@ -16,6 +16,7 @@ import time
 from pathlib import Path
 
 import goruntu
+import okuma
 
 log = logging.getLogger('evrak')
 
@@ -317,7 +318,9 @@ class Isleyici:
             else:
                 k = masaustu_klasoru / YENI_ALT
 
-        ozetler = {e['ozet'] for e in is_['evraklar'][is_.get('evraklar_onceki', 0):]}   # revizyonda yalnız bu turun evrakı
+        ozetler = set()                                                   # revizyonda yalnız bu turun evrakı
+        for e in is_['evraklar'][is_.get('evraklar_onceki', 0):]:
+            ozetler.add(e['ozet']); ozetler.update(e.get('ek_ozetler', []))
         eklenen, kayitlar = [], []
         for f in dosyalar:
             oz = ozet(f)
@@ -334,6 +337,9 @@ class Isleyici:
                 is_['uyarilar'].append(f"{e['ad']}: {e['uyari']}")
             kayitlar.append({'tarih': simdi().isoformat(), 'is': is_['id'], 'olay': 'evrak eklendi', 'dosya': e['tur']})
 
+        if len(eklenen) > 1:
+            self.ayni_turu_birlestir(k, is_, eklenen)
+        self.okunanlari_denetle(is_)
         if eklenen:
             is_['son_evrak'] = paket_zamani.isoformat()
             if mevcut_klasor:
@@ -363,6 +369,16 @@ class Isleyici:
         self._boyutlar.pop(p.name, None)
         self.kayit_yaz(kayitlar)
         self.kayit.kaydet()
+
+    @staticmethod
+    def okunanlari_denetle(is_):
+        """Evraklardan okunan ada/parsel farklıysa KONTROL uyarısı."""
+        ada_parsel = {(e['okunan'].get('ada'), e['okunan'].get('parsel')) for e in is_['evraklar']
+                      if e.get('okunan', {}).get('ada') and e.get('okunan', {}).get('parsel')}
+        if len(ada_parsel) > 1:
+            u = 'evraklarda farklı ada/parsel okundu: ' + ', '.join(f'{a}/{p}' for a, p in sorted(ada_parsel))
+            if u not in is_['uyarilar']:
+                is_['uyarilar'] = [x for x in is_['uyarilar'] if not x.startswith('evraklarda farklı ada/parsel')] + [u]
 
     @staticmethod
     def _bulanik_satiri(evraklar):
@@ -400,7 +416,10 @@ class Isleyici:
         if uz in goruntu.RESIM_UZANTILARI:
             try:
                 im, b = goruntu.iyilestir(goruntu.oku(f), self.a.get('kalite', 'tam'))
-                hedef = benzersiz(k / f'{ad}.pdf')
+                metin = okuma.resim_metni(im)
+                tur, _ = okuma.tur_bul(metin, f.name)
+                e.update(evrak_turu=tur, okunan=okuma.bilgi_cikar(metin))
+                hedef = benzersiz(k / f'{tur or ad}.pdf')
                 goruntu.pdf_yap([im], hedef, self.a.get('jpeg_kalite', 85))
                 e.update(ad=hedef.name, aciklama='fotoğraftan tarandı' + ('' if b['kirpildi'] else ', kenar bulunamadı'),
                          bulaniklik=b['bulaniklik'])
@@ -412,10 +431,51 @@ class Isleyici:
                 shutil.copy2(f, hedef)
                 e.update(ad=hedef.name, uyari=f'resim işlenemedi ({type(hata).__name__}), olduğu gibi kondu')
         else:
-            hedef = benzersiz(k / (ad + uz))
+            metin = ''
+            if uz == '.pdf':
+                metin = okuma.pdf_metni(f)
+                if len(metin.strip()) < 40:                    # taranmış PDF: ilk sayfayı oku
+                    sayfa = okuma.pdf_ilk_sayfa_resmi(f)
+                    metin = okuma.resim_metni(sayfa) if sayfa is not None else ''
+            tur, _ = okuma.tur_bul(metin, f.name)
+            e.update(evrak_turu=tur, okunan=okuma.bilgi_cikar(metin))
+            hedef = benzersiz(k / ((tur or ad) + uz))
             shutil.copy2(f, hedef)
             e['ad'] = hedef.name
         return e
+
+    def ayni_turu_birlestir(self, k: Path, is_, eklenen):
+        """Aynı gönderimde aynı türden birden çok PDF (ör. tapunun 1. ve 2. sayfası) tek PDF'te birleşir."""
+        from pypdf import PdfReader, PdfWriter
+        gruplar = {}
+        for e in eklenen:
+            if e.get('evrak_turu') and e['ad'] and e['ad'].lower().endswith('.pdf') and (k / e['ad']).exists():
+                gruplar.setdefault(e['evrak_turu'], []).append(e)
+        for tur, liste in gruplar.items():
+            if len(liste) < 2:
+                continue
+            try:
+                yazar = PdfWriter()
+                for e in liste:
+                    for sayfa in PdfReader(str(k / e['ad'])).pages:
+                        yazar.add_page(sayfa)
+                gecici = k / f'.{liste[0]["ad"]}.tmp'
+                with open(gecici, 'wb') as fp:
+                    yazar.write(fp)
+                ilk = liste[0]
+                for e in liste[1:]:
+                    (k / e['ad']).unlink()
+                    ilk.setdefault('ek_ozetler', []).append(e['ozet'])
+                    ilk.setdefault('ek_kaynaklar', []).append(e['kaynak'])
+                    if e.get('uyari') and not ilk.get('uyari'):
+                        ilk['uyari'] = e['uyari']
+                    is_['evraklar'].remove(e)
+                    eklenen.remove(e)
+                os.replace(gecici, k / ilk['ad'])
+                ilk['sayfa'] = len(liste)
+                ilk['aciklama'] = f'{len(liste)} sayfa birleştirildi'
+            except Exception:
+                log.exception('aynı tür birleştirilemedi')
 
     # ---------- bilgisiz / bozuk paket
     def kontrole_tasi(self, p: Path, neden: str):
@@ -532,6 +592,13 @@ def bilgi_yaz(k: Path, is_, sadece=None):
         s.append(f"REVİZYON {is_['revizyon']}: önceki evrak kendi proje klasörünüzde.")
     if sadece is not None:
         s.append('Bu klasördeki evrak, iş masaüstündeyken geldi.')
+    okunan = {}
+    for e in evraklar:
+        for a, v in (e.get('okunan') or {}).items():
+            okunan.setdefault(a, v)
+    if okunan:
+        s.append('Evraklardan okunan: ' + ' · '.join(f'{ {"ada": "Ada", "parsel": "Parsel", "il_ilce": "İl/İlçe", "mahalle": "Mahalle"}.get(a, a)} {v}'
+                                                    for a, v in okunan.items()) + '  (kontrol edin; okuma hatalı olabilir)')
     s += ['', 'Evraklar:']
     for e in evraklar:
         s.append(f"  - {e['tarih'][:16].replace('T', ' ')}  {e['ad']}" + (f"  ({e['aciklama']})" if e.get('aciklama') else '')

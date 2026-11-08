@@ -6,3 +6,5 @@ img2pdf==0.5.1
 pypdf==5.1.0
 pystray==0.19.5
 pyinstaller==6.11.1
+pytesseract==0.3.13
+pypdfium2==4.30.0

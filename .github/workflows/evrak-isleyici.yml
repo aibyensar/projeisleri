@@ -27,16 +27,29 @@ jobs:
           python-version: '3.12'
       - name: Bağımlılıklar
         run: pip install -r requirements.txt
+      - name: Tesseract (Türkçe yazı okuma) — programa gömülecek
+        shell: bash
+        run: |
+          choco install tesseract -y --no-progress
+          T="/c/Program Files/Tesseract-OCR"
+          curl -sSL -o "$T/tessdata/tur.traineddata" https://github.com/tesseract-ocr/tessdata/raw/4.1.0/tur.traineddata
+          mkdir -p gomulu/tesseract/tessdata
+          cp "$T"/*.exe "$T"/*.dll gomulu/tesseract/ 2>/dev/null || true
+          cp "$T/tessdata/tur.traineddata" "$T/tessdata/osd.traineddata" gomulu/tesseract/tessdata/ 2>/dev/null || true
+          cp "$T/tessdata/eng.traineddata" gomulu/tesseract/tessdata/ 2>/dev/null || true
+          rm -f gomulu/tesseract/*training*.exe gomulu/tesseract/unicharset_extractor.exe gomulu/tesseract/*_tool*.exe
+          du -sh gomulu/tesseract; ls gomulu/tesseract/tessdata
       - name: Görüntü ve akış denemesi
         shell: bash
         run: |
           python -c "import sys; sys.path.insert(0,'.'); import goruntu, islem, ayar, yerel_form, agy_evrak; print('modüller tamam', ayar.SURUM)"
           python test/ornek_uret.py "$RUNNER_TEMP/ornek"
           python test/akis_dene.py "$RUNNER_TEMP/ornek"
+          python test/ocr_dene.py "$RUNNER_TEMP/ornek"
       - name: Derle
         run: |
           python simge_yap.py
-          pyinstaller --noconfirm --onefile --windowed --name AGY-Evrak --icon simge.ico --hidden-import pystray._win32 --add-data "../apps-script/Form.html;." --exclude-module tkinter agy_evrak.py
+          pyinstaller --noconfirm --onefile --windowed --name AGY-Evrak --icon simge.ico --hidden-import pystray._win32 --add-data "../apps-script/Form.html;." --add-data "gomulu/tesseract;tesseract" --hidden-import pypdfium2 --collect-data pypdfium2 --collect-binaries pypdfium2 --exclude-module tkinter agy_evrak.py
       - name: Sürüm kontrolü
         shell: bash
         run: ls -la dist && test -s dist/AGY-Evrak.exe
