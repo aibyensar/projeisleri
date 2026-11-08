@@ -217,6 +217,17 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
 1p. SEMBOLLER KULLANICININ DOSYASINDAN (8 Kasım 2026): kullanıcı YES.dxf gönderdi (YKŞ + sigorta sembolü; depoda YOK). bhp-cizim.js
    sembol.ykş ve sembol.sigorta bu dosyadaki koordinatlarla BİREBİR çizilir (ölçek 16 birimlik yere). Sayaç önleri de aynı sigorta sembolü
    (dikey). K.A.R da YKŞ sembolüyle. TMŞ ve "Diğer" IEC devre kesici (×). Eski otomat3/buson3 artık tek hatta kullanılmıyor.
+1r. ORAN, YAZI, VAZİYET (8 Kasım 2026, kullanıcının 7 maddelik mesajı):
+   - Semboller ortak ölçekte: bhp-cizim.js SEMBOL_OLCEK = 0.5 (sigorta sayaçtan küçük; YKŞ ≈ 9x7). Yazısında mA / YKŞ / K.A.R / KAÇAK
+     geçen kesici YKŞ sembolüyle çizilir.
+   - Güç tablosu hücreleri sigH() ile sığdırılır (ör. "TİCARETHANE"); xKucuk() ile x hep küçük.
+   - Vaziyet planı: noktalarda numaralı rozet (1 enerji noktası, 2 pano, 3 kablo), açıklamalar boş köşede ayrı kutuda; kutunun arkası
+     AutoCAD WIPEOUT maskesi (maske-ekle.py şablona ekledi; json "maske":1).
+   - Şablondaki sabit yazı çakışmaları yazi-duzelt.py ile giderildi (json "yazi":1): tablo çizgisinden taşan 10 yazı daraltıldı,
+     30/300 mA–K.A.R ve BTK–PTT ayrıldı, açıklamadaki taşan satır, "Boru İç Çapı" başlığını bölen çizgi. Montaj detayında
+     "Ø100 PVC KORUMA BORUSU" parsel sınırı çizgisinin üstüne binmez. Deneme: scratchpad cakisma.py + cizgi-kesen.py → 0 (yalnız "24 V" sembolü).
+   - Araç: 5. bölümde GDZ krokisi kırpılmadan, TKGM resminin yanında, yakınlaştırılabilir kutuda (uyduGoster/tamKirp; DXF'e giden D.uydu
+     aynı). Dosya seç düğmeleri lacivert; Proje durumu panelinde ilerleme çubuğu (x / 5). test/sahte-gdz.py artık 2. sayfada kroki üretir.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

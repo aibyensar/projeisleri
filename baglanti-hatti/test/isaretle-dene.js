@@ -98,6 +98,12 @@ const { chromium } = require('playwright');
     console.log('   indir düğmesi açık:', await p.isEnabled('#indir'));
     const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#indir')]); await dl.saveAs(S + '/indirilen.zip'); console.log('   indirildi:', dl.suggestedFilename()); }
   await p.screenshot({ path: S + '/genel.png', fullPage: true });
+  if (process.argv[4]) {                                        // vaziyet: GDZ krokisi yakınlaştırılabilir kutuda, TKGM'nin yanında
+    await p.setInputFiles('#f-tkgm', S + '/gdz-kirp.png'); await p.waitForTimeout(600);
+    console.log('   c-uydu:', await p.textContent('#c-uydu'), await p.isVisible('#uyduKutu'));
+    if (await p.isVisible('#uyduKutu')) { await p.click('#r-uyduYakin .yakin-arac button[data-z="1"]'); await p.waitForTimeout(200); }
+    console.log('   vaziyet kroki görünür:', await p.isVisible('#r-uydu'), '|', await p.textContent('#c-uydu'));
+    await (await p.$('#k-vaziyet')).screenshot({ path: S + '/vaziyet-bolum.png' }); }
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle
   await p.click('#gAdimlar button[data-i="1"]');

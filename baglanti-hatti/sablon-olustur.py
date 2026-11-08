@@ -5,6 +5,8 @@
 #   python3 baglanti-hatti/sablon-olustur.py box.json direk.json baglanti-hatti/BHP-SABLON.dxf
 #   python3 baglanti-hatti/kapak-ekle.py KAPAK.dxf baglanti-hatti/BHP-SABLON.dxf   (antetin yerine kullanıcının kapağı)
 #   python3 baglanti-hatti/pafta-duzen.py baglanti-hatti/BHP-SABLON.dxf             (bölümleri ızgaraya yerleştirir, çerçeveler)
+#   python3 baglanti-hatti/maske-ekle.py baglanti-hatti/BHP-SABLON.dxf              (vaziyet açıklama kutusu için AutoCAD maskesi)
+#   python3 baglanti-hatti/yazi-duzelt.py baglanti-hatti/BHP-SABLON.dxf              (sabit yazı çakışmalarını düzeltir)
 #
 # Taban: boxlu onaylı proje (çok bağımsız bölümlü; yük dağılım cetveline yer var). Sabit kısımlar aynen kalır:
 # elektrik tesisatı açıklamaları, kablo kanalı detayı ve uyarı yazısı, kuvvetli/zayıf akım sembolleri, TEDAŞ metni,

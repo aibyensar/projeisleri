@@ -54,14 +54,21 @@
   main { max-width: 1400px; }
   .yukleme { display: block; border: 1px dashed var(--cizgi); border-radius: 8px; padding: 12px; max-width: 640px; color: var(--yazi); }
   .yukleme b { display: block; }
-  .yukleme input[type=file] { margin-top: 6px; }
+  .yukleme input[type=file] { margin-top: 6px; font: inherit; font-size: .9rem; color: var(--soluk); }
+  .yukleme input[type=file]::file-selector-button { font: inherit; font-weight: 600; font-size: .88rem; margin-right: 12px; padding: 8px 16px;
+    border-radius: 8px; border: 1px solid #1f3a68; background: #1f3a68; color: #fff; cursor: pointer; }
+  .yukleme input[type=file]::file-selector-button:hover { background: #2b4e8a; }
+  .ilerleme { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; font-size: .8rem; color: var(--soluk); }
+  .ilerleme span { flex: 1; height: 6px; border-radius: 3px; background: var(--cizgi); overflow: hidden; }
+  .ilerleme span i { display: block; height: 100%; background: var(--iyi); border-radius: 3px; transition: width .3s; }
   #ro-gdz, #hatSecim { margin-top: 12px; max-width: 640px; }
   #hatTur { margin: 6px 0 0; }
   .blok { border-top: 1px solid var(--cizgi); padding-top: 12px; margin-top: 14px; }
   .blok h3 { margin: 0 0 10px; font-size: 1rem; }
   .kablo-satir { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) 180px; gap: 12px; align-items: end; margin: 6px 0 12px; }
   .kablo-satir .secim { margin: 0; }
-  .iki-vaz { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; margin-top: 12px; }
+  .iki-vaz { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; margin-top: 12px; align-items: start; }
+  #r-uyduYakin { height: 560px; min-height: 0; flex: none; }
   details > summary { cursor: pointer; font-size: .9rem; color: var(--soluk); }
   #gPanel { margin-top: 12px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px;
     border: 1px solid var(--cizgi); border-radius: 8px; padding: 12px; }
@@ -338,7 +345,9 @@
         <button type="button" class="kucuk-dugme" id="isaretSil">İşaretleri temizle</button>
       </div>
       <div>
-        <figure style="margin:0"><img id="r-uydu" alt="GDZ uydu görüntüsü" hidden style="width:100%;border:1px solid var(--cizgi);border-radius:6px"><figcaption class="durum" id="c-uydu">GDZ uydu görüntüsü</figcaption></figure>
+        <b style="font-size:.9rem">GDZ bağlantı krokisi (uydu)</b>
+        <div class="kontrol" id="uyduKutu" hidden style="margin-top:6px"><img id="r-uydu" alt="GDZ uydu görüntüsü"></div>
+        <span class="durum" id="c-uydu">GDZ yazısı yüklenince burada görünür.</span>
         <label id="uyduSec" hidden class="yukleme" style="margin-top:8px"><b>Uydu görüntüsünü kendiniz seçin</b><input type="file" id="f-uydu" accept="image/*"></label>
       </div>
     </div>
@@ -349,6 +358,7 @@
 <aside class="panel">
   <div class="panel-ic">
     <h3>Proje durumu</h3>
+    <div class="ilerleme"><span><i id="ilerlemeCubuk" style="width:0"></i></span><b id="ilerlemeYazi">0 / 5</b></div>
     <ol id="adimListe" class="adimlar-durum"></ol>
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <div id="d-indir" class="indir-durum"></div>
@@ -408,6 +418,26 @@ function kirpVeSigdir(kaynak, [W, H]) {
   x1.drawImage(c0, a, b, w, h, (W - w * r) / 2, (H - h * r) / 2, w * r, h * r);
   return new Promise(res => c1.toBlob(res, 'image/jpeg', 0.9));
 }
+// Beyaz kenarları kırpılmış, tam çözünürlüklü kopya (vaziyet çizerken GDZ krokisine yakından bakmak için)
+function tamKirp(kaynak) {
+  const c0 = document.createElement('canvas'); c0.width = kaynak.width; c0.height = kaynak.height;
+  const x0 = c0.getContext('2d'); x0.drawImage(kaynak, 0, 0);
+  const v = x0.getImageData(0, 0, c0.width, c0.height).data;
+  let a = c0.width, b = c0.height, c = -1, d = -1;
+  for (let y = 0; y < c0.height; y += 2) for (let x = 0; x < c0.width; x += 2) {
+    const i = (y * c0.width + x) * 4;
+    if (v[i] < 235 || v[i + 1] < 235 || v[i + 2] < 235) { if (x < a) a = x; if (y < b) b = y; if (x > c) c = x; if (y > d) d = y; }
+  }
+  if (c < 0) return new Promise(r => c0.toBlob(r, 'image/jpeg', 0.92));
+  const c1 = document.createElement('canvas'); c1.width = c - a + 1; c1.height = d - b + 1;
+  c1.getContext('2d').drawImage(c0, a, b, c1.width, c1.height, 0, 0, c1.width, c1.height);
+  return new Promise(r => c1.toBlob(r, 'image/jpeg', 0.92));
+}
+async function uyduGoster(kaynak, yazi) {
+  const bl = await tamKirp(kaynak);
+  D.uyduGosterUrl && URL.revokeObjectURL(D.uyduGosterUrl); D.uyduGosterUrl = URL.createObjectURL(bl);
+  $('r-uydu').src = D.uyduGosterUrl; $('uyduKutu').hidden = false; $('c-uydu').textContent = yazi; yakinSigdir('r-uydu');
+}
 function resimGoster(id, blob) { const im = $(id); im.src = URL.createObjectURL(blob); im.hidden = false; }
 
 $('f-gdz').addEventListener('change', async e => {
@@ -430,7 +460,7 @@ $('f-gdz').addEventListener('change', async e => {
       const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
       await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
       D.uydu = await kirpVeSigdir(cv, BHP.RESIM.uydu);
-      resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = `GDZ yazısının ${sn + 1}. sayfasından alındı`;
+      await uyduGoster(cv, `GDZ yazısının ${sn + 1}. sayfasındaki kroki — tekerlekle yaklaşın, sürükleyerek gezin`);
     } else { $('c-uydu').textContent = 'GDZ yazısında uydu görüntüsü bulunamadı; kendiniz seçin.'; $('uyduSec').hidden = false; }
     alanlariDoldur(); hatGoster();
   } catch (x) { durum('d-gdz', 'Okunamadı: ' + x.message, 'kotu'); hatGoster(); }
@@ -467,7 +497,7 @@ $('f-tkgm').addEventListener('change', async e => {
 $('f-uydu').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   D.uydu = await kirpVeSigdir(await createImageBitmap(f), BHP.RESIM.uydu);
-  resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = 'Sizin seçtiğiniz resim'; guncelle();
+  await uyduGoster(await createImageBitmap(f), 'Sizin seçtiğiniz resim — tekerlekle yaklaşın, sürükleyerek gezin'); guncelle();
 });
 
 // ---- Yakınlaştırılabilir kontrol resmi: tekerlek = yaklaş/uzaklaş, sürükle = kaydır, çift tık = sığdır ----
@@ -503,7 +533,7 @@ function yakinKur(id) {
   new ResizeObserver(() => Z.sigdir()).observe(kutu);
 }
 function yakinSigdir(id) { requestAnimationFrame(() => YK[id] && YK[id].sigdir()); }
-yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('gdzResim');
+yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('gdzResim'); yakinKur('r-uydu');
 
 // ---- Hat türü: GDZ'ye göre yeraltı ya da havai sayfası açılır ----
 function hatSec(tur) {
@@ -864,6 +894,8 @@ function durumPaneli(eksik) {
   ];
   $('adimListe').innerHTML = adim.map(([id, ad, d, alt], i) =>
     `<li class="${d}" data-hedef="${id}"><i>${d === 'tamam' ? '✓' : i + 1}</i><div>${ad}${alt ? `<small>${kac(alt)}</small>` : ''}</div></li>`).join('');
+  const tamam = adim.filter(a => a[2] === 'tamam').length;
+  $('ilerlemeCubuk').style.width = (tamam / adim.length * 100) + '%'; $('ilerlemeYazi').textContent = `${tamam} / ${adim.length}`;
   const cip = (id, d, t) => { const e = $(id); if (!e) return; e.className = 'cip' + (d ? ' ' + d : ''); e.textContent = t; };
   adim.forEach(([id, , d]) => cip('c-' + id.slice(2), d, d === 'tamam' ? 'Tamam' : d === 'dikkat' ? 'Devam ediyor' : 'Bekliyor'));
   const mus = String(b.malSahibi || (D.gdz && D.gdz.sahibi) || '').trim();
@@ -1413,7 +1445,7 @@ Yalnız şu JSON'u döndür:
       const pg = await doc.getPage(+v.uyduSayfa), vp = pg.getViewport({ scale: 3 });
       const cv = document.createElement('canvas'); cv.width = vp.width; cv.height = vp.height;
       await pg.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
-      D.uydu = await kirpVeSigdir(cv, BHP.RESIM.uydu); resimGoster('r-uydu', D.uydu); $('c-uydu').textContent = `GDZ yazısının ${v.uyduSayfa}. sayfasından alındı`;
+      D.uydu = await kirpVeSigdir(cv, BHP.RESIM.uydu); await uyduGoster(cv, `GDZ yazısının ${v.uyduSayfa}. sayfasındaki kroki — tekerlekle yaklaşın`);
     }
     durum('d-ro-gdz', `Resimden okundu: ${Object.keys(resimden).length} bilgi tamamlandı.`, 'iyi');
     durum('d-gdz', `Okundu: ${g.basvuruNo || '?'} · ${g.sahibi || ''} · ${g.direk || ''}`, 'iyi');
