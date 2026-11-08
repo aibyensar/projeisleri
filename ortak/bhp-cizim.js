@@ -92,7 +92,7 @@
     c.yazi(baslik, (x0 + x1) / 2, y1 - 3.5, 3.0, { stil: KALIN, hiza: 'orta' });
     return [x0 + 3, y0 + 3, x1 - 3, y1 - 10];
   }
-  const CIHAZ_AD = { sigorta: '', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'YKŞ' };
+  const CIHAZ_AD = { sigorta: '', kar: 'K.A.R', tms: 'TMŞ', tmsyks: 'YKŞ', diger: '' };
   // Kesici etiketi (kullanıcının kuralı): akım "4x63A" biçiminde (x her zaman küçük); YKŞ ve K.A.R altında her zaman 300 mA, kesicilerde her zaman 10kA
   // kurumun kuralı: trifazede her zaman 4 kutuplu, monofazede 2 kutuplu kesici (iç tesisatta 3x25A yazsa bile 4x25A)
   function kesiciEtiket(k, faz = 3) {
@@ -139,11 +139,13 @@
     for (const k of v.korumalar) {
       const cx = x + 8;
       const et = kesiciEtiket(k, v.faz);
-      if (et.kacak) sembol.ykş(c, cx, yh); else if (k.tur === 'sigorta') sembol.sigorta(c, cx, yh, et.kutup); else sembol.salter(c, cx, yh, k.tur);
+      if (et.kacak) sembol.ykş(c, cx, yh); else if (k.tur === 'sigorta') sembol.sigorta(c, cx, yh, et.kutup); else sembol.salter(c, cx, yh, k.tur);   // diğer: devre kesici
       // etiket: YKŞ / K.A.R → ad, akım, 300 mA; kesici → (ad), 10kA, akım (kullanıcının örnekleri)
-      const sat = et.kacak ? [CIHAZ_AD[k.tur], et.akim, et.ek] : [CIHAZ_AD[k.tur], et.ek, et.akim].filter(Boolean);
+      // elle yazı varsa aynen (satırlar / ile), yoksa kural: YKŞ / K.A.R → ad, akım, 300 mA; kesici → (ad), 10kA, akım
+      const elle = String(k.yazi || '').split('/').map(t => t.trim()).filter(Boolean);
+      const sat = elle.length ? elle : k.tur === 'diger' ? [String(k.deger || '').trim()] : et.kacak ? [CIHAZ_AD[k.tur], et.akim, et.ek] : [CIHAZ_AD[k.tur], et.ek, et.akim].filter(Boolean);
       const y0 = yh + (et.kacak ? 9.5 : 6.8);
-      sat.slice().reverse().forEach((t, i) => c.yazi(t, cx, y0 + i * 4, 2.5, { stil: i === sat.length - 1 && CIHAZ_AD[k.tur] ? INCE : KALIN, hiza: 'orta' }));
+      sat.slice().reverse().forEach((t, i) => c.yazi(t, cx, y0 + i * 4, 2.5, { stil: !elle.length && i === sat.length - 1 && CIHAZ_AD[k.tur] ? INCE : KALIN, hiza: 'orta' }));
       x += 16; c.cizgi(x, yh, x + 8, yh, S); x += 8;
     }
     const gruplar = v.gruplar && v.gruplar.length ? v.gruplar : [{ onu: '', adet: v.sayacAdet || 1, ad: '', tip: v.sayacTip }];
@@ -198,6 +200,12 @@
     c.cizgi(x0, ty, x0 + w, ty, T);
     satirlar.forEach((s, i) => c.yazi(s, x0 + 0.5, ty + 1.6 + (satirlar.length - 1 - i) * h * 1.5, h, { stil: i === 0 ? KALIN : INCE }));
   }
+  // galvaniz topraklama kazığı (kullanıcının onaylı detayındaki yazıyla)
+  function kazik(c, x, yg, sag) {
+    c.dolgu([[x - 1.2, yg - 4], [x + 1.2, yg - 4], [x + 1.2, yg - 40], [x - 1.2, yg - 40]], S);
+    const tx = sag ? x + 3 : x - 3, h = sag ? 'sol' : 'sag';
+    c.yazi('DAL.GAL.TOP.KAZ.', tx, yg - 30, 2.0, { stil: KALIN, hiza: h }); c.yazi('L=2m 65x65x7 mm', tx, yg - 33.5, 2.0, { hiza: h });
+  }
   function detay(c, v, [x0, y0, x1, y1], cerceveYok) {
     const T = { katman: 'BHP-TABLO' }, K = { katman: 'BHP-KABLO', lt: 'BHP-KESIK', kalin: true };
     if (!cerceveYok) {
@@ -224,21 +232,21 @@
     let xk;                                                 // kablonun yere girdiği x
     if (v.baglanti === 'box') {
       const bx = x0 + 32;
-      c.kutu(bx - 17, yg - 1, bx + 17, yg + 8, T); tarama(c, bx - 17, yg - 1, bx + 17, yg + 8, 2.6);
-      c.kutu(bx - 14, yg + 8, bx + 14, yg + 52, { katman: 'BHP-TABLO', kalin: true });
+      // box kendi alt çerçevesi üstünde (kullanıcının detayı; beton kaide yok)
+      c.cizgi(bx - 17, yg + 5, bx + 17, yg + 5, { ...T, kalin: true }); c.cizgi(bx - 17, yg + 5, bx - 17, yg, T); c.cizgi(bx + 17, yg + 5, bx + 17, yg, T);
+      c.kutu(bx - 14, yg + 5, bx + 14, yg + 52, { katman: 'BHP-TABLO', kalin: true });
       c.dolgu([[bx - 16, yg + 52], [bx + 16, yg + 52], [bx + 16, yg + 55], [bx - 16, yg + 55]], S);
       c.cizgi(bx, yg + 10, bx, yg + 50, T);
       c.dolgu([[bx - 7, yg + 40], [bx - 10, yg + 34.5], [bx - 4, yg + 34.5]], S);
       c.yazi('AG', bx + 7, yg + 32, 2.6, { stil: KALIN, hiza: 'orta' }); c.yazi('BOX', bx + 7, yg + 27.5, 2.6, { stil: KALIN, hiza: 'orta' });
       etiket(c, bx + 10, yg + 50, x0 + 52, y1 - 16, ['AG SAHA DAĞITIM KUTUSU (BOX) - GDZ ŞEBEKESİ', v.kaynakAd || ''].filter(Boolean));
-      etiket(c, bx + 15, yg + 4, x0 + 52, yg + 12, ['BETON KAİDE']);
       xk = bx + 4;
-      c.cokgen([[xk, yg + 8], [xk, yc + 6], [xk + 6, yc], [xa, yc]], K);
+      c.cokgen([[xk, yg + 5], [xk, yc + 6], [xk + 6, yc], [xa, yc]], K);
+      const xkz = x0 + 8;                                    // box topraklama kazığı
+      c.cokgen([[bx - 12, yg + 5], [bx - 12, yg - 2], [xkz, yg - 4]], T); kazik(c, xkz, yg, true);
     } else {
       const dx = x0 + 30;
       c.cokgen([[dx - 3, yg], [dx - 1.6, y1 - 6], [dx + 1.6, y1 - 6], [dx + 3, yg]], { katman: 'BHP-TABLO', kapali: false });
-      c.kutu(dx - 5, yg - 22, dx + 5, yg, { katman: 'BHP-TABLO', lt: 'BHP-GIZLI' });
-      c.yazi('beton temel', dx + 6, yg - 20, 2.0);
       const ty = y1 - 12;
       c.cizgi(dx - 14, ty, dx + 14, ty, { katman: 'BHP-TABLO', kalin: true });
       [-11, -5, 5, 11].forEach(d => { c.daire(dx + d, ty + 2, 1.1, T); c.cizgi(dx + d, ty + 3.1, x0 + 2, ty + 3.1 + (d + 11) * 0.15, T); });
@@ -265,28 +273,27 @@
     const olcu = (a, b, t) => { c.cizgi(a, yo, b, yo, T); [a, b].forEach(q => c.cizgi(q - 1, yo - 1, q + 1, yo + 1, T)); c.yazi(t, (a + b) / 2, yo + 1.8, 2.2, { hiza: 'orta' }); };
     olcu(xk, xp, `parsel dışı ${sayiYaz(v.Ldis)} m`); olcu(xp, xr, `parsel içi ${sayiYaz(v.Lic)} m`);
     c.yazi(`L = ${sayiYaz(v.L)} m`, (xk + xr) / 2, yo - 3.4, 2.4, { stil: KALIN, hiza: 'orta' });
-    // sağ: sayaç panosu, beton kaide, koruma borusu
-    c.kutu(xr - 6, yg - 1, xr + 6, yg + M, T); tarama(c, xr - 6, yg - 1, xr + 6, yg + M, 2.6);
+    // sağ: sayaç panosu pano ayağı üstünde (kullanıcının detayı; beton kaide yok), koruma borusu
     const pb = yg + M;
+    c.dolgu([[xr - 3.5, yg], [xr + 3.5, yg], [xr + 3.5, pb], [xr - 3.5, pb]], S);
+    c.dolgu([[xr - 7, yg], [xr + 7, yg], [xr + 3.5, yg + 2.5], [xr - 3.5, yg + 2.5]], S);
     c.kutu(xr - 15, pb, xr + 15, pb + 34, { katman: 'BHP-TABLO', kalin: true });
     c.cizgi(xr - 17, pb + 34, xr + 17, pb + 34, { katman: 'BHP-TABLO', kalin: true });
     c.kutu(xr - 11, pb + 18, xr - 1, pb + 29, T); c.yazi('kWh', xr - 6, pb + 23.5, 2.0, { hiza: 'orta' });
     c.dolgu([[xr + 7, pb + 29], [xr + 3.5, pb + 22.5], [xr + 10.5, pb + 22.5]], S);
     c.cizgi(xr - 15, pb + 14, xr + 15, pb + 14, T);
     c.daire(xr + 11, pb + 8, 0.9, T);
-    // koruma borusu (kaide içinden panoya)
-    c.cizgi(xr - 3, yc + 3, xr - 3, pb, { katman: 'BHP-TABLO', lt: 'BHP-GIZLI' }); c.cizgi(xr + 3, yc - 3, xr + 3, pb, { katman: 'BHP-TABLO', lt: 'BHP-GIZLI' });
-    c.cokgen([[xb, yc], [xr - 6, yc], [xr, yc + 6], [xr, pb + 4]], K);
+    // koruma borusu (zeminden pano ayağına)
+    c.cizgi(xr - 3, yc + 3, xr - 3, yg, { katman: 'BHP-TABLO', lt: 'BHP-GIZLI' }); c.cizgi(xr + 3, yc - 3, xr + 3, yg, { katman: 'BHP-TABLO', lt: 'BHP-GIZLI' });
+    c.cokgen([[xb, yc], [xr - 6, yc], [xr, yc + 6], [xr, yg]], K);
     // topraklama
     const tk = topraklamaKesit(v.kablo.kesit), xt = x1 - 8;
-    c.dolgu([[xt - 1.2, yg - 4], [xt + 1.2, yg - 4], [xt + 1.2, yg - 40], [xt - 1.2, yg - 40]], S);
+    kazik(c, xt, yg, false);
     c.cokgen([[xr + 15, pb + 4], [xr + 19, pb + 4], [xr + 19, yg - 2], [xt, yg - 4]], { katman: 'BHP-TABLO' });
     // açıklamalar
     etiket(c, xr - 15, pb + 30, xr - 24, pb + 40, ['SAYAÇ PANOSU', '(mühürlenebilir bölümlü, kilitli)'], false);
-    etiket(c, xr - 6, yg + 15, xr - 30, yg + 22, ['BETON KAİDE'], false);
     etiket(c, xr - 3, yg - 10, xr - 30, yg - 6, ['Ø100 PVC KORUMA BORUSU'], false);
     etiket(c, xr + 19, yg + 10, x1 - 3, pb + 46, [`1x${tk} mm² NYY`, 'TOPRAKLAMA İLETKENİ'], false, 2.1);
-    etiket(c, xt - 1.2, yg - 22, xt - 4, yg - 12, ['TOPRAKLAMA KAZIĞI', 'galv. 65x65x7 mm', 'L = 2 m'], false, 1.9);
   }
 
   // ---------- Gerilim düşümü ve akım hesabı: solda hesapta kullanılan değerler, sağda hesap adımları ----------

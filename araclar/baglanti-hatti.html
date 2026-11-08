@@ -492,7 +492,7 @@ function hatGoster() {
 }
 
 // ---- Düzenlenebilir alanlar ----
-const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=Kaçak akım rölesi (K.A.R)|tmsyks=TMŞ + YKŞ (kaçak akımlı)';
+const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=Kaçak akım rölesi (K.A.R)|tmsyks=YKŞ (kaçak akımlı)|diger=Diğer (yazdığım gibi)';
 const ALANLAR = [
   ['', [['malSahibi', 'Mal sahibi', 'genis'], ['kullanim', 'Kullanım amacı'], ['adres', 'Adres', 'genis'],
     ['il', 'İl'], ['ilce', 'İlçe'], ['belediye', 'Belediye'], ['mahalle', 'Mahalle'], ['pafta', 'Pafta'], ['ada', 'Ada'], ['parsel', 'Parsel'],
@@ -501,7 +501,9 @@ const ALANLAR = [
   ['', [['basvuruNo', 'Başvuru no'], ['baglanti', 'Enerji alınan yer', '', 'select:direk=Direk|box=AG box'], ['faz', 'Bağlantı', '', 'select:3=Trifaze (380 V)|1=Monofaze (220 V)'], ['direk', 'Direk / box adı', 'genis'],
     ['Ldis', 'Parsel dışı (m)', '', 'number'], ['Lic', 'Parsel içi (m)', '', 'number'], ['projeTarihi', 'Proje tarihi']]],
   ['', [['k1tur', 'Ana kesici (1. koruma)', '', KORUMA], ['k1deger', '1. değer (4x40A 10kA gibi)'],
+    ['k1yazi', '1. kesicinin tek hat yazısı — elle (boşsa otomatik; satırları / ile ayırın)', 'genis'],
     ['k2tur', 'Ana kesici (2. koruma, varsa)', '', KORUMA], ['k2deger', '2. değer (4x40A 300mA gibi)'],
+    ['k2yazi', '2. kesicinin tek hat yazısı — elle (boşsa otomatik)', 'genis'],
     ['sayacAdet', 'Sayaç adedi', '', 'number'], ['sayac', 'Sayaç (3x10 gibi)'], ['sayacTur', 'Sayaç türü', '', 'select:Aktif|Aktif-Reaktif'], ['onuHepsi', 'Sayaç önü sigorta (bütün sayaçlara)', 'genis']]],
 ];
 (function alanlariKur() {
@@ -577,7 +579,7 @@ function bilgiler() {
   b.reaktif = b.sayacTur === 'Aktif-Reaktif';
   b.basvuruNo = String(b.basvuruNo || (D.gdz && D.gdz.basvuruNo) || 'bhp').replace(/[\\/:*?"<>|\s]+/g, '-');
   b.alan = /\d/.test(b.alan) ? b.alan.replace(/\s*m²?$/, '') : '-';
-  b.korumalar = [{ tur: b.k1tur, deger: b.k1deger }, { tur: b.k2tur, deger: b.k2deger }].filter(k => k.tur);
+  b.korumalar = [{ tur: b.k1tur, deger: b.k1deger, yazi: b.k1yazi }, { tur: b.k2tur, deger: b.k2deger, yazi: b.k2yazi }].filter(k => k.tur);
   b.sayacAdet = Math.max(1, Math.round(b.sayacAdet || D.satirlar.length || 1));
   b.satirlar = D.satirlar;
   b.faz = +b.faz || 3;
@@ -783,16 +785,19 @@ function onizle() {
 }
 
 $('indir').addEventListener('click', async () => {
-  const { b, c } = cizim(), ad = b.basvuruNo;
-  const uyduAd = `${ad}-uydu.jpg`, vazAd = `${ad}-vaziyet.jpg`;
+  const { b, c } = cizim();
+  // dosya adı: "MÜŞTERİ ADI BHP" (ör. AYŞE ÇELENK BHP); mal sahibi yoksa başvuru no
+  const musteri = String(b.malSahibi || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().toLocaleUpperCase('tr-TR');
+  const ad = musteri ? `${musteri} BHP` : `BHP-${b.basvuruNo}`;
+  const uyduAd = 'uydu.jpg', vazAd = 'vaziyet.jpg';
   const dxf = BHPCizim.dxfeEkle(BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd)), c, b.baglanti);
-  const zip = new JSZip(), klasor = zip.folder(`BHP-${ad}`);
-  klasor.file(`BHP-${ad}.dxf`, dxf);
+  const zip = new JSZip(), klasor = zip.folder(ad);
+  klasor.file(`${ad}.dxf`, dxf);
   if (D.uydu) klasor.file(uyduAd, D.uydu);
   if (D.vaziyet) klasor.file(vazAd, D.vaziyet);
   try { klasor.file(BHP.LOGO_DOSYA, await logoAl()); } catch (x) { /* logo alınamazsa çizim yine iner, şerit boş görünür */ }
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-  const dosyaAdi = `BHP-${ad}.zip`;
+  const dosyaAdi = `${ad}.zip`;
   // claude.ai içinde sayfa kendisi indiremez; platformun "dosya kaydet" izniyle verilir
   const dl = await indirmeAraci();
   if (dl) {

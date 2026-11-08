@@ -243,7 +243,7 @@
   // Kesici yazısı (kurumun kuralı): trifazede her zaman 4 kutup, monofazede 2 kutup (iç tesisatta 3x25A yazsa bile 4x25A);
   // sigorta / TMŞ her zaman 10kA, YKŞ ve K.A.R her zaman 300mA; x her zaman küçük. "3X25A 6kA" → "4x25A 10kA"
   function kesiciDuzelt(deger, tur, faz = 3) {
-    const d = String(deger || '').trim(); if (!d) return '';
+    const d = String(deger || '').trim(); if (!d || tur === 'diger') return d;
     const m = d.replace(',', '.').match(/(?:(\d+)\s*[xX×*]\s*)?(\d+(?:\.\d+)?)\s*A(?![a-zA-Z])/);
     if (!m) return d.replace(/\s*[X×*]\s*/g, 'x');
     const kutup = +faz === 1 ? 2 : 4, a = m[2].replace('.', ',');
@@ -252,7 +252,7 @@
   // Ana kesici akımı (In): aşırı akıma karşı koruyan cihazlardan (sigorta, TMŞ, TMŞ+YKŞ); kaçak akım rölesi sayılmaz.
   // "4x125A 300mA" → 125. Birden çoksa en küçüğü.
   function anaKesiciA(korumalar) {
-    const l = (korumalar || []).filter(k => k && ['sigorta', 'tms', 'tmsyks'].includes(k.tur)).map(k => {
+    const l = (korumalar || []).filter(k => k && ['sigorta', 'tms', 'tmsyks', 'diger'].includes(k.tur)).map(k => {
       const m = String(k.deger || '').replace(',', '.').match(/(?:^|[x×*\s])(\d+(?:\.\d+)?)\s*A(?![a-zA-Z])/i);
       return m ? parseFloat(m[1]) : NaN;
     }).filter(x => x > 0);
@@ -377,7 +377,7 @@
       baglanti: b.baglanti, kaynakAd: b.direk, kablo, L, Ldis: b.Ldis, Lic: b.Lic, N, h: hesap(kablo, N, L, anaKesiciA(b.korumalar)), faz, bolen: BOLEN[faz],
       korumalar: (b.korumalar || []).filter(k => k.tur),
       sayacAdet: b.sayacAdet || 1, sayacTip: b.sayac, sayacTur: b.reaktif ? 'Aktif-Reaktif (kombi)' : 'Aktif',
-      satirlar: b.satirlar, kuruluToplam: b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0) || b.kuruluW,
+      satirlar: b.satirlar, kuruluToplam: b.kuruluW || b.satirlar.reduce((t, s) => t + (parseFloat(s.kurulu) || 0), 0),   // kapaktaki (antet) kurulu güç
       malzeme: malzeme || malzemeOner(b, kablo), notlar: notlar || notlarOner(b), gruplar: sayacGruplari(b),
       ada: b.ada, parsel: b.parsel, vaziyet: b.vaziyet || null,
     };
