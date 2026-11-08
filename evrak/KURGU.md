@@ -1,274 +1,272 @@
-# Evrak Toplayıcı — kurgu (taslak, 8 Kasım 2026)
+# Evrak Toplayıcı — kurgu (sürüm 2, 8 Kasım 2026)
 
-WhatsApp'tan gelen müşteri evrakını (fotoğraf, PDF, belge) en az el işiyle, kaliteli PDF olarak, doğru adla ve doğru
-klasörde PC masaüstüne getirmek. Bu belge yalnız kurgudur; onaylanmadan kurulum yapılmaz. Müşteri bilgisi bu depoya
-hiçbir zaman yazılmaz (örnek evraklar dahil).
+WhatsApp'tan (ve PC'deki WhatsApp'tan, kağıt taramadan) gelen evrakı en az el işiyle kaliteli PDF yapıp masaüstündeki
+**Çizilecek Projeler** listesine doğru adla koymak. Bu belge kurgudur; onaylanmadan kurulum yapılmaz.
+Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
 
 ---
 
-## 0. Hedef ve başarı ölçütleri
+## 0. Kullanıcı kararları (8 Kasım 2026)
+
+| Konu | Karar |
+|---|---|
+| WhatsApp | Normal WhatsApp, kendi numarası; ayrı hat yok; ücretsiz; kural dışı program yok |
+| Telefon / PC | iPhone · Windows |
+| Google | Şirket hesabı **normal Gmail** (Workspace değil). PC'deki şahsi Drive yedeklemesine dokunulmaz |
+| Gönderen | **Yalnız kullanıcı** (tek iPhone) |
+| Diğer kanallar | **PC'deki WhatsApp** ve **kağıt / tarama** (tarayıcı ya da CamScanner) |
+| Evrak türleri | Her çeşit: fotoğraf, müşteri PDF'i, CamScanner PDF'i, Word/Excel. Kalite şart |
+| Masaüstü | Yalnız **çizilecek projeler** görünür |
+| Listeye giriş | **İlk evrak gelince** (eksikse EKSİK EVRAK durumuyla) |
+| Klasör adı | **İşi getiren + proje adı** (örnekleri kullanıcı sonra verecek) |
+| Sıra | En eski en üstte; **ACİL** işaretli iş en üstte |
+| Gecikme uyarısı | **3 gün** |
+| PDF çıktısı | Her evrak türü **ayrı PDF + tek birleşik Tümü.pdf** |
+| İş bitince | Kullanıcı klasörü **masaüstündeki kendi proje klasörüne taşır**; listeden kalkar. Ayrı aşama takibi yok |
+| Bildirim | **Her paket** işlenince telefona özet |
+| PC açık kalma | Düzensiz; sabit saat yok |
+
+## 1. Başarı ölçütleri
 
 | Ölçüt | Hedef |
 |---|---|
-| Telefonda harcanan süre | Müşteri başına ≤ 10 saniye (seç → paylaş → müşteri seç) |
-| PC'de harcanan süre | Sıfır; yalnız "Kontrol et" klasörüne düşenlere bakılır |
-| Evrakın masaüstüne düşmesi | PC açıksa paylaşımdan sonra ≤ 2 dakika |
-| Tür (Tapu, Kimlik…) doğruluğu | İlk ay ≥ %90, kurallar öğrendikçe ≥ %97 |
+| Telefonda süre | Paket başına ≤ 10 saniye (seç → paylaş → işi seç) |
+| PC'de süre | Sıfır; yalnız KONTROL durumundaki işlere bakılır |
+| Masaüstüne düşme | PC açıksa ≤ 2 dakika; kapalıysa açıldıktan sonra ≤ 2 dakika |
+| Tür doğruluğu | İlk ay ≥ %90, kurallar öğrendikçe ≥ %97 |
 | Kalite | Okunaklı, düz, gölgesiz; renkli evrak renkli; orijinal her zaman saklı |
-| Kayıp | Sıfır: hiçbir dosya silinmez, emin olunamayan "Kontrol et"e gider |
+| Kayıp | Sıfır: hiçbir dosya silinmez, üstüne yazılmaz; emin olunamayan KONTROL'e |
 | Ücret | Sıfır |
-| Kural ihlali / numara riski | Yok (yalnız WhatsApp'ın kendi "Paylaş" özelliği) |
 
-## 1. Kısıtlar (kullanıcıyla netleşenler)
+## 2. Neden bu yol (özet)
 
-- Normal WhatsApp, kendi numarası; ayrı "evrak hattı" istenmiyor.
-- Ücretsiz olmalı. Meta'nın aynı numarayı otomasyona bağlaması (coexistence) yalnız aracı firma / Tech Provider
-  üzerinden → şimdilik yok (bkz. 12. bölüm).
-- Telefon iPhone; bilgisayar Windows.
-- Google: şirket hesabı (evrakın yeri). PC'de şahsi hesapla çalışan Drive yedeklemesi var — **dokunulmayacak**.
-- Gelen evrak çeşitli: telefon fotoğrafı, müşterinin PDF'i, kullanıcının CamScanner PDF'i, bazen Word/Excel.
-- Kalite şart: dağıtım şirketi / belediye evrakı reddetmemeli.
-
-## 2. Değerlendirilen yollar
+Aynı numarayla tam otomatik resmî yol yalnız ücretli aracı firma ya da Meta onaylı Tech Provider ile mümkün; resmî
+olmayan programlar numara riskli. Bu yüzden: **iPhone Kestirmesi (tek paylaşım) + Google Drive + PC'de işleyici**.
+Görüntü işleme (belge taraması) ücretsiz bulut servislerinde yapılamadığı için PC'de.
 
 | Yol | Ücret | Aynı numara | Otomatiklik | Risk | Karar |
 |---|---|---|---|---|---|
 | Meta Cloud API, ayrı hat | 0 | Hayır | Tam | Yok | Kullanıcı istemedi |
 | Meta + aracı firma (coexistence) | Aylık | Evet | Tam | Yok | Ücretli |
-| Kendin Tech Provider ol | 0 (görünüşe göre) | Evet | Tam | Onay belirsiz, haftalar | İleride (12. bölüm) |
-| Resmî olmayan WhatsApp Web programı | 0 | Evet | Tam | **Numara kapanabilir** | Reddedildi |
-| Sohbeti dışa aktar → Drive | 0 | Evet | Yarı | Yok | Bütün sohbeti taşır, seçici değil |
+| Kendin Tech Provider ol | 0 (görünüşe göre) | Evet | Tam | Onay belirsiz, haftalar | İleride |
+| Resmî olmayan WhatsApp Web programı | 0 | Evet | Tam | Numara kapanabilir | Reddedildi |
+| Sohbeti dışa aktar → Drive | 0 | Evet | Yarı | Yok | Bütün sohbeti taşır |
 | Telegram botu | 0 | Evet | Yarı | Yok | Ek uygulama; kestirme daha kısa |
 | **iPhone Kestirmesi + Drive + PC işleyici** | **0** | **Evet** | **Yarı (tek paylaşım)** | **Yok** | **Seçilen** |
-
-Neden işleme PC'de: belge taraması (kenar bulma, perspektif, gölge giderme) görüntü işleme ister; Google Apps Script
-bunu yapamaz. Bulut sunucusu (Cloud Run vb.) ücretsiz katmanda bile kredi kartı ister. PC zaten her gün açık.
 
 ## 3. Mimari
 
 ```
- iPhone                         Google Drive (şirket hesabı)              Windows PC
- ───────                        ─────────────────────────────            ──────────────────────────────
- WhatsApp: evrakları seç        AGY Evrak/                                Drive masaüstü uygulaması
-   → Paylaş → "AGY Evrak"         0-Gelen/                                 (2. hesap: şirket) eşitler
- Kestirme:                          2026-11-08_1432_ab12/  ──── eşitleme ──►         │
-   müşteri / iş seç                   foto1.jpg, belge.pdf …                       ▼
-   paketi Drive'a kaydet              paket.json (kim, hangi iş, not)     "Evrak İşleyici" (arka planda)
-   "4 evrak gönderildi" bildirimi                                          1 bekle (paket tamam mı)
-                                    Çizilecek Projeler/ ◄────────────────  2 tanı · 3 kalite · 4 oku
-                                      01 · HAZIR · … – <iş adı>/          5 tür bul · 6 bilgi çıkar
-                                        Tapu.pdf, Kimlik.pdf …             7 kontrol · 8 birleştir
-                                        _orijinal/ …                       9 adlandır · 10 yerleştir
-                                    8-Kontrol Et/                         11 kayıt · 12 bildirim
-                                    Kayıt.csv · kurallar.json
-                                                                         Masaüstü kısayolu → Çizilecek Projeler
+ GİRİŞLER                                  GOOGLE DRIVE (şirket Gmail)               PC (Windows)
+ ─────────                                 ──────────────────────────               ─────────────
+ iPhone: WhatsApp / CamScanner / Dosyalar   AGY Evrak/
+   → Paylaş → "AGY Evrak" kestirmesi  ──►     0-Gelen/<paket>/ + paket.json  ──►   Evrak İşleyici
+ PC: WhatsApp masaüstü, tarayıcı, e-belge                                          (arka planda, açılışta başlar)
+   → masaüstündeki "Evrak Bırak"  ─────►      (PC girişi de buraya paket bırakır)      │
+     ya da sağ tık → Gönder → AGY Evrak                                                 ▼
+                                             Çizilecek Projeler/  ◄──────────────  PDF, okuma, tür, birleştirme,
+                                               ! ACİL · 2026-11-07 · … · HAZIR            adlandırma, yerleştirme
+                                               2026-11-03 · … · EKSİK EVRAK         Telefona özet e-postası
+                                               _LİSTE.txt                            Windows bildirimi
+                                             8-Kontrol Et/ · 9-Arşiv/
+                                             getirenler.txt · Kayıt.csv · kurallar.json
+
+ Masaüstü: "Çizilecek Projeler" kısayolu · "Evrak Bırak" kısayolu
+ İş bitince: kullanıcı iş klasörünü kendi proje klasörüne sürükler → listeden kalkar, Kayıt.csv'ye "bitti" yazılır
 ```
 
-Üç parça, her biri tek başına anlaşılır:
-1. **iPhone Kestirmesi** — yalnız toplar ve paketler; hiçbir dosyayı değiştirmez.
-2. **Google Drive (şirket)** — tek doğru kaynak; PC kapalıyken evrak burada bekler, yedek de budur.
-3. **PC Evrak İşleyici** — bütün akıl burada; kurallar `kurallar.json` dosyasında, kod değişmeden güncellenir.
+## 4. Giriş 1 — iPhone Kestirmesi "AGY Evrak"
 
-İleride tam otomatik giriş gelirse (12. bölüm) yalnız 1. parça değişir; paketi aynı `0-Gelen` klasörüne bırakır.
+**Nereden:** WhatsApp (mesajlara basılı tut → Seç → işaretle → Paylaş), CamScanner (Paylaş), Dosyalar, Mail eki.
 
-## 4. Parça 1 — iPhone Kestirmesi ("AGY Evrak")
+**Sorular (tek ekran, hızlı):**
+1. **İş:** açık işler listesi — `Çizilecek Projeler`deki işler **ve henüz işlenmemiş paketlerdeki işler** (PC kapalıyken
+   açılan yeni iş de listede çıkar; aynı işin iki kez açılması önlenir). En üstte en son kullanılanlar.
+2. Listede yoksa **Yeni iş:** İşi getiren (`getirenler.txt` listesinden seç ya da yeni yaz) → Proje adı (yaz) →
+   İş türü (BHP · İç tesisat · Kompanzasyon · Diğer).
+3. **ACİL mi?** (yalnız yeni işte; sonradan klasör adının başına `! ACİL` yazarak da verilir).
+4. Not (isteğe bağlı).
 
-**Kullanım:** WhatsApp sohbeti → mesaja basılı tut → *Seç* → evrakları işaretle → *Paylaş* → **AGY Evrak**.
+**Yaptığı:** dosyaları **olduğu gibi** (yeniden sıkıştırmadan) `0-Gelen/<tarih_saat_kod>/`e kaydeder, yanına `paket.json`
+(iş, işi getiren, proje adı, iş türü, acil, not, dosya sırası, telefon saati) yazar, "N evrak gönderildi" bildirimi verir.
 
-**Kestirmenin soruları (hepsi tek ekranda, hızlı):**
-1. Müşteri / iş: `Çizilecek Projeler`deki açık işlerin listesi (en üstte) + "Yeni iş" (müşteri adı yazılır).
-2. Yeni işte: aynı müşterinin tamamlanmış işi varsa "bu işin revizyonu mu?" sorusu; "Bilmiyorum (evraktan bulunsun)" seçeneği.
-3. İş türü (yeni işte): BHP · İç tesisat · Kompanzasyon · Diğer.
-4. Not (isteğe bağlı): ör. "tapunun arkası eksik".
+**Kaydetme yolu (Faz 0'da denenip biri seçilecek):** (A) *Dosyalar* içindeki Google Drive konumuna doğrudan; (B) şirket
+hesabındaki küçük Apps Script web uygulamasına gönderim (kesin "alındı" onayı; dosya dosya). İnternet yoksa A kuyruğa
+alır, B "gönderilemedi, tekrar dene" der; hiçbir şey kaybolmaz.
 
-**Yaptığı:** gelen dosyaları **olduğu gibi** (yeniden sıkıştırmadan) `0-Gelen/<tarih_saat_kısa-kod>/` klasörüne kaydeder,
-yanına `paket.json` yazar (müşteri, iş, tür, not, dosya sırası, telefon saati), sonra "N evrak gönderildi" bildirimi.
+## 5. Giriş 2 — PC: "Evrak Bırak"
 
-**Kaydetme yolu — iki seçenek, Faz 0'da denenip biri seçilecek:**
-- (A) Kestirmenin "Dosyayı Kaydet" eylemiyle iPhone *Dosyalar* içindeki Google Drive konumuna. Sunucu yok, boyut sınırı yok.
-  Risk: Drive uygulaması yüklemeyi arka planda geciktirebilir.
-- (B) Kestirme dosyaları base64 olarak şirket hesabındaki küçük bir Apps Script web uygulamasına gönderir; o Drive'a yazar
-  ve "alındı" cevabı döner. Kesin onay verir. Risk: büyük paketlerde gönderi boyutu (resmî sınır bulunamadı; dosya dosya
-  gönderilerek aşılır) ve gizli anahtar yönetimi.
+PC'deki WhatsApp'tan sürüklenen dosyalar, tarayıcıdan çıkan PDF'ler, e-Devlet / e-posta belgeleri için:
+- Masaüstündeki **Evrak Bırak** simgesine dosyaları sürükle **ya da** dosyalara sağ tık → *Gönder* → *AGY Evrak*.
+- Küçük bir pencere açılır: telefondaki aynı sorular (iş listesi / yeni iş / ACİL / not). Tamam → dosyalar paket olarak
+  `0-Gelen`e kopyalanır (asıl dosyalara dokunulmaz) ve aynı işlemden geçer.
+- Tarayıcı yazılımının kayıt klasörü istenirse `Evrak Bırak` klasörü yapılır; yeni tarama gelince pencere kendiliğinden açılır.
 
-**Kestirme hataları:** internet yoksa (A) Drive kuyruğa alır; (B) "gönderilemedi, tekrar dene" der, hiçbir şey kaybolmaz.
-
-## 5. Parça 2 — Drive klasör düzeni (masaüstü = çizilecek projeler)
-
-Kullanıcının isteği (8 Kasım 2026): **masaüstünde yalnız çizilecek projeler** görünsün. Masaüstü bir iş kuyruğudur;
-bütün müşteri arşivi değil.
+## 6. Drive klasör düzeni
 
 ```
 AGY Evrak/
-  0-Gelen/                      kestirmenin bıraktığı ham paketler (işlenince 9-Arşiv'e taşınır)
-  Çizilecek Projeler/           ◄── MASAÜSTÜNDEKİ KISAYOL BURAYI AÇAR
-    01 · HAZIR · 2026-11-03 · AHMET YILMAZ – <iş adı>/
-    02 · HAZIR · 2026-11-05 · …
-    03 · EKSİK EVRAK · 2026-11-06 · …/
-    _LİSTE.txt                  sıra, bekleme günü, eksikler (bir bakışta durum)
-    ✔ Bitti/                    çizimi biten iş klasörü buraya sürüklenir
-  Tamamlanan Projeler/          "Bitti"ye bırakılanlar program tarafından buraya taşınır (masaüstünden kalkar)
-  8-Kontrol Et/                 müşterisi/türü belirsiz evrak (sebebiyle)
-  9-Arşiv/                      işlenmiş ham paketler
-  Kayıt.csv · kurallar.json
+  0-Gelen/                          ham paketler (işlenince 9-Arşiv'e taşınır)
+  Çizilecek Projeler/               ◄── MASAÜSTÜ KISAYOLU
+    ! ACİL · 2026-11-07 · <İŞİ GETİREN> – <Proje adı> · HAZIR/
+    2026-11-03 · <İŞİ GETİREN> – <Proje adı> · EKSİK EVRAK/
+    2026-11-05 · <İŞİ GETİREN> – <Proje adı> · KONTROL/
+    _LİSTE.txt                      sıra, bekleme günü (3 gün uyarısı), eksikler — bir bakışta
+  8-Kontrol Et/                     hiçbir işe bağlanamayan evrak (sebebiyle)
+  9-Arşiv/                          işlenmiş ham paketler = orijinallerin ikinci kopyası (saklama süresi: karar)
+  getirenler.txt                    işi getirenler listesi (kestirme ve PC penceresi buradan okur)
+  Kayıt.csv                         her evrak bir satır: tarih, iş, tür, kaynak, durum, bitiş tarihi
+  kurallar.json                     iş türleri, gerekli evrak listeleri, tür anahtar kelimeleri, adlandırma
 
-İş klasörünün içi (her iki yerde aynı):
-  Tapu.pdf  Kimlik.pdf  Vekaletname.pdf  …   düzeltilmiş, aranabilir PDF'ler
-  Tümü.pdf                                   (isteğe bağlı) dağıtım şirketine tek dosya
+İş klasörünün içi:
+  Kimlik.pdf  Tapu.pdf  Vekaletname.pdf  …   düzeltilmiş, aranabilir (Ctrl+F) PDF'ler
+  Tümü.pdf                                   hepsi tek dosyada, kurallardaki sırayla
   _orijinal/                                 gelen dosyaların değişmemiş kopyası
-  _bilgi.txt                                 okunan bilgiler, eksik evrak, müşteriye hazır mesaj
+  _bilgi.txt                                 iş bilgisi, evrak listesi, eksikler, müşteriye hazır mesaj, uyarılar
+  .is-kimligi                                gizli; program işi bununla tanır
 ```
 
-- **Sıra:** en eski iş en üstte (öne konan 01, 02… numarası evrakın ilk geliş tarihine göre). Bekleme günü `_LİSTE.txt`de;
-  X günü geçen iş için uyarı (gecikmeyi önlemek için).
-- **Durum** klasör adının başında: `HAZIR` (iş türünün gerekli evrakı tamam) · `EKSİK EVRAK` (eksikler `_bilgi.txt`de,
-  müşteriye hazır mesajla) · `KONTROL` (çelişki/bulanık evrak). Yeni evrak gelince durum ve ad kendiliğinden güncellenir.
-- **Kimlik:** program klasörü adından değil, içindeki gizli `.is-kimligi` dosyasından tanır; kullanıcı klasör adını
-  değiştirse de evrak doğru klasöre gider ve kullanıcının verdiği ad korunur (yalnız durum öneki güncellenir — karar).
-- **Bitti:** kullanıcı klasörü `✔ Bitti`ye sürükler → program `Tamamlanan Projeler/<yıl>/`e taşır. Tamamlanan işe yeni evrak
-  gelirse (revizyon) iş yeniden `Çizilecek Projeler`e döner ve "REVİZYON" öneki alır.
-- Masaüstüne yalnız `Çizilecek Projeler` klasörünün kısayolu konur; Drive eşitlemesi sayesinde PC'de dosya taşımak/silmek
-  Drive'a da yansır.
+**Adlandırma ve sıralama — sık ad değiştirme hatasına karşı:**
+- Sıra **tarih önekiyle** sağlanır (Windows ad sırası = en eski üstte); `! ACİL` öneki en üste çıkar. Numara (01, 02…)
+  kullanılmaz; numara kullanılsaydı her iş bitişinde bütün klasörlerin adı değişirdi.
+- Bekleme günü ve 3 gün uyarısı **klasör adına yazılmaz** (her gün ad değişirdi); `_LİSTE.txt`, Windows bildirimi ve
+  telefon özetinde gösterilir.
+- Durum (HAZIR / EKSİK EVRAK / KONTROL) **sonda**; yalnız durum değişince güncellenir. Klasörde açık dosya varsa
+  (Windows adı değiştirmeye izin vermez) değişiklik ertelenir, sonra tekrar denenir; hata vermez, işi bozmaz.
+- Kullanıcı adı elle değiştirirse program gizli `.is-kimligi`nden tanır; kullanıcının verdiği ad korunur, yalnız sondaki
+  durum sözcüğü güncellenir.
+- Türkçe büyük harf doğru (i→İ, ı→I); Windows'ta yasak karakterler temizlenir; yol ≤ 200 karakter; aynı ad varsa ` (2)`.
 
-Klasör adı kuralları: Türkçe büyük harf (i→İ, ı→I doğru), Windows'ta yasak karakterler (`\ / : * ? " < > |`) temizlenir,
-yol uzunluğu 200 karakteri geçmez, aynı ad varsa ` (2)` eklenir — hiçbir dosyanın üstüne yazılmaz.
+**İş bitince:** kullanıcı klasörü kendi proje klasörüne sürükler. Drive açısından klasör Drive'dan çıkar (Drive çöpüne
+düşer, 30 gün sonra silinir); kalıcı kopya kullanıcının proje klasöründedir (şahsi Drive yedeklemesi o klasörü kapsıyorsa
+onunla yedeklenir — kontrol edilecek). Orijinallerin ikinci kopyası `9-Arşiv`de saklama süresi boyunca durur.
+Program klasörün kalktığını fark eder, `Kayıt.csv`ye bitiş tarihini yazar.
 
-## 6. Parça 3 — PC Evrak İşleyici (adım adım)
+**Revizyon:** listeden kalkmış bir işe yeni evrak gelirse (kestirmede eski işler "Bitenler" altında aranabilir), iş
+`… · REVİZYON` olarak yeniden açılır; içinde yalnız yeni evrak olur, `_bilgi.txt` "önceki evrak kendi proje
+klasörünüzde" der.
 
-Windows açılınca kendiliğinden başlar, saatin yanında küçük simgeyle durur (çalışıyor / işliyor / hata).
-Yerel çalışır; internete yalnız Drive eşitlemesi çıkar (o da Google'ın kendi uygulaması).
+## 7. PC Evrak İşleyici (adım adım)
 
-1. **Bekleme:** `0-Gelen`deki paket, `paket.json` gelip bütün dosyaların boyutu 10 saniye sabit kalınca işlenir
-   (eşitleme yarıda kalmışken işlemez).
-2. **Tanıma:** JPG/PNG/HEIC/WEBP fotoğraf · PDF (metinli mi, taranmış mı) · Word/Excel/diğer · ZIP (açılır).
-3. **Kalite (yalnız fotoğraf ve taranmış PDF sayfası):**
-   - Bulanıklık ve çözünürlük ölçülür. Okunamayacak kadar kötüyse işlenir ama "Kontrol et — müşteriden yeniden iste" işareti alır.
-   - Kenar bulma + perspektif düzeltme (sayfa düz dikdörtgene açılır); kenar bulunamazsa kırpılmadan bırakılır.
-   - Yön düzeltme (yan/ters sayfa döndürülür).
-   - Gölge ve sarılık giderme, kontrast; **renk kararı:** renkli içerik (mühür, imza, kimlik, fotoğraf) varsa renkli,
-     yoksa gri. Siyah-beyaz yalnız kurala göre (dağıtım şirketi isterse).
-   - Hedef: A4, 300 dpi eşdeğeri; dosya boyutu sınırı ayarlanabilir (ör. sayfa başı ≤ 1 MB).
-   - **Zaten düzgün olana dokunulmaz:** CamScanner/müşteri PDF'i ve metinli PDF olduğu gibi kalır (yalnız okunur).
-4. **Okuma (OCR):** Türkçe. Adaylar: Tesseract (tur) ve Windows'un kendi OCR'ı — Faz 0'da gerçek evraklarla ikisi
-   karşılaştırılıp iyi okuyan seçilir. Çıktı **aranabilir PDF** olur (PDF içinde Ctrl+F ile ad, ada, parsel aranır).
-5. **Tür bulma:** `kurallar.json`daki anahtar kelimeler + güven puanı. Başlangıç listesi: Kimlik, Tapu, Vekaletname,
-   İmar durumu, Aplikasyon/Kroki, Yapı ruhsatı, İskan, Abonelik/Sözleşme, Fatura, Muvafakatname, Vergi levhası,
-   İmza sirküleri, Ticaret sicil, Proje/Çizim, Diğer. Güven düşükse "Kontrol et".
-6. **Bilgi çıkarma:** ad-soyad, TC kimlik no (11 hane + resmî kontrol algoritması), il/ilçe/mahalle, ada/parsel,
-   tesisat/abone no, tarih. Bunlar iş adını kurmak ve kontrol için kullanılır, `_bilgi.txt`ye yazılır.
-7. **Kontroller (uyarı verir, engellemez):** tapudaki malik ↔ seçilen müşteri; kimlikteki ad ↔ müşteri; vekaletname
-   tarihi; aynı işte farklı ada/parsel; kimlik süresi geçmiş mi.
-8. **Birleştirme:** aynı türdeki sayfalar tek PDF (tapunun önü/arkası). Sayfa sırası = paylaşım sırası. İsteğe bağlı `Tümü.pdf`.
-9. **Adlandırma:** klasör `MÜŞTERİ ADI – <iş adı>`; dosya `<Tür>.pdf` (ikinci gelirse `<Tür> (2).pdf`).
-   İş adının neyden kurulacağı kullanıcıdan öğrenilecek (bkz. 13. bölüm, soru 1).
-10. **Yerleştirme:** iş klasörüne (yeni işse `Çizilecek Projeler`de açılır; tamamlanmış işse REVİZYON olarak geri gelir);
-    orijinaller `_orijinal/`e; ham paket `9-Arşiv/`e; `_LİSTE.txt` ve klasör önekleri (sıra, durum) güncellenir.
-11. **Tekrar kontrolü:** aynı dosya (özet değeri) ya da yeniden sıkıştırılmış aynı fotoğraf (görsel benzerlik) ikinci kez
-    gelirse yeni kopya oluşturulmaz, kayda "tekrar" yazılır.
-12. **Eksik evrak:** iş türüne göre gerekli liste (`kurallar.json`) ile karşılaştırılır; `_bilgi.txt`de eksikler ve
-    bulanık evraklar için **müşteriye atılacak hazır WhatsApp mesajı** ("Tapunuzun arka yüzü ve kimliğinizin net bir
-    fotoğrafı eksik…") yazılır.
-13. **Kayıt:** `Kayıt.csv` — tarih, müşteri, iş, tür, kaynak dosya, güven, durum, uyarı.
-14. **Bildirim:** Windows bildirimi ("AHMET YILMAZ: 4 evrak işlendi, 1 tanesi kontrol bekliyor"). Telefona bildirim
-    isteğe bağlı (ücretsiz yol: şirket e-postasına kısa özet) — karar.
-15. **Öğrenme:** kullanıcı bir dosyanın adını/klasörünü elle değiştirirse işleyici bunu fark eder, "düzeltmeler"
-    dosyasına yalnız *tür ve kelime* bilgisini yazar (kişisel veri yazmaz). Bu dosyadan kurallar güncellenir.
-16. **Güncelleme:** kurallar `kurallar.json` ile (Drive'dan okunur, program yeniden kurulmaz). Program güncellemesi
-    yeni sürüm dosyasıyla.
+Windows açılınca kendiliğinden başlar (saat yanında simge: çalışıyor / işliyor / hata). Yerel çalışır.
+PC uzun süre kapalı kaldıysa açılışta biriken paketleri **geliş sırasıyla** işler; bekleme günleri telefonun gönderim
+saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 
-## 7. Güvenlik ve KVKK
+1. **Bekleme:** `paket.json` geldi ve dosya boyutları 10 saniye sabit → işle (eşitleme yarıdayken işlemez).
+2. **Tanıma:** fotoğraf (JPG/PNG/HEIC/WEBP) · PDF (metinli / taranmış) · Word/Excel/diğer · ZIP (açılır). Video/ses atlanır (kayda not).
+3. **Kalite** (fotoğraf ve taranmış PDF sayfası):
+   - bulanıklık / çözünürlük ölçümü → okunamayacak kadar kötüyse işlenir ama KONTROL + "yeniden gönderin" hazır mesajı;
+   - kenar bulma + perspektif düzeltme (bulunamazsa kırpmadan bırakır); yön düzeltme;
+   - gölge / sarılık giderme, kontrast; **renk:** mühür, imza, kimlik, fotoğraf varsa renkli, yoksa gri;
+   - A4, 300 dpi eşdeğeri; dosya boyutu sınırı ayarlanabilir;
+   - **zaten düzgün olana dokunulmaz:** CamScanner / müşteri PDF'i, metinli PDF, temiz ekran görüntüsü olduğu gibi kalır.
+4. **Okuma (OCR, Türkçe, yerel):** Tesseract `tur` ya da Windows OCR — Faz 0'da gerçek evrakla karşılaştırılıp seçilir.
+   Çıktı aranabilir PDF.
+5. **Tür bulma:** `kurallar.json` anahtar kelimeleri + güven puanı. Başlangıç: Kimlik, Tapu, Vekaletname, İmar durumu,
+   Aplikasyon/Kroki, Yapı ruhsatı, İskan, Abonelik/Sözleşme, Fatura, Muvafakatname, Vergi levhası, İmza sirküleri,
+   Ticaret sicil, Proje/Çizim, Diğer. Güven düşükse dosya adı `Belirsiz-1.pdf`, iş durumu KONTROL.
+6. **Bilgi çıkarma (kontrol için):** ad-soyad, TC no (11 hane + resmî kontrol algoritması), il/ilçe/mahalle, ada/parsel,
+   tesisat/abone no, tarihler → `_bilgi.txt`.
+7. **Kontroller (uyarı, engel değil):** aynı işte farklı ada/parsel; tapu maliki ↔ kimlik / vekaletname uyumu;
+   kimlik süresi; vekaletnamenin tarihi.
+8. **Birleştirme:** aynı türdeki sayfalar tek PDF (tapu ön/arka), sıra = paylaşım sırası; `Tümü.pdf` kurallardaki sırayla
+   (her yeni evrakta yeniden üretilir).
+9. **Yerleştirme:** iş klasörüne; orijinaller `_orijinal/`e; ham paket `9-Arşiv/`e. Aynı türden ikinci evrak gelirse
+   eskisi silinmez: `Tapu (2).pdf` (KONTROL notu: "iki tapu var, doğru olan hangisi?").
+10. **Tekrar kontrolü:** aynı dosya (özet değeri) ya da yeniden sıkıştırılmış aynı fotoğraf (görsel benzerlik) tekrar
+    eklenmez; kayda "tekrar" yazılır.
+11. **Durum:** iş türünün gerekli evrak listesi tamam ve KONTROL sebebi yok → HAZIR; eksik varsa EKSİK EVRAK
+    (eksikler + müşteriye hazır WhatsApp mesajı `_bilgi.txt`de); bulanık / belirsiz / çelişki → KONTROL.
+12. **Liste:** `_LİSTE.txt` güncellenir (ACİL'ler, sonra en eski; bekleme günü; 3 günü geçenler işaretli).
+13. **Kayıt:** `Kayıt.csv`.
+14. **Bildirim (her paket):** Windows bildirimi + şirket Gmail'inden kullanıcının telefonuna kısa özet e-postası
+    ("<İşi getiren> – <Proje>: 4 evrak işlendi · durum HAZIR · 3 günü geçen 2 iş var"). E-posta Google içinde kalır;
+    üçüncü bir bildirim servisine kişisel veri gitmez. (Gönderim için şirket Gmail'inde "uygulama şifresi" gerekir.)
+15. **Öğrenme:** kullanıcı bir dosyanın adını değiştirirse (ör. `Belirsiz-1.pdf` → `İmar durumu.pdf`) program bunu
+    fark eder, yalnız tür + anahtar kelime bilgisini `duzeltmeler.txt`ye yazar (kişisel veri yok); kurallar buna göre güncellenir.
+16. **Güncelleme:** kurallar `kurallar.json` ile (Drive'dan okunur); program yeni sürüm dosyasıyla.
 
-- Kimlik, tapu gibi kişisel veriler yalnız: kullanıcının iPhone'u → şirket Google Drive'ı → kullanıcının PC'si.
-  Üçüncü bir hizmete, yapay zekâya, bu depoya gönderilmez. OCR yerel çalışır.
-- Şirket Google hesabında iki adımlı doğrulama açık olmalı; `AGY Evrak` klasörü kimseyle paylaşılmaz.
-- (B) yolunda kestirme gizli bir anahtarla gönderir; anahtar yalnız kullanıcının telefonunda ve Apps Script'te durur.
-- Saklama süresi: iş bitince ne kadar tutulacağı şirket kararı (KVKK: amaç için gerekli süre). İşleyici istenirse
-  "iş kapandı" işaretli klasörleri X ay sonra arşive/silmeye aday listeler — otomatik silmez.
-- Program kayıtlarında (log) kişisel veri tutulmaz; yalnız dosya kodları ve durum.
-- Test ve ayar için kullanılacak örnek evraklar maskelenmiş olmalı ve depoya girmez.
+## 8. Güvenlik ve KVKK
 
-## 8. Uç durumlar ve hatalar
+- Kişisel veri yalnız: kullanıcının iPhone'u → şirket Google Drive'ı → kullanıcının PC'si (+ özet e-postası aynı Gmail).
+  OCR yerel; yapay zekâya, üçüncü servise, bu depoya gönderilmez.
+- Şirket Gmail'inde **iki adımlı doğrulama** açık olmalı (uygulama şifresi için de şart); `AGY Evrak` kimseyle paylaşılmaz.
+- B yolunda kestirme gizli anahtarla gönderir; anahtar yalnız telefonda ve Apps Script'te.
+- Program kayıtlarında (log) kişisel veri yok.
+- `9-Arşiv` saklama süresi şirket kararı; program süresi dolanı **silmez**, yalnız listeler.
+- Faz 0 örnek evrakları maskeli olmalı, depoya girmez.
+
+## 9. Uç durumlar
 
 | Durum | Davranış |
 |---|---|
-| PC kapalı | Paket Drive'da bekler; PC açılınca sırayla işlenir |
+| PC günlerce kapalı | Paketler Drive'da bekler; açılınca geliş sırasıyla işlenir; bekleme günü telefon saatine göre |
+| PC kapalıyken aynı iş için iki paket | Kestirme işlenmemiş paketlerdeki işleri de listeler → aynı iş seçilir |
 | Eşitleme yarıda | Boyutlar sabitlenene kadar beklenir |
-| Kullanıcı iş klasörünün adını değiştirdi | Gizli kimlik dosyasıyla tanınır, yeni evrak yine oraya gider |
-| Bitmiş işe yeni evrak geldi | REVİZYON olarak Çizilecek Projeler'e döner |
-| Aynı müşteri, iki ayrı iş | İş seçimiyle ayrılır; "Bilmiyorum" seçilirse ada/parsel'e göre önerilir, emin değilse Kontrol et |
-| Müşteri adı yazım farkı (Ahmet Yilmaz / AHMET YILMAZ) | Türkçe büyük harfe ve sadeleştirilmiş karşılaştırmaya göre aynı sayılır |
-| Bir pakette iki farklı kişinin evrakı (ör. malik + vekil) | Hepsi seçilen işin klasörüne; kişi adları `_bilgi.txt`ye |
-| Bulanık / karanlık / parmak kapatan fotoğraf | İşlenir + Kontrol et + hazır "yeniden gönderin" mesajı |
-| Şifreli PDF | Olduğu gibi konur, "şifreli" uyarısı |
-| Çok sayfalı karışık PDF (tek dosyada tapu+kimlik) | Bölünmez (orijinal korunur), türü "Karma", sayfa listesi `_bilgi.txt`de |
-| Video, ses, konum | Yok sayılır, kayda not düşülür |
-| Çok büyük dosya | İşlenir; PDF boyut sınırı aşarsa kalite kademeli düşürülür, orijinal saklı |
-| Kural yanlış tür verdi | Kullanıcı düzeltir → öğrenme dosyası → kural güncellenir |
-| İşleyici çöktü | Paket `0-Gelen`de kalır (taşınmamıştır), yeniden başlayınca tekrar dener; 3 denemede olmazsa Kontrol et |
-| Drive dolu (15 GB) | Uyarı; `9-Arşiv` temizliği önerilir |
-| iOS / WhatsApp güncellemesi kestirmeyi bozdu | Kestirme tek parça, yeniden kurulumu 1 dakika; işleyici etkilenmez |
+| Klasörde dosya açıkken durum değişti | Ad değişikliği ertelenir, tekrar denenir |
+| Kullanıcı klasör adını değiştirdi | Gizli kimlikle tanınır; ad korunur |
+| Kullanıcı klasörü taşıdı / sildi | "Bitti" sayılır; Kayıt.csv'ye yazılır; orijinaller 9-Arşiv'de |
+| Bitmiş işe yeni evrak | REVİZYON olarak yeniden açılır |
+| Aynı türden iki evrak | İkisi de saklanır, KONTROL |
+| Bir pakette iki kişinin evrakı (malik + vekil) | Hepsi aynı işe; kişiler `_bilgi.txt`de |
+| Bulanık / karanlık / parmak | İşlenir + KONTROL + hazır "yeniden gönderin" mesajı |
+| Şifreli PDF | Olduğu gibi konur, uyarı |
+| Tek PDF'te karışık evrak | Bölünmez; tür "Karma", sayfa listesi `_bilgi.txt`de |
+| Video / ses / konum | Atlanır, kayda not |
+| Çok büyük dosya | PDF boyutu sınırı aşarsa kalite kademeli düşer; orijinal saklı |
+| İşleyici çöktü | Paket 0-Gelen'de kalır; yeniden başlayınca dener; 3 denemede olmazsa 8-Kontrol Et |
+| Drive dolu (Gmail 15 GB, Gmail + Fotoğraflar ile ortak) | Uyarı; 9-Arşiv temizliği önerilir |
+| E-posta gönderilemedi (internet yok) | Kuyrukta bekler, sonra gönderilir |
+| iOS / WhatsApp güncellemesi kestirmeyi bozdu | Kestirme 1 dakikada yeniden kurulur; işleyici etkilenmez |
+| Windows SmartScreen uyarısı | İmzasız program; kurulum rehberinde "yine de çalıştır" gösterilir |
 
-## 9. Kurulum (onaydan sonra)
+## 10. Kurulum (onaydan sonra)
 
 | Kim | Ne | Süre |
 |---|---|---|
-| Kullanıcı | Şirket Google hesabında `AGY Evrak` klasörünü açmak (ya da işleyiciye açtırmak) | 1 dk |
-| Kullanıcı | PC'de Drive masaüstü uygulamasına şirket hesabını **2. hesap** olarak eklemek (4 hesaba kadar destekleniyor; her hesap ayrı sürücü harfi) | 5 dk |
-| Kullanıcı | iPhone'a Google Drive uygulaması (A yolu) ve kestirmeyi bağlantıdan eklemek | 3 dk |
-| Benim | Kestirme, işleyici programı (tek kurulum dosyası), `kurallar.json`, kurulum rehberi (ekran görüntülü) | — |
-| Kullanıcı | İşleyiciyi kurmak; masaüstüne `AGY Evrak` kısayolu | 5 dk |
+| Kullanıcı | Şirket Gmail'inde iki adımlı doğrulama + uygulama şifresi (özet e-postası için) | 5 dk |
+| Kullanıcı | PC'de Drive masaüstü uygulamasına şirket hesabını **2. hesap** olarak eklemek (4 hesaba kadar; ayrı sürücü harfi) | 5 dk |
+| Kullanıcı | iPhone'a Google Drive uygulaması (A yolu) + kestirmeyi bağlantıdan eklemek | 3 dk |
+| Benim | Kestirme, işleyici (tek kurulum dosyası), Evrak Bırak penceresi, `kurallar.json`, ekran görüntülü rehber | — |
+| Kullanıcı | İşleyiciyi kurmak; masaüstüne iki kısayol (Çizilecek Projeler, Evrak Bırak) | 5 dk |
 
-Not: imzasız kurulum dosyasında Windows "SmartScreen" uyarısı çıkabilir ("Yine de çalıştır"). Rehberde gösterilecek.
+## 11. Test ve kabul
 
-## 10. Test planı ve kabul
+- **Faz 0 (kurmadan önce, kullanıcının telefonunda ~10 dk):** WhatsApp'ta karışık seçim (fotoğraf + PDF) kestirmeye
+  orijinal dosya olarak ve sırayla geliyor mu · A yolu (Drive'a doğrudan kayıt) hızlı ve güvenilir mi, değilse B ·
+  HD / belge / normal fotoğraf çözünürlük farkı · PC'deki WhatsApp'tan sürükle-bırak.
+- **Kalite denemesi:** maskeli 15–20 gerçek evrak (bulanık, gölgeli, eğik, kimlik ön/arka, tapu, CamScanner PDF'i,
+  müşteri PDF'i, ekran görüntüsü, tarayıcı çıktısı); önce/sonra karşılaştırması kullanıcıya gösterilir, ayar onaylanır.
+- **OCR karşılaştırması:** Tesseract ↔ Windows OCR, Türkçe karakterlerle.
+- **Kabul:** 1. bölüm ölçütleri; bir hafta gerçek kullanımda kayıp sıfır, KONTROL oranı düşüyor.
 
-- **Faz 0 doğrulamaları (kurmadan önce, kullanıcının telefonunda 10 dakikalık deneme):**
-  1. WhatsApp'ta karışık seçim (fotoğraf + PDF) paylaşımı kestirmeye **orijinal dosya** olarak geliyor mu, sırası korunuyor mu?
-  2. A yolu: kestirmeden Google Drive'a (şirket hesabı) kaydetme güvenilir ve hızlı mı? Değilse B yolu.
-  3. HD / belge olarak gelen fotoğrafla normal fotoğrafın çözünürlük farkı.
-- **Kalite denemesi:** kullanıcının (maskelenmiş) 15–20 gerçek evrakı: bulanık fotoğraf, gölgeli fotoğraf, eğik çekim,
-  kimlik ön/arka, tapu, CamScanner PDF'i, müşteri PDF'i, ekran görüntüsü. Her biri için önce/sonra karşılaştırması
-  kullanıcıya gösterilir; ayarlar onaylanır.
-- **OCR karşılaştırması:** aynı evraklarda Tesseract ve Windows OCR; Türkçe karakterlerle doğruluk.
-- **Kabul:** 0. bölümdeki ölçütler; bir hafta gerçek kullanımda kayıp sıfır, Kontrol et oranı düşüyor.
+## 12. Fazlar
 
-## 11. Fazlar
+| Faz | İçerik |
+|---|---|
+| 0 | Doğrulamalar + kalite / OCR denemesi |
+| 1 | Kestirme + Evrak Bırak + Drive düzeni + işleyici çekirdeği (tanı, kalite, PDF, yerleştir, liste, kayıt, bildirim) |
+| 2 | OCR, tür bulma, birleştirme, Tümü.pdf, tekrar kontrolü |
+| 3 | Gerekli evrak → HAZIR / EKSİK, hazır mesajlar, kontroller, 3 gün uyarısı |
+| 4 | Öğrenme ve kural güncellemeleri |
+| İleride | Tam otomatik giriş (Tech Provider onayı) — yalnız giriş değişir |
 
-| Faz | İçerik | Çıktı |
-|---|---|---|
-| 0 | Doğrulamalar + örnek evraklarla kalite/OCR denemesi | Seçilen kayıt yolu, onaylı kalite ayarı |
-| 1 | Kestirme + Drive düzeni + işleyicinin çekirdeği (tanı, kalite, PDF, yerleştir, kayıt) | Evraklar masaüstüne düzgün PDF olarak düşer |
-| 2 | OCR, tür bulma, bilgi çıkarma, iş adı, tekrar kontrolü | Doğru ad ve klasör |
-| 3 | Kontroller, eksik evrak listesi + hazır mesajlar, bildirimler | Gecikmeleri önleyen uyarılar |
-| 4 | Öğrenme (düzeltmeleri izleme), kural güncellemeleri | Zamanla sıfır düzeltme |
-| İleride | Tam otomatik giriş (12. bölüm) | Paylaşım adımı da kalkar |
+## 13. Kullanıcıdan beklenenler (kalan)
 
-## 12. İleride tam otomatik
-
-Kendi Tech Provider başvurusu (ücretsiz görünüyor; şirket doğrulaması + Meta incelemesi) onaylanırsa aynı numara
-coexistence ile Cloud API'ye bağlanır; gelen evrak bir web kancasıyla doğrudan `0-Gelen`e paket olarak düşer
-(gönderenin adı ve numarası `paket.json`a). Parça 2 ve 3 hiç değişmez. Başvuru ayrıca araştırılacak.
-
-## 13. Kullanıcıdan beklenen kararlar
-
-1. **İş adı** neyden kurulsun? (ada/parsel · tesisat/abone no · mahalle/adres · iş türü) — örnek bir klasör adı.
-2. **Masaüstü kuyruğu:** (a) iş ilk evrak gelir gelmez mi kuyruğa girsin (EKSİK EVRAK önekiyle), yoksa yalnız evrak
-   tamamlanınca mı? (b) Sıra en eski iş üstte mi, yoksa elle öncelik verilebilsin mi? (c) Kaç gün bekleyen iş uyarı versin?
-   (d) "Bitti" işareti klasörü `✔ Bitti`ye sürüklemek mi olsun? (e) Tamamlananlar yıl / iş türüne göre mi ayrılsın?
-3. **Tümü.pdf** (dağıtım şirketine tek dosya) gerekli mi? Dağıtım şirketinin dosya boyutu / renk / format şartı var mı?
-4. **İş türüne göre gerekli evrak listeleri** (BHP için hangi evraklar, iç tesisat için hangileri…).
-5. Şirket hesabı **Google Workspace** mi (alan adlı e-posta) yoksa Gmail mi? (Workspace'te yönetici kısıtı kontrolü)
-6. `9-Arşiv` ve kapanan işler ne kadar saklansın?
-7. Telefona bildirim istenir mi (e-posta özeti)?
-8. Faz 0 için maskelenmiş 15–20 örnek evrak.
+1. **Proje adı örnekleri** (klasör adının "İşi getiren – Proje adı" kısmı için 3–5 örnek). *(kullanıcı sonra verecek)*
+2. **İş türleri ve her biri için gerekli evrak listesi** (HAZIR / EKSİK kararı buna bağlı). Liste gelene kadar durum
+   yalnız YENİ / KONTROL olur.
+3. **Faz 0 için maskeli 15–20 örnek evrak.**
+4. `9-Arşiv`deki orijinaller ne kadar saklansın? (öneri: 1 yıl)
+5. Kendi proje klasörün nerede ve şahsi Drive yedeklemesi o klasörü kapsıyor mu? (iş bitince tek kopya orada kalır)
 
 ## Araştırma notları (dayanaklar)
 
-- Coexistence yalnız Solution Partner / Tech Provider üzerinden: Meta, *Onboard WhatsApp Business app users* (developers.facebook.com).
-- Cloud API'de kullanıcının başlattığı (gelen) mesajlar ücretsiz: üçüncü taraf fiyat rehberleri (Meta fiyat sayfası ayrıca kontrol edilecek).
+- Coexistence yalnız Solution Partner / Tech Provider üzerinden: Meta, *Onboard WhatsApp Business app users*.
+- Cloud API'de gelen (kullanıcının başlattığı) mesajlar ücretsiz: üçüncü taraf fiyat rehberleri.
 - Resmî olmayan kütüphanelerde numara kapanma riski: whatsmeow-node SSS ve benzeri.
 - Drive masaüstü uygulaması 4 hesaba kadar, her hesap ayrı sürücü harfi: Google Drive yardım (answer 10838124).
-- Apps Script `doPost` için resmî gönderi boyutu sınırı bulunamadı (topluluk: ~50 MB; doğrulanmadı) → B yolunda dosya dosya gönderim.
-- Apps Script web uygulaması POST'a 302 yönlendirmesiyle cevap verir; kestirme yönlendirmeyi izler (Faz 0'da denenecek).
+- Apps Script `doPost` resmî gönderi sınırı bulunamadı (topluluk ~50 MB) → B yolunda dosya dosya gönderim; POST'a
+  302 yönlendirmesiyle cevap verir (Faz 0'da denenecek).
 - WhatsApp'ta "belge" olarak gönderilen fotoğraf sıkıştırılmaz; HD orijinal değildir: üçüncü taraf rehberler.
-- Türkçe OCR: Tesseract `tur` verisi var; Windows OCR'ın Türkçe desteği ve doğruluğu kaynakla doğrulanamadı → Faz 0'da ölçülecek.
+- Türkçe OCR: Tesseract `tur` var; Windows OCR Türkçe doğruluğu doğrulanamadı → Faz 0.
