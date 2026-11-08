@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.4 (sade e-postalar). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.5 (telefon bildiriminde iş adları ve gün). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -119,7 +119,10 @@ function bekleyenler() {
   const geciken = isler.filter(x => x.gun >= GECIKME_GUN).length;
   const satir = x => x.is + ' · ' + x.gun + ' gün' + (x.durum ? ' · ' + x.durum : '') + (x.gun >= GECIKME_GUN ? ' · GECİKİYOR' : '');
   return { isler: isler, geciken: geciken, satirlar: isler.map(satir),
-    kisa: isler.length ? isler.length + ' iş bekliyor' + (geciken ? ', ' + geciken + "'si " + GECIKME_GUN + ' günü geçti' : '') : 'Bekleyen iş yok' };
+    kisa: isler.length
+      ? isler.length + ' iş bekliyor' + (geciken ? ' (' + geciken + ' gecikiyor)' : '') + '\n' +
+        isler.map(x => x.is + ' · ' + x.gun + ' gün' + (x.durum ? ' · ' + x.durum : '')).join('\n')
+      : 'Bekleyen iş yok' };
 }
 
 // her saat çalışır; Türkiye saatiyle SABAH_SAATI'nde günde bir kez sabah özeti gönderir
