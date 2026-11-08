@@ -45,26 +45,36 @@
       c.cokgen([T(-4.5, -1.8), T(4.5, -1.8), T(4.5, 1.8), T(-4.5, 1.8)], { ...S, kapali: true });
       [-0.7, 0, 0.7].forEach(d => L(d, -1.8, d, 1.8));
     },
-    // YKŞ / kaçak akım rölesi (kullanıcının sembolü): kutu içinde iki bağlantı ucu, açık bıçak, açma işareti (dolu üçgen
-    // ve ×) ve basamaklı mandal; hat soldan girer, sağdaki uçtan çıkar (genişlik 16, merkez x,y)
+    // YKŞ / kaçak akım rölesi: kullanıcının AutoCAD sembolü (YES.dxf) birebir; kutu 18,04 x 14,14, uçlar hat üzerinde.
+    // Yerel koordinat: x kutunun ortası, y hat (bağlantı uçlarının merkezi); hat soldan kutu kenarına girer, sağ kenardan çıkar.
     ykş(c, x, y) {
-      const L = (a, b, d, e) => c.cizgi(x + a, y + b, x + d, y + e, S);
-      c.kutu(x - 7, y - 4, x + 7, y + 7.5, S);
-      L(-8, -1.5, -7, -1.5); c.daire(x - 4.6, y - 1.5, 1.5, S); L(-7, -1.5, -6.1, -1.5);
-      c.daire(x + 4.6, y - 1.5, 1.5, S); L(6.1, -1.5, 8, -1.5);
-      L(-3.5, -0.4, 3.6, 4.0);                                             // bıçak
-      c.dolgu([[x - 0.6, y + 1.6], [x - 3.4, y + 1.9], [x - 1.9, y + 4.3]], S);   // açma üçgeni
-      L(-4.2, 2.2, -2.2, 4.6); L(-4.2, 4.0, -2.0, 2.6);                     // ×
-      L(1.2, 2.6, 1.2, 4.6); L(1.2, 4.6, 2.9, 4.6); L(2.9, 4.6, 2.9, 6.3); L(2.9, 6.3, 1.4, 6.3);   // mandal
+      const k = 16 / 18.04, ox = 797.65, oy = 5693.1;                     // ölçek: tek hattaki 16 birimlik yere sığar
+      const P = (a, b) => [x + (a - ox) * k, y + (b - oy) * k];
+      const L = (a, b, d, e) => c.cizgi(...P(a, b), ...P(d, e), S);
+      c.cokgen([P(788.63, 5703.12), P(806.67, 5703.12), P(806.67, 5688.98), P(788.63, 5688.98)], { ...S, kapali: true });
+      c.cizgi(x - 8 - 0.4, y, ...P(788.63, 5693.1), S);                  // hat → kutu
+      c.daire(...P(792.67, 5693.1), 2.15 * k, S); c.daire(...P(803.23, 5693.1), 2.15 * k, S);
+      L(805.38, 5693.1, 806.67, 5693.1); c.cizgi(...P(806.67, 5693.1), x + 8 + 0.4, y, S);
+      L(794.82, 5693.1, 801.88, 5698.04);                                  // bıçak
+      c.dolgu([P(796.63, 5697.67), P(794.14, 5695.9), P(793.84, 5698.95)], S);   // açma üçgeni
+      L(796.95, 5694.59, 793.84, 5698.95);
+      L(792.6, 5698.07, 795.09, 5699.84); L(793.84, 5698.95, 792.9, 5700.33);      // ×
+      [[800, 5696.72], [798.58, 5698.68], [800.51, 5700.04], [799.38, 5701.74], [797.34, 5700.38], [796.14, 5701.97]]
+        .reduce((o, q) => { if (o) L(...o, ...q); return q; }, null);     // mandal
     },
-    // sigorta (kullanıcının sembolü): hat üzerinde kutu, kutup sayısı kadar dikey çizgi, çapraz ok
-    sigorta(c, x, y, kutup = 4) {
-      const L = (a, b, d, e) => c.cizgi(x + a, y + b, x + d, y + e, S);
-      L(-8, 0, -5, 0); L(5, 0, 8, 0);
-      c.kutu(x - 5, y - 2.2, x + 5, y + 2.2, S);
-      for (let i = 0; i < kutup; i++) { const u = (i - (kutup - 1) / 2) * 1.7; L(u, -3.2, u, 3.2); }
-      L(-5.8, -3.8, 5.4, 3.6);
-      c.dolgu([[x + 6.4, y + 4.2], [x + 4.2, y + 3.9], [x + 5.3, y + 2.3]], S);
+    // sigorta: kullanıcının AutoCAD sembolü (YES.dxf) birebir; kutu 17,73 x 8,87, kutuyu aşan kutup çizgileri, çapraz ok
+    // dikey: true → saat yönünün tersine 90° (sayaç önü: enerji aşağıdan yukarı)
+    sigorta(c, x, y, kutup = 4, dikey = false) {
+      const k = 16 / 18.6, ox = 835.645, oy = 5695.755;
+      const P = dikey ? (a, b) => [x - (b - oy) * k, y + (a - ox) * k] : (a, b) => [x + (a - ox) * k, y + (b - oy) * k];
+      const L = (a, b, d, e) => c.cizgi(...P(a, b), ...P(d, e), S);
+      const ucA = dikey ? [x, y - 8.4] : [x - 8.4, y], ucB = dikey ? [x, y + 8.4] : [x + 8.4, y];
+      c.cizgi(...ucA, ...P(826.78, oy), S); c.cizgi(...P(844.51, oy), ...ucB, S);
+      c.cokgen([P(826.78, 5700.19), P(844.51, 5700.19), P(844.51, 5691.32), P(826.78, 5691.32)], { ...S, kapali: true });
+      const xs = kutup === 2 ? [833.47, 837.0] : kutup === 3 ? [831.7, 835.645, 839.6] : [829.94, 833.47, 837.0, 840.52];
+      xs.forEach(u => L(u, 5686.89, u, 5704.62));
+      L(827.19, 5688.39, 843.69 + (841.92 - 843.69) / 2, 5701.31 + (5703.31 - 5701.31) / 2);
+      c.dolgu([P(846.07, 5705.19), P(843.69, 5701.31), P(841.92, 5703.31)], S);
     },
     // TMŞ (IEC 60617 devre kesici): açık kontak, sabit kontakta ×
     salter(c, x, y, tur, dikey = false) {
@@ -144,7 +154,7 @@
       // elle yazı varsa aynen (satırlar / ile), yoksa kural: YKŞ / K.A.R → ad, akım, 300 mA; kesici → (ad), 10kA, akım
       const elle = String(k.yazi || '').split('/').map(t => t.trim()).filter(Boolean);
       const sat = elle.length ? elle : k.tur === 'diger' ? [String(k.deger || '').trim()] : et.kacak ? [CIHAZ_AD[k.tur], et.akim, et.ek] : [CIHAZ_AD[k.tur], et.ek, et.akim].filter(Boolean);
-      const y0 = yh + (et.kacak ? 9.5 : 6.8);
+      const y0 = yh + (et.kacak ? 11.5 : 10.5);
       sat.slice().reverse().forEach((t, i) => c.yazi(t, cx, y0 + i * 4, 2.5, { stil: !elle.length && i === sat.length - 1 && CIHAZ_AD[k.tur] ? INCE : KALIN, hiza: 'orta' }));
       x += 16; c.cizgi(x, yh, x + 8, yh, S); x += 8;
     }
@@ -158,10 +168,10 @@
       c.daire(gx, yh, 0.8, S);
       let y = yh;
       if (g.onu) {
-        sembol.otomat3(c, gx, yh + 14, true);
-        c.cizgi(gx, yh, gx, yh + 6, S);
         const et = kesiciEtiket({ tur: 'sigorta', deger: g.onu }, v.faz);    // sigortalarda her zaman 10kA, kutup faza göre
-        c.yazi(et.ek, gx + 4, yh + 15, 2.3, { stil: KALIN }); c.yazi(et.akim, gx + 4, yh + 11.3, 2.3, { stil: KALIN });
+        sembol.sigorta(c, gx, yh + 14, et.kutup, true);                     // kullanıcının sigorta sembolü, dik
+        c.cizgi(gx, yh, gx, yh + 5.6, S);
+        c.yazi(et.ek, gx + 9.5, yh + 15.5, 2.3, { stil: KALIN }); c.yazi(et.akim, gx + 9.5, yh + 11.8, 2.3, { stil: KALIN });
         y = yh + 22;
       }
       const sy = yh + 35;

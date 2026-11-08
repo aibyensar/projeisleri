@@ -208,13 +208,15 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    (zip adları UTF-8 bayraklı; Windows 10+ doğru açar). Montaj detayı kullanıcının onaylı detayına göre: BETON KAİDE YOK; box kendi alt
    çerçevesinde, pano dolu pano ayağında, kazık "DAL.GAL.TOP.KAZ. L=2m 65x65x7 mm" (box işinde iki uçta, direkte pano tarafında);
    direkte "beton temel" yok. Vaziyet planında enerji alınan box/direk adı 3 mm kalın etiket. DXF denetimi (ezdxf audit) 0 hata.
-   YKŞ sembolü: kullanıcı "tutturamamışsın" dedi; fotoğraf elde yok → kullanıcıdan sembolün DXF'i (WBLOCK) istendi, gelince blok olarak
-   birebir konacak.
+   YKŞ sembolü: 1p'de çözüldü.
 1o. TASARIM (8 Kasım 2026): beyaz üst şerit (logo-beyaz.png = lacivert logo, başlık, sağda müşteri/başvuru çipi, ← Proje İşleri);
    main.duzen iki sütun: solda numaralı bölüm kartları (.kbas: numara rozeti, başlık, kısa açıklama, durum çipi Bekliyor/Devam ediyor/Tamam),
    sağda yapışkan "Proje durumu" paneli (durumPaneli(eksik): 5 adım, tıklayınca bölüme gider; İndir düğmesi ve eksikler burada).
    Yazı tipi Inter (Google Fonts) — "calt" KAPALI (yoksa 4x25 → 4×25 görünür; x hep küçük). Güç tablosu bloğu 1.5fr/1fr.
    yayin-hazirla.py logo-beyaz.png'yi de kopyalar, "../baglanti-hatti/" (çift tırnak) yolunu da düzeltir.
+1p. SEMBOLLER KULLANICININ DOSYASINDAN (8 Kasım 2026): kullanıcı YES.dxf gönderdi (YKŞ + sigorta sembolü; depoda YOK). bhp-cizim.js
+   sembol.ykş ve sembol.sigorta bu dosyadaki koordinatlarla BİREBİR çizilir (ölçek 16 birimlik yere). Sayaç önleri de aynı sigorta sembolü
+   (dikey). K.A.R da YKŞ sembolüyle. TMŞ ve "Diğer" IEC devre kesici (×). Eski otomat3/buson3 artık tek hatta kullanılmıyor.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).
