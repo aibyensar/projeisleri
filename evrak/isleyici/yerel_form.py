@@ -15,7 +15,8 @@ from pathlib import Path
 TURLER = ['İç Tesisat', 'Bağlantı Hattı', 'İç Tesisat + Bağlantı Hattı', 'Kompanzasyon']
 
 # Google Apps Script yerine yerel sunucuya gönderen ara katman
-ARA_KATMAN = """<script>
+ARA_KATMAN = """<style>html { zoom: .86; } .ust { padding: 12px 18px 56px; } .ust img { height: 38px; } main { padding-bottom: 96px; }</style>
+<script>
 window.google = { script: { run: {
   _s: null, _h: null,
   withSuccessHandler(f) { this._s = f; return this; },
@@ -125,12 +126,31 @@ def edge_yolu():
     return None
 
 
+def pencere_olcusu():
+    """Ekranın çalışma alanına göre pencere boyu (fiziksel piksel): yüksekliğin en çok %80'i, ortada."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        ctypes.windll.user32.SetProcessDPIAware()
+        r = wintypes.RECT()
+        ctypes.windll.user32.SystemParametersInfoW(0x0030, 0, ctypes.byref(r), 0)       # SPI_GETWORKAREA
+        olcek = ctypes.windll.user32.GetDpiForSystem() / 96 if hasattr(ctypes.windll.user32, 'GetDpiForSystem') else 1
+        ekran_g, ekran_y = r.right - r.left, r.bottom - r.top
+        yuk = int(min(720 * olcek, ekran_y * 0.8))
+        gen = int(min(440 * olcek, ekran_g * 0.5))
+        return gen, yuk, r.left + (ekran_g - gen) // 2, r.top + (ekran_y - yuk) // 2
+    except Exception:
+        return 440, 680, 200, 60
+
+
 def pencere_ac(url):
     if sys.platform != 'win32':
         print('FORM:', url)
         return
     edge = edge_yolu()
     if edge:
-        subprocess.Popen([edge, f'--app={url}', '--window-size=560,900', '--new-window'], creationflags=0x08000000)
+        gen, yuk, x, y = pencere_olcusu()
+        subprocess.Popen([edge, f'--app={url}', f'--window-size={gen},{yuk}', f'--window-position={x},{y}', '--new-window'],
+                         creationflags=0x08000000)
     else:
         os.startfile(url)
