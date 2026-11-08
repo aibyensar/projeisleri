@@ -1,4 +1,4 @@
-# Evrak Toplayıcı — kurgu (sürüm 2, 8 Kasım 2026)
+# Evrak Toplayıcı — kurgu (sürüm 3, 8 Kasım 2026)
 
 WhatsApp'tan (ve PC'deki WhatsApp'tan, kağıt taramadan) gelen evrakı en az el işiyle kaliteli PDF yapıp masaüstündeki
 **Çizilecek Projeler** listesine doğru adla koymak. Bu belge kurgudur; onaylanmadan kurulum yapılmaz.
@@ -18,7 +18,8 @@ Müşteri bilgisi bu depoya hiçbir zaman yazılmaz (örnek evraklar dahil).
 | Evrak türleri | Her çeşit: fotoğraf, müşteri PDF'i, CamScanner PDF'i, Word/Excel. Kalite şart |
 | Masaüstü | Yalnız **çizilecek projeler** görünür |
 | Listeye giriş | **İlk evrak gelince** (eksikse EKSİK EVRAK durumuyla) |
-| Klasör adı | **İşi getiren + proje adı** (örnekleri kullanıcı sonra verecek) |
+| Kestirmenin sorduğu | **Elektrikçi adı, proje adı, proje türü — üçünü de kullanıcı yazar** (ör. tür: İç Tesisat · Bağlantı Hattı · İç Tesisat + Bağlantı Hattı) |
+| Klasör adı | **Tarih · ELEKTRİKÇİ – Proje adı · Proje türü · Durum** |
 | Sıra | En eski en üstte; **ACİL** işaretli iş en üstte |
 | Gecikme uyarısı | **3 gün** |
 | PDF çıktısı | Her evrak türü **ayrı PDF + tek birleşik Tümü.pdf** |
@@ -69,7 +70,7 @@ Görüntü işleme (belge taraması) ücretsiz bulut servislerinde yapılamadı�
                                                2026-11-03 · … · EKSİK EVRAK         Telefona özet e-postası
                                                _LİSTE.txt                            Windows bildirimi
                                              8-Kontrol Et/ · 9-Arşiv/
-                                             getirenler.txt · Kayıt.csv · kurallar.json
+                                             Kayıt.csv · kurallar.json
 
  Masaüstü: "Çizilecek Projeler" kısayolu · "Evrak Bırak" kısayolu
  İş bitince: kullanıcı iş klasörünü kendi proje klasörüne sürükler → listeden kalkar, Kayıt.csv'ye "bitti" yazılır
@@ -79,16 +80,28 @@ Görüntü işleme (belge taraması) ücretsiz bulut servislerinde yapılamadı�
 
 **Nereden:** WhatsApp (mesajlara basılı tut → Seç → işaretle → Paylaş), CamScanner (Paylaş), Dosyalar, Mail eki.
 
-**Sorular (tek ekran, hızlı):**
-1. **İş:** açık işler listesi — `Çizilecek Projeler`deki işler **ve henüz işlenmemiş paketlerdeki işler** (PC kapalıyken
-   açılan yeni iş de listede çıkar; aynı işin iki kez açılması önlenir). En üstte en son kullanılanlar.
-2. Listede yoksa **Yeni iş:** İşi getiren (`getirenler.txt` listesinden seç ya da yeni yaz) → Proje adı (yaz) →
-   İş türü (BHP · İç tesisat · Kompanzasyon · Diğer).
-3. **ACİL mi?** (yalnız yeni işte; sonradan klasör adının başına `! ACİL` yazarak da verilir).
-4. Not (isteğe bağlı).
+**Sorular (kullanıcının kararı: üçünü de kendisi yazar):**
+1. **Elektrikçi adı** (yazılır)
+2. **Proje adı** (yazılır)
+3. **Proje türü** (yazılır; ör. İç Tesisat · Bağlantı Hattı · İç Tesisat + Bağlantı Hattı)
+4. **ACİL mi?** (Evet / Hayır)
+5. Not (isteğe bağlı)
+
+Hız için tek kolaylık: kestirme açılınca önce **"Son iş: <ELEKTRİKÇİ> – <Proje>'ye mi eklensin?"** diye sorar; aynı işe
+art arda evrak atarken üç alanı yeniden yazmak gerekmez. "Hayır" denince üç soru gelir.
+
+**Aynı işi tanıma (yazım farkına karşı):** program elektrikçi + proje adını Türkçe büyük harfe çevirip boşluk ve
+noktalama farklarını yok sayarak karşılaştırır ("Ahmet usta / ahmet  USTA" aynı). Birebir aynıysa mevcut işe ekler.
+Çok benziyor ama aynı değilse (ör. tek harf farkı) yeni iş açmaz: mevcut işe ekler ve `_bilgi.txt` + özet e-postasında
+"yazım farkı: '<yazılan>' → '<mevcut>' işine eklendi" der; kullanıcı yanlışsa paketi elle taşır. Hiç benzemiyorsa yeni iş.
+Bitmiş (listeden kalkmış) bir işle aynı ad yazılırsa iş REVİZYON olarak açılır.
+
+**Proje türü:** yazılan metin sadeleştirilip tanınan türlerle eşleştirilir (İÇ TESİSAT, BAĞLANTI HATTI, KOMPANZASYON…;
+"+" ile birleşik türler). Gerekli evrak listesi tanınan türlerin birleşimidir (İç Tesisat + Bağlantı Hattı = ikisinin
+listeleri toplamı). Tanınmayan tür klasör adına yazıldığı gibi girer, durum YENİ olur (gerekli evrak bilinmediği için).
 
 **Yaptığı:** dosyaları **olduğu gibi** (yeniden sıkıştırmadan) `0-Gelen/<tarih_saat_kod>/`e kaydeder, yanına `paket.json`
-(iş, işi getiren, proje adı, iş türü, acil, not, dosya sırası, telefon saati) yazar, "N evrak gönderildi" bildirimi verir.
+(elektrikçi, proje adı, proje türü, acil, not, dosya sırası, telefon saati) yazar, "N evrak gönderildi" bildirimi verir.
 
 **Kaydetme yolu (Faz 0'da denenip biri seçilecek):** (A) *Dosyalar* içindeki Google Drive konumuna doğrudan; (B) şirket
 hesabındaki küçük Apps Script web uygulamasına gönderim (kesin "alındı" onayı; dosya dosya). İnternet yoksa A kuyruğa
@@ -98,7 +111,8 @@ alır, B "gönderilemedi, tekrar dene" der; hiçbir şey kaybolmaz.
 
 PC'deki WhatsApp'tan sürüklenen dosyalar, tarayıcıdan çıkan PDF'ler, e-Devlet / e-posta belgeleri için:
 - Masaüstündeki **Evrak Bırak** simgesine dosyaları sürükle **ya da** dosyalara sağ tık → *Gönder* → *AGY Evrak*.
-- Küçük bir pencere açılır: telefondaki aynı sorular (iş listesi / yeni iş / ACİL / not). Tamam → dosyalar paket olarak
+- Küçük bir pencere açılır: telefondaki aynı sorular (elektrikçi adı, proje adı, proje türü, ACİL, not; açık işler
+  listesinden tıklayarak da doldurulabilir). Tamam → dosyalar paket olarak
   `0-Gelen`e kopyalanır (asıl dosyalara dokunulmaz) ve aynı işlemden geçer.
 - Tarayıcı yazılımının kayıt klasörü istenirse `Evrak Bırak` klasörü yapılır; yeni tarama gelince pencere kendiliğinden açılır.
 
@@ -108,13 +122,12 @@ PC'deki WhatsApp'tan sürüklenen dosyalar, tarayıcıdan çıkan PDF'ler, e-Dev
 AGY Evrak/
   0-Gelen/                          ham paketler (işlenince 9-Arşiv'e taşınır)
   Çizilecek Projeler/               ◄── MASAÜSTÜ KISAYOLU
-    ! ACİL · 2026-11-07 · <İŞİ GETİREN> – <Proje adı> · HAZIR/
-    2026-11-03 · <İŞİ GETİREN> – <Proje adı> · EKSİK EVRAK/
-    2026-11-05 · <İŞİ GETİREN> – <Proje adı> · KONTROL/
+    ! ACİL · 2026-11-07 · <ELEKTRİKÇİ> – <Proje adı> · <Proje türü> · HAZIR/
+    2026-11-03 · <ELEKTRİKÇİ> – <Proje adı> · <Proje türü> · EKSİK EVRAK/
+    2026-11-05 · <ELEKTRİKÇİ> – <Proje adı> · <Proje türü> · KONTROL/
     _LİSTE.txt                      sıra, bekleme günü (3 gün uyarısı), eksikler — bir bakışta
   8-Kontrol Et/                     hiçbir işe bağlanamayan evrak (sebebiyle)
   9-Arşiv/                          işlenmiş ham paketler = orijinallerin ikinci kopyası (saklama süresi: karar)
-  getirenler.txt                    işi getirenler listesi (kestirme ve PC penceresi buradan okur)
   Kayıt.csv                         her evrak bir satır: tarih, iş, tür, kaynak, durum, bitiş tarihi
   kurallar.json                     iş türleri, gerekli evrak listeleri, tür anahtar kelimeleri, adlandırma
 
@@ -180,7 +193,7 @@ saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 12. **Liste:** `_LİSTE.txt` güncellenir (ACİL'ler, sonra en eski; bekleme günü; 3 günü geçenler işaretli).
 13. **Kayıt:** `Kayıt.csv`.
 14. **Bildirim (her paket):** Windows bildirimi + şirket Gmail'inden kullanıcının telefonuna kısa özet e-postası
-    ("<İşi getiren> – <Proje>: 4 evrak işlendi · durum HAZIR · 3 günü geçen 2 iş var"). E-posta Google içinde kalır;
+    ("<Elektrikçi> – <Proje>: 4 evrak işlendi · durum HAZIR · 3 günü geçen 2 iş var"). E-posta Google içinde kalır;
     üçüncü bir bildirim servisine kişisel veri gitmez. (Gönderim için şirket Gmail'inde "uygulama şifresi" gerekir.)
 15. **Öğrenme:** kullanıcı bir dosyanın adını değiştirirse (ör. `Belirsiz-1.pdf` → `İmar durumu.pdf`) program bunu
     fark eder, yalnız tür + anahtar kelime bilgisini `duzeltmeler.txt`ye yazar (kişisel veri yok); kurallar buna göre güncellenir.
@@ -201,7 +214,9 @@ saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 | Durum | Davranış |
 |---|---|
 | PC günlerce kapalı | Paketler Drive'da bekler; açılınca geliş sırasıyla işlenir; bekleme günü telefon saatine göre |
-| PC kapalıyken aynı iş için iki paket | Kestirme işlenmemiş paketlerdeki işleri de listeler → aynı iş seçilir |
+| PC kapalıyken aynı iş için iki paket | Aynı elektrikçi + proje adı yazıldığı için işleyici ikisini aynı işe koyar |
+| Elektrikçi / proje adında yazım farkı | Çok benziyorsa mevcut işe eklenir ve bildirilir; hiç benzemiyorsa yeni iş |
+| Tanınmayan proje türü | Yazıldığı gibi kullanılır; durum YENİ (gerekli evrak listesi yok) |
 | Eşitleme yarıda | Boyutlar sabitlenene kadar beklenir |
 | Klasörde dosya açıkken durum değişti | Ad değişikliği ertelenir, tekrar denenir |
 | Kullanıcı klasör adını değiştirdi | Gizli kimlikle tanınır; ad korunur |
@@ -253,8 +268,8 @@ saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 
 ## 13. Kullanıcıdan beklenenler (kalan)
 
-1. **Proje adı örnekleri** (klasör adının "İşi getiren – Proje adı" kısmı için 3–5 örnek). *(kullanıcı sonra verecek)*
-2. **İş türleri ve her biri için gerekli evrak listesi** (HAZIR / EKSİK kararı buna bağlı). Liste gelene kadar durum
+1. ~~Proje adı örnekleri~~ — kullanıcı her seferinde kendisi yazıyor; gerek kalmadı.
+2. **Proje türleri (İç Tesisat, Bağlantı Hattı, …) ve her biri için gerekli evrak listesi** (HAZIR / EKSİK kararı buna bağlı). Liste gelene kadar durum
    yalnız YENİ / KONTROL olur.
 3. **Faz 0 için maskeli 15–20 örnek evrak.**
 4. `9-Arşiv`deki orijinaller ne kadar saklansın? (öneri: 1 yıl)
