@@ -5,7 +5,12 @@ const { chromium } = require('playwright');
 (async () => {
   const S = process.argv[2], NM = S + '/nd/node_modules/';
   const b = await chromium.launch();
-  const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+  // GORUNUM=<klasör>: akışın sonunda her bölümün ekran görüntüsü alınır (GENISLIK=1280 gibi, KOYU=1 koyu tema)
+  const G = process.env.GORUNUM, GEN = +process.env.GENISLIK || 1440;
+  const p = await b.newPage({ viewport: { width: GEN, height: 900 }, acceptDownloads: true, colorScheme: process.env.KOYU ? 'dark' : 'light' });
+  const bolumler = async (ek) => { if (!G) return; await p.addStyleTag({ content: 'header.ust{position:static!important}' });
+    for (const id of ['k-gdz', 'k-ic', 'k-kontrol', 'k-kablo', 'k-vaziyet']) { const e = await p.$('#' + id); if (e && await e.isVisible()) await e.screenshot({ path: `${G}/${ek}-${id}.png` }); }
+    const a = await p.$('aside.panel'); if (a) await a.screenshot({ path: `${G}/${ek}-panel.png` }); };
   await p.route('https://cdnjs.cloudflare.com/**', r => { const u = r.request().url();
     const yol = u.includes('pdf.worker') ? NM + 'pdfjs-dist/build/pdf.worker.min.mjs' : u.includes('pdf.min') ? NM + 'pdfjs-dist/build/pdf.min.mjs' : NM + 'jszip/dist/jszip.min.js';
     r.fulfill({ path: yol, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
@@ -32,6 +37,7 @@ const { chromium } = require('playwright');
   }, process.env.SENARYO || '');
   await p.goto('http://localhost:8765/araclar/baglanti-hatti.html');
   await p.waitForTimeout(1500);
+  if (G) await p.screenshot({ path: `${G}/0-bos.png` });
   if (process.argv[4]) {                                        // GDZ: önce havai yazısı (havai sayfası), sonra yeraltı
     if (process.argv[5]) { await p.setInputFiles('#f-gdz', process.argv[5]); await p.waitForFunction(() => !document.getElementById('gdzKontrol').hidden, null, { timeout: 30000 });
       console.log('havai GDZ:', await p.textContent('#d-hat'), '| havai sayfa:', await p.isVisible('#sayfaHavai'), '| yeraltı sayfa:', await p.isVisible('#sayfaYeralti')); }
@@ -107,7 +113,24 @@ const { chromium } = require('playwright');
     console.log('   c-uydu:', await p.textContent('#c-uydu'), await p.isVisible('#uyduKutu'));
     if (await p.isVisible('#uyduKutu')) { await p.click('#r-uyduYakin .yakin-arac button[data-z="1"]'); await p.waitForTimeout(200); }
     console.log('   vaziyet kroki görünür:', await p.isVisible('#r-uydu'), '|', await p.textContent('#c-uydu'));
-    await (await p.$('#k-vaziyet')).screenshot({ path: S + '/vaziyet-bolum.png' }); }
+    await (await p.$('#k-vaziyet')).screenshot({ path: S + '/vaziyet-bolum.png' });
+    if (G) {                                                   // vaziyet işaretleri: 1, dönüş, 2, sınır
+      const bb = await (await p.$('#vazKutu')).boundingBox(), tik = (x, y) => p.mouse.click(bb.x + bb.width * x, bb.y + bb.height * y);
+      await tik(0.3, 0.7); await p.click('#isaretMod button[data-v=bina]'); await tik(0.6, 0.35);
+      await p.click('#isaretMod button[data-v=sinir]'); await tik(0.1, 0.5); await tik(0.9, 0.5);
+      await p.waitForTimeout(300); await bolumler('1');
+      // yakınlaştırıp sürükledikten sonra tıklanan nokta resmin doğru yerine işlenmeli
+      await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.wheel(0, -900); await p.waitForTimeout(150);
+      await p.mouse.down(); await p.mouse.move(bb.x + bb.width / 2 - 60, bb.y + bb.height / 2 - 30, { steps: 6 }); await p.mouse.up();
+      const n0 = await p.$$eval('#vazIsaret circle', l => l.length);
+      await p.click('#b-nokta'); const im = await (await p.$('#r-vaziyet')).boundingBox();
+      const tx = bb.x + bb.width * 0.4, ty = bb.y + bb.height * 0.6;               // kutunun içinde bir nokta
+      const bek = [(tx - im.x) / im.width * 1000, (ty - im.y) / im.height * 528];
+      await p.mouse.click(tx, ty); await p.waitForTimeout(100);
+      const c = await p.$eval('#vazIsaret circle', e => [+e.getAttribute('cx'), +e.getAttribute('cy')]);
+      console.log('   yakın: ölçek', Math.round(im.width / bb.width * 100) + '%', '| sürükleme işaret koymadı:', n0 === await p.$$eval('#vazIsaret circle', l => l.length), '| nokta:', c.map(Math.round).join(', '), '(beklenen', bek.map(Math.round).join(', ') + ')');
+      await b.close(); return;
+    } }
   console.log('   indir:', await p.textContent('#d-indir'));
   // 4) güç tablosu yok → elle
   await p.click('#gAdimlar button[data-i="1"]');
