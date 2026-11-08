@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.5 (telefon bildiriminde iş adları ve gün). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.6 (bildirimGonder geri eklendi; tam sürüm). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -146,6 +146,28 @@ function sabahOzeti() {
   }
   const konu = 'AGY Evrak — ' + d.isler.length + ' iş bekliyor' + (d.geciken ? ' (' + d.geciken + ' gecikiyor)' : '');
   MailApp.sendEmail({ to: alici, subject: konu, body: d.satirlar.join('\n'), name: 'AGY Evrak' });
+}
+
+// 5 dakikada bir: bilgisayardaki programın 7-Bildirim'e bıraktığı özetleri e-posta olarak gönderir ve siler
+function bildirimGonder() {
+  const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
+  const k = klasorAl(kok, BILDIRIM);
+  const alici = aliciBul();
+  if (!alici) { console.error('Alıcı adresi bulunamadı: Kod.gs içindeki ALICI satırına e-posta adresini yazın.'); return; }
+  const dosyalar = [];
+  const it = k.getFiles();
+  while (it.hasNext()) { const f = it.next(); if (/\.json$/i.test(f.getName())) dosyalar.push(f); }
+  dosyalar.sort((a, b) => a.getName() < b.getName() ? -1 : 1);
+  dosyalar.slice(0, 40).forEach(f => {
+    try {
+      const b = JSON.parse(f.getBlob().getDataAsString('UTF-8'));
+      MailApp.sendEmail({ to: alici, subject: String(b.konu || 'AGY Evrak'), body: String(b.metin || ''), name: 'AGY Evrak' });
+      f.setTrashed(true);
+    } catch (hata) {
+      console.error('bildirim gönderilemedi: ' + f.getName() + ' ' + hata);
+      if ((Date.now() - f.getDateCreated().getTime()) > 3 * 86400000) f.setTrashed(true);   // 3 günden eski bozuk dosya
+    }
+  });
 }
 
 // ---------- Yardımcılar ----------
