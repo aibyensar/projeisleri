@@ -4,11 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kablo Kesiti Hesabı</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="../ortak/stil.css">
 <style>
-  .giris { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .giris { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
   .giris label { min-width: 0; }
-  .giris input { font-size: 1.4rem; padding: 12px; width: 100%; min-width: 0; }
+  .giris input { font-size: 1.35rem; font-weight: 600; padding: 10px 12px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+  .giris.ince select { width: 100%; min-width: 0; }
+  .bolum-etiket + .secim { margin-bottom: 14px; }
+  .secim button[aria-pressed="true"] small { opacity: .85; }
+  #firmaKutu { max-height: 460px; overflow: auto; border: 1px solid var(--cizgi); border-radius: 8px; }
+  #firmaKutu thead { position: sticky; top: 0; z-index: 1; }
+  #firmaKutu table { border: 0; }
+  .sonuc-bas { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .rozet { font-size: .8rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
+  .rozet.iyi { background: var(--iyi-zemin); color: var(--iyi); } .rozet.kotu { background: var(--kotu-zemin); color: var(--kotu); }
+  .adimlar-baslik { margin: 20px 0 6px; }
   .secim { display: flex; gap: 8px; margin-bottom: 12px; }
   .secim button {
     flex: 1; min-width: 0; font: inherit; font-size: .9rem; padding: 10px 6px; border-radius: 8px; cursor: pointer;
@@ -17,7 +28,7 @@
   .secim button small { display: block; font-size: .75rem; opacity: .8; }
   .secim button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); }
   button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
-  .buyuk { font-size: 2rem; font-weight: 700; color: var(--vurgu); margin: 4px 0; }
+  .buyuk { font-size: 2rem; font-weight: 700; color: var(--baslik-yazi); margin: 2px 0; letter-spacing: -.01em; }
   .adim { padding: 10px 0; border-top: 1px solid var(--cizgi); }
   .adim:first-child { border-top: 0; padding-top: 0; }
   .adim b { display: block; font-size: .85rem; color: var(--soluk); font-weight: 600; }
@@ -43,81 +54,91 @@
 </style>
 </head>
 <body>
-<header>
-  <a href="../index.html">← Proje İşleri</a>
-  <h1>Kablo kesiti</h1>
+<header class="ust">
+  <div class="ust-ic">
+    <img class="ust-logo" src="../baglanti-hatti/logo/logo-beyaz.png" alt="AGY Enerji Mühendislik">
+    <div class="ust-baslik">
+      <h1>Kablo Kesiti ve Gerilim Düşümü</h1>
+      <p>Gerilim düşümü ve akım taşıma kontrolüyle en küçük uygun kesit · Öznur Kablo kataloğu</p>
+    </div>
+    <a class="ust-geri" href="../index.html">← Proje İşleri</a>
+  </div>
 </header>
-<main>
-  <div class="kart">
-    <div class="secim" id="faz">
-      <button type="button" data-v="3" aria-pressed="true">Trifaze<small id="lb-u3"></small></button>
-      <button type="button" data-v="1" aria-pressed="false">Monofaze<small id="lb-u1"></small></button>
+<main class="genis">
+  <div class="iki-sutun">
+    <div>
+      <div class="kart">
+        <div class="kart-bas"><h2>Hat bilgileri</h2><small>Değiştirdikçe sonuç güncellenir</small></div>
+        <p class="bolum-etiket">Sistem</p>
+        <div class="secim" id="faz">
+          <button type="button" data-v="3" aria-pressed="true">Trifaze<small id="lb-u3"></small></button>
+          <button type="button" data-v="1" aria-pressed="false">Monofaze<small id="lb-u1"></small></button>
+        </div>
+        <p class="bolum-etiket">İletken</p>
+        <div class="secim" id="iletken">
+          <button type="button" data-v="cu" aria-pressed="true">Bakır<small>Cu</small></button>
+          <button type="button" data-v="al" aria-pressed="false">Alüminyum<small>Al</small></button>
+        </div>
+        <p class="bolum-etiket">Kullanım · izin verilen gerilim düşümü</p>
+        <div class="secim" id="kullanim">
+          <button type="button" data-v="normal" aria-pressed="true">Normal tesisat<small id="lb-normal"></small></button>
+          <button type="button" data-v="motor" aria-pressed="false">Motor<small id="lb-motor"></small></button>
+          <button type="button" data-v="trafo" aria-pressed="false">Trafo<small id="lb-trafo"></small></button>
+        </div>
+        <div class="giris">
+          <label>Güç P (W)
+            <input id="guc" type="number" inputmode="decimal" value="30000" min="0" step="any">
+          </label>
+          <label>Hat uzunluğu L (m)
+            <input id="uzunluk" type="number" inputmode="decimal" value="100" min="0" step="any">
+          </label>
+        </div>
+        <div class="giris ince">
+          <label>Kablo tipi<select id="tip"></select></label>
+          <label>Döşeme<select id="doseme"></select></label>
+        </div>
+      </div>
+      <div class="kart">
+        <details>
+          <summary>Formül ve ayarlar</summary>
+          <p class="not">Burada yaptığınız değişiklikler bu bilgisayarda saklanır. Değişen kutular turuncu görünür.</p>
+          <div class="ayar-grup">
+            <h3>Gerilim (V)</h3>
+            <label>Trifaze<input id="u-3" type="number" step="any" min="1"></label>
+            <label>Monofaze<input id="u-1" type="number" step="any" min="1"></label>
+          </div>
+          <div class="ayar-grup">
+            <h3>İletkenlik k (m/Ω·mm²)</h3>
+            <label>Bakır<input id="k-cu" type="number" step="any" min="1"></label>
+            <label>Alüminyum<input id="k-al" type="number" step="any" min="1"></label>
+          </div>
+          <div class="ayar-grup">
+            <h3>cos φ</h3>
+            <label>Güç katsayısı<input id="cosfi" type="number" step="0.01" min="0.1" max="1"></label>
+          </div>
+          <div class="ayar-grup">
+            <h3>Bu değerlerle çıkan katsayılar</h3>
+            <div class="formul" id="katsayiListe" style="grid-column: 1 / -1"></div>
+          </div>
+          <div class="ayar-grup">
+            <h3>İzin verilen gerilim düşümü (%)</h3>
+            <label>Normal tesisat<input id="e-normal" type="number" step="0.1" min="0.1"></label>
+            <label>Motor<input id="e-motor" type="number" step="0.1" min="0.1"></label>
+            <label>Trafo<input id="e-trafo" type="number" step="0.1" min="0.1"></label>
+          </div>
+          <button type="button" class="ikincil" id="sifirla">Varsayılan değerlere dön</button>
+        </details>
+      </div>
     </div>
-    <div class="secim" id="iletken">
-      <button type="button" data-v="cu" aria-pressed="true">Bakır</button>
-      <button type="button" data-v="al" aria-pressed="false">Alüminyum</button>
-    </div>
-    <div class="secim" id="kullanim">
-      <button type="button" data-v="normal" aria-pressed="true">Normal tesisat<small id="lb-normal"></small></button>
-      <button type="button" data-v="motor" aria-pressed="false">Motor<small id="lb-motor"></small></button>
-      <button type="button" data-v="trafo" aria-pressed="false">Trafo<small id="lb-trafo"></small></button>
-    </div>
-    <div class="giris">
-      <label>Güç (W)
-        <input id="guc" type="number" inputmode="decimal" value="30000" min="0" step="any">
-      </label>
-      <label>Mesafe (m)
-        <input id="uzunluk" type="number" inputmode="decimal" value="100" min="0" step="any">
-      </label>
-    </div>
+    <div class="kart" id="sonuc"></div>
   </div>
 
-  <div class="kart" id="sonuc"></div>
-
   <div class="kart">
-    <h2 id="firmaBaslik"></h2>
-    <p class="not" id="firmaBilgi"></p>
-    <div class="tablo-kutu">
+    <div class="kart-bas"><h2 id="firmaBaslik"></h2><small id="firmaBilgi"></small></div>
+    <div class="tablo-kutu" id="firmaKutu">
       <table id="firmaTablo"></table>
     </div>
     <p class="not" id="firmaNot"></p>
-  </div>
-
-  <div class="kart">
-    <details>
-      <summary>Formül ve ayarlar</summary>
-      <p class="not">Burada yaptığınız değişiklikler bu cihazda saklanır. Değişen kutular turuncu görünür.</p>
-      <div class="ayar-grup">
-        <h3>Gerilim (V)</h3>
-        <label>Trifaze<input id="u-3" type="number" step="any" min="1"></label>
-        <label>Monofaze<input id="u-1" type="number" step="any" min="1"></label>
-      </div>
-      <div class="ayar-grup">
-        <h3>İletkenlik k (m/Ω·mm²)</h3>
-        <label>Bakır<input id="k-cu" type="number" step="any" min="1"></label>
-        <label>Alüminyum<input id="k-al" type="number" step="any" min="1"></label>
-      </div>
-      <div class="ayar-grup">
-        <h3>cos φ</h3>
-        <label>Güç katsayısı<input id="cosfi" type="number" step="0.01" min="0.1" max="1"></label>
-      </div>
-      <div class="ayar-grup">
-        <h3>Bu değerlerle çıkan katsayılar</h3>
-        <div class="formul" id="katsayiListe" style="grid-column: 1 / -1"></div>
-      </div>
-      <div class="ayar-grup">
-        <h3>İzin verilen gerilim düşümü (%)</h3>
-        <label>Normal tesisat<input id="e-normal" type="number" step="0.1" min="0.1"></label>
-        <label>Motor<input id="e-motor" type="number" step="0.1" min="0.1"></label>
-        <label>Trafo<input id="e-trafo" type="number" step="0.1" min="0.1"></label>
-      </div>
-      <div class="ayar-grup">
-        <h3>Kablo</h3>
-        <label>Kablo tipi<select id="tip"></select></label>
-        <label>Döşeme<select id="doseme"></select></label>
-      </div>
-      <button type="button" class="ikincil" id="sifirla">Varsayılan değerlere dön</button>
-    </details>
   </div>
 </main>
 <script src="../veri/kablolar.js"></script>
@@ -234,7 +255,7 @@ function hesapla() {
   const sutun = +$('doseme').value;
 
   if (!(P > 0 && L > 0 && c > 0 && e > 0 && cosfi > 0)) {
-    $('sonuc').innerHTML = '<span class="uyari">Güç ve mesafeyi girin. Ayarlardaki değerler sıfırdan büyük olmalı.</span>';
+    $('sonuc').innerHTML = '<p class="bolum-etiket">Gerekli kablo</p><p class="not">Güç ve hat uzunluğunu girin. Ayarlardaki değerler sıfırdan büyük olmalı.</p>';
     firmaTablosu(tip, null);
     return;
   }
@@ -248,38 +269,48 @@ function hesapla() {
   firmaTablosu(tip, secilen && secilen.etiket);
 
   if (!secilen) {
-    $('sonuc').innerHTML = `<span class="uyari">${tip} tablosunda yeterli kesit yok. Gerekli kesit ${sayi(Sgerek)} mm², hat akımı ${sayi(I, 1)} A. Paralel kablo veya başka kablo tipi düşünün.</span>`;
+    $('sonuc').innerHTML = `<div class="sonuc-bas"><p class="bolum-etiket" style="margin:0">Gerekli kablo</p><span class="rozet kotu">UYGUN KESİT YOK</span></div>
+      <p class="uyari">${tip} tablosunda yeterli kesit yok. Gerekli kesit ${sayi(Sgerek)} mm², hat akımı ${sayi(I, 1)} A. Paralel kablo ya da başka kablo tipi düşünün.</p>`;
     return;
   }
 
-  const notrNotu = secilen.notr ? `<div class="not">16 mm² üstünde piyasada kullanılan nötrü küçültülmüş kablo seçildi (${secilen.ad}).</div>` : '';
+  const notrNotu = secilen.notr ? ` · 16 mm² üstünde piyasada kullanılan nötrü küçültülmüş kablo` : '';
   const akimNotu = secilen !== dusumIcin
-    ? `<div class="not">${dusumIcin.ad} ${doseme} ${dusumIcin.akim[sutun]} A taşır, akım için yetmiyor. Bir üst kesite çıkıldı.</div>`
+    ? `<div class="not">${dusumIcin.ad} ${doseme} ${dusumIcin.akim[sutun]} A taşır, akım için yetmiyor; bir üst kesite çıkıldı.</div>`
     : '';
+  const eGercek = c * P * L / secilen.S, Iz = secilen.akim[sutun];
+  const fazAdi = faz === '3' ? `Trifaze ${U} V` : `Monofaze ${U} V`;
 
   $('sonuc').innerHTML = `
-    <div class="adim">
-      <b>Gerekli kablo</b>
-      <div class="buyuk">${tip} ${secilen.ad} mm²</div>
-      ${notrNotu}
-      <div class="not">Gerilim düşümü %${sayi(c * P * L / secilen.S)} · ${doseme} ${secilen.akim[sutun]} A taşır</div>
+    <div class="sonuc-bas"><p class="bolum-etiket" style="margin:0">Gerekli kablo</p><span class="rozet iyi">UYGUN</span></div>
+    <div class="buyuk">${tip} ${secilen.ad} mm²</div>
+    <div class="not">${fazAdi} · ${il === 'cu' ? 'bakır' : 'alüminyum'} · ${doseme}${notrNotu}</div>
+    <div class="kontroller">
+      <div class="kontrol-k iyi"><b>Gerilim düşümü</b><div class="d">%${sayi(eGercek)}</div><div class="s">≤ %${sayi(e, 1)} izin verilen · uygun</div></div>
+      <div class="kontrol-k iyi"><b>Akım taşıma</b><div class="d">${sayi(I, 1)} A</div><div class="s">≤ Iz ${Iz} A (${doseme}) · uygun</div></div>
+      <div class="kontrol-k"><b>Hesaplanan kesit</b><div class="d">${sayi(Sgerek)} mm²</div><div class="s">tablodan bir üstü: ${dusumIcin.ad}</div></div>
     </div>
+    <p class="bolum-etiket adimlar-baslik">Hesap adımları</p>
     <div class="adim">
-      <b>1. Formül</b>
+      <b>1. Gerilim düşümüne göre kesit</b>
       <div class="formul">katsayı = ${BIRIM[faz]} / (${k} × ${U}²) = ${katsayiYaz(c)}</div>
-      <div class="formul">S = ${katsayiYaz(c)} × P × L / %e</div>
-      <div class="formul">S = ${katsayiYaz(c)} × ${sayi(P, 0)} × ${sayi(L, 0)} / ${sayi(e, 1)} = <span class="deger">${sayi(Sgerek)} mm²</span></div>
+      <div class="formul">S = katsayı × P × L / %e = ${katsayiYaz(c)} × ${sayi(P, 0)} × ${sayi(L, 0)} / ${sayi(e, 1)} = <span class="deger">${sayi(Sgerek)} mm²</span></div>
     </div>
     <div class="adim">
-      <b>2. Tablodan</b>
+      <b>2. Katalogdan seçim</b>
       <div>${sayi(Sgerek)} mm²'nin bir üstü: <span class="deger">${dusumIcin.ad}</span></div>
     </div>
     <div class="adim">
       <b>3. Akım kontrolü</b>
       ${akimNotu}
-      <div class="formul">I = ${faz === '3' ? `P / (√3 × ${U} × ${sayi(cosfi)})` : `P / (${U} × ${sayi(cosfi)})`} = ${sayi(I, 1)} A</div>
-      <div>Hat akımı ${sayi(I, 1)} A ≤ ${secilen.ad} taşıma ${secilen.akim[sutun]} A ✓</div>
+      <div class="formul">I = ${faz === '3' ? `P / (√3 × ${U} × ${sayi(cosfi)})` : `P / (${U} × ${sayi(cosfi)})`} = ${sayi(I, 1)} A ≤ Iz = ${Iz} A</div>
+    </div>
+    <div class="adim">
+      <b>4. Seçilen kabloyla gerilim düşümü</b>
+      <div class="formul">%e = ${katsayiYaz(c)} × ${sayi(P, 0)} × ${sayi(L, 0)} / ${secilen.S} = <span class="deger">%${sayi(eGercek)}</span> ≤ %${sayi(e, 1)}</div>
     </div>`;
+  const sec = $('firmaTablo').querySelector('tr.secilen');           // firma tablosunda seçilen satıra kaydır
+  if (sec) { const k = $('firmaKutu'); k.scrollTop = sec.offsetTop - k.clientHeight / 2 + sec.offsetHeight / 2; }
 }
 
 for (const grup of ['faz', 'iletken', 'kullanim']) {

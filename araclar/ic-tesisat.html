@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>İç Tesisat Hesabı</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="../ortak/stil.css">
 <style>
   .secim { display: flex; gap: 8px; margin-bottom: 12px; }
@@ -17,8 +18,6 @@
   .alanlar label { min-width: 0; }
   .alanlar input, .alanlar select { width: 100%; min-width: 0; }
   .genis { grid-column: 1 / -1; }
-  .kart h2 { margin: 0 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-  .kart h2 small { font-weight: 400; color: var(--soluk); font-size: .8rem; }
   .hat { border-top: 1px solid var(--cizgi); padding-top: 12px; margin-top: 12px; }
   .hat:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
   .hat-bas { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
@@ -37,86 +36,100 @@
   .durum.kotu { color: var(--kotu); }
   .cizim { overflow-x: auto; border-radius: 8px; border: 1px solid var(--cizgi); background: #000; }
   .cizim.kagit { background: #fff; }
-  .cizim svg { display: block; min-width: 760px; }
+  .cizim svg { display: block; min-width: 640px; }
+  .iki-sutun.ic { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+  @media (max-width: 1100px) { .iki-sutun.ic { grid-template-columns: minmax(0, 1fr); } }
+  .hat-no { display: inline-block; font-size: .78rem; font-weight: 700; color: var(--baslik-yazi); background: var(--ana-acik); border-radius: 6px; padding: 2px 7px; margin-right: 6px; vertical-align: 2px; }
+  .durum { font-size: 1.05rem; }
+  .yapiskan .cizim-bas { align-items: flex-end; }
   details > summary { cursor: pointer; font-weight: 600; }
   details[open] > summary { margin-bottom: 12px; }
 </style>
 </head>
 <body>
-<header>
-  <a href="../index.html">← Proje İşleri</a>
-  <h1>İç tesisat hesabı</h1>
-  <p>Akım kontrolü, gerilim düşümü çizelgesi ve tek hat şeması. Çizim, AutoCAD'deki GERILIMDUSUMU komutunun aynısıdır.</p>
+<header class="ust">
+  <div class="ust-ic">
+    <img class="ust-logo" src="../baglanti-hatti/logo/logo-beyaz.png" alt="AGY Enerji Mühendislik">
+    <div class="ust-baslik">
+      <h1>İç Tesisat Hesabı</h1>
+      <p>Akım kontrolü, gerilim düşümü çizelgesi ve tek hat şeması · AutoCAD'deki GERILIMDUSUMU komutunun aynısı</p>
+    </div>
+    <a class="ust-geri" href="../index.html">← Proje İşleri</a>
+  </div>
 </header>
-<main>
-  <div class="kart">
-    <h2>Genel bilgiler</h2>
-    <div class="secim" id="mod">
-      <button type="button" data-v="Evet" aria-pressed="true">Branşman mevcut</button>
-      <button type="button" data-v="Hayir" aria-pressed="false">Branşman yok</button>
-    </div>
-    <div class="alanlar">
-      <label>Kurulu güç (W)<input id="kurulu" type="text" inputmode="decimal" value="32200"></label>
-      <label class="genis">Talep güç Nt (W) · sayı veya işlem<input id="talep" type="text" value="(16220 * 0,45) + 5000"></label>
-    </div>
-    <p class="not" id="talepSonuc"></p>
-  </div>
+<main class="genis">
+  <div class="iki-sutun ic">
+    <div>
+      <div class="kart">
+        <div class="kart-bas"><h2>Genel bilgiler</h2></div>
+        <div class="secim" id="mod">
+          <button type="button" data-v="Evet" aria-pressed="true">Branşman mevcut</button>
+          <button type="button" data-v="Hayir" aria-pressed="false">Branşman yok</button>
+        </div>
+        <div class="alanlar">
+          <label>Kurulu güç (W)<input id="kurulu" type="text" inputmode="decimal" value="32200"></label>
+          <label class="genis">Talep güç Nt (W) · sayı ya da işlem<input id="talep" type="text" value="(16220 * 0,45) + 5000"></label>
+        </div>
+        <p class="not" id="talepSonuc"></p>
+      </div>
 
-  <div class="kart" id="bransmanKart">
-    <h2>Branşman hattı <small>%e1</small></h2>
-    <div class="alanlar">
-      <label>Kablo kesiti<input id="b-kesit" list="b-kesitler" value="4x6" autocomplete="off"><datalist id="b-kesitler"></datalist></label>
-      <label>Kablo türü<select id="b-tur"></select></label>
-      <label>Döşeme<select id="b-doseme"></select></label>
-      <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
-      <label>Faz<select id="b-faz"><option value="Trifaze">Trifaze</option><option value="Monofaze">Monofaze</option></select></label>
-    </div>
-    <p class="uyari-not" id="b-not" hidden></p>
-    <p class="not">Gücü talep güç (Nt). Faz kesitten tahmin edilir: 2x, 3x → monofaze; 4x, 5x, 3x25/16 → trifaze.</p>
-  </div>
+      <div class="kart" id="bransmanKart">
+        <div class="kart-bas"><h2><span class="hat-no">%e1</span> Branşman hattı</h2><small>gücü talep güç (Nt)</small></div>
+        <div class="alanlar">
+          <label>Kablo kesiti<input id="b-kesit" list="b-kesitler" value="4x6" autocomplete="off"><datalist id="b-kesitler"></datalist></label>
+          <label>Kablo türü<select id="b-tur"></select></label>
+          <label>Döşeme<select id="b-doseme"></select></label>
+          <label>Uzunluk (m)<input id="b-L" type="number" inputmode="decimal" value="15" min="0" step="any"></label>
+          <label>Faz<select id="b-faz"><option value="Trifaze">Trifaze</option><option value="Monofaze">Monofaze</option></select></label>
+        </div>
+        <p class="uyari-not" id="b-not" hidden></p>
+        <p class="not">Faz kesitten tahmin edilir: 2x, 3x → monofaze; 4x, 5x, 3x25/16 → trifaze.</p>
+      </div>
 
-  <div class="kart" id="baglantiKart" hidden>
-    <h2>Bağlantı</h2>
-    <div class="alanlar">
-      <label>Bağlantı fazı<select id="s-faz"><option value="Trifaze">Trifaze</option><option value="Monofaze">Monofaze</option></select></label>
-    </div>
-  </div>
+      <div class="kart" id="baglantiKart" hidden>
+        <div class="kart-bas"><h2>Bağlantı</h2></div>
+        <div class="alanlar">
+          <label>Bağlantı fazı<select id="s-faz"><option value="Trifaze">Trifaze</option><option value="Monofaze">Monofaze</option></select></label>
+        </div>
+      </div>
 
-  <div class="kart">
-    <h2>İç hatlar <small>kolon + linye</small></h2>
-    <div id="hatlar"></div>
-    <button type="button" class="kucuk-btn" id="hatEkle" style="margin-top:12px">+ Kolon hattı ekle</button>
-  </div>
+      <div class="kart">
+        <div class="kart-bas"><h2>İç hatlar</h2><small>kolon + linye</small></div>
+        <div id="hatlar"></div>
+        <button type="button" class="kucuk-btn" id="hatEkle" style="margin-top:12px">+ Kolon hattı ekle</button>
+      </div>
 
-  <div class="kart">
-    <div class="cizim-bas">
-      <span class="durum" id="durum">Hesaplanıyor…</span>
-      <div class="secim" id="gorunum">
-        <button type="button" data-v="ekran" aria-pressed="true">Ekran</button>
-        <button type="button" data-v="kagit" aria-pressed="false">Kâğıt</button>
+      <div class="kart">
+        <details>
+          <summary>Ayarlar</summary>
+          <div class="alanlar">
+            <label>Trifaze gerilim (V)<input id="ICT_U3" type="number" step="any"></label>
+            <label>Monofaze gerilim (V)<input id="ICT_U1" type="number" step="any"></label>
+            <label>Bakır κ<input id="ICT_KCU" type="number" step="any"></label>
+            <label>Alüminyum κ<input id="ICT_KAL" type="number" step="any"></label>
+            <label>cos φ<input id="ICT_COSFI" type="number" step="0.01"></label>
+            <label>Toplam düşüm sınırı (%)<input id="ICT_LIMIT" type="number" step="0.1"></label>
+          </div>
+          <p class="not">AutoCAD'deki GDAYAR komutunun ayarlarıyla aynıdır.</p>
+          <button type="button" class="kucuk-btn" id="sifirla">Varsayılan değerlere dön</button>
+        </details>
       </div>
     </div>
-    <div class="cizim" id="cizim"></div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px">
-      <button type="button" class="kucuk-btn ana-btn" id="kopyala">Yazı olarak kopyala</button>
-    </div>
-    <p class="not">AutoCAD'de aynı çizimi <b>GERILIMDUSUMU</b> komutu yapar. Telefonda çizimi yana kaydırarak okuyabilirsiniz.</p>
-  </div>
 
-  <div class="kart">
-    <details>
-      <summary>Ayarlar</summary>
-      <div class="alanlar">
-        <label>Trifaze gerilim (V)<input id="ICT_U3" type="number" step="any"></label>
-        <label>Monofaze gerilim (V)<input id="ICT_U1" type="number" step="any"></label>
-        <label>Bakır κ<input id="ICT_KCU" type="number" step="any"></label>
-        <label>Alüminyum κ<input id="ICT_KAL" type="number" step="any"></label>
-        <label>cos φ<input id="ICT_COSFI" type="number" step="0.01"></label>
-        <label>Toplam düşüm sınırı (%)<input id="ICT_LIMIT" type="number" step="0.1"></label>
+    <div class="kart yapiskan">
+      <div class="cizim-bas">
+        <div><p class="bolum-etiket" style="margin:0 0 2px">Sonuç</p><span class="durum" id="durum">Hesaplanıyor…</span></div>
+        <div class="secim" id="gorunum">
+          <button type="button" data-v="ekran" aria-pressed="true">Ekran</button>
+          <button type="button" data-v="kagit" aria-pressed="false">Kâğıt</button>
+        </div>
       </div>
-      <p class="not">AutoCAD'deki GDAYAR komutunun ayarlarıyla aynıdır.</p>
-      <button type="button" class="kucuk-btn" id="sifirla">Varsayılan değerlere dön</button>
-    </details>
+      <div class="cizim" id="cizim"></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px">
+        <button type="button" class="kucuk-btn ana-btn" id="kopyala">Yazı olarak kopyala</button>
+        <span class="not">AutoCAD'de aynı çizimi <b>GERILIMDUSUMU</b> komutu yapar.</span>
+      </div>
+    </div>
   </div>
 </main>
 <script src="../veri/kablolar.js"></script>
@@ -190,7 +203,7 @@ function hatlariCiz() {
   const n = hatlar.length;
   $('hatlar').innerHTML = hatlar.map((h, i) => `
     <div class="hat" data-i="${i}">
-      <div class="hat-bas"><strong>%e${i + 2} · ${hatAdi(i, n)}</strong>
+      <div class="hat-bas"><strong><span class="hat-no">%e${i + 2}</span>${hatAdi(i, n)}</strong>
         ${i < n - 1 && n > 2 ? `<button type="button" class="kucuk-btn" data-sil="${i}">Sil</button>` : ''}</div>
       <div class="alanlar">
         <label>Güç N (W)<input data-k="P" type="number" inputmode="decimal" min="0" step="any" value="${h.P}"></label>

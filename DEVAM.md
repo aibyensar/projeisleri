@@ -250,6 +250,13 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    yan yana eşit boy (480 px), işaret düğmeleri üstte tam genişlik. Koyu temada üst başlık okunur (--baslik-yazi). Havai seçiliyken
    sağ panel yeraltı adımlarını saymaz. Deneme: isaretle-dene.js GORUNUM=<klasör> [GENISLIK=1280] [KOYU=1] → bölüm bölüm ekran
    görüntüsü + yakınlaştırılmış tıklama doğrulaması.
+1v. ÜÇ ARACIN ORTAK ARAYÜZÜ (8 Kasım 2026): ortak/stil.css'e BHP'nin kimliği taşındı: header.ust (logo + başlık + ← Proje İşleri),
+   Inter + "calt" kapalı (x hep küçük), main.genis, .iki-sutun (≤1100 px tek sütun), .yapiskan, .kart-bas, .bolum-etiket,
+   .kontroller/.kontrol-k (iyi/kotu), --baslik-yazi/--ana-acik/--golge tokenları (koyu tema dahil). Kablo kesiti: solda hat bilgileri
+   (kablo tipi + döşeme ayarlardan çıkarıldı), sağda sonuç (UYGUN rozeti, 3 kontrol kutusu, 4 hesap adımı), altta firma tablosu
+   kayan kutuda, seçilen satıra kendiliğinden kayar. Hesap mantığı DEĞİŞMEDİ. İç tesisat: solda girişler (%e rozetleri), sağda
+   yapışkan sonuç + çizim. Ana sayfa: logolu başlık, 3 sütun. Ana sayfa artifact'ı (7oz…) files: araclar/*.html, ortak/stil.css,
+   baglanti-hatti/logo/logo-beyaz.png; BHP artifact'ına da yeni stil.css gönderildi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
