@@ -55,8 +55,8 @@ bunu yapamaz. Bulut sunucusu (Cloud Run vb.) ücretsiz katmanda bile kredi kart�
    müşteri / iş seç                   foto1.jpg, belge.pdf …                       ▼
    paketi Drive'a kaydet              paket.json (kim, hangi iş, not)     "Evrak İşleyici" (arka planda)
    "4 evrak gönderildi" bildirimi                                          1 bekle (paket tamam mı)
-                                    1-Müşteriler/  ◄─────────────────────  2 tanı · 3 kalite · 4 oku
-                                      AHMET YILMAZ – <iş adı>/             5 tür bul · 6 bilgi çıkar
+                                    Çizilecek Projeler/ ◄────────────────  2 tanı · 3 kalite · 4 oku
+                                      01 · HAZIR · … – <iş adı>/          5 tür bul · 6 bilgi çıkar
                                         Tapu.pdf, Kimlik.pdf …             7 kontrol · 8 birleştir
                                         _orijinal/ …                       9 adlandır · 10 yerleştir
                                     8-Kontrol Et/                         11 kayıt · 12 bildirim
@@ -76,8 +76,8 @@ bunu yapamaz. Bulut sunucusu (Cloud Run vb.) ücretsiz katmanda bile kredi kart�
 **Kullanım:** WhatsApp sohbeti → mesaja basılı tut → *Seç* → evrakları işaretle → *Paylaş* → **AGY Evrak**.
 
 **Kestirmenin soruları (hepsi tek ekranda, hızlı):**
-1. Müşteri: son müşteriler listesi (Drive'daki `1-Müşteriler` klasör adlarından okunur) + "Yeni müşteri" (ad yazılır).
-2. İş: o müşterinin açık işleri + "Yeni iş" + "Bilmiyorum (evraktan bulunsun)".
+1. Müşteri / iş: `Çizilecek Projeler`deki açık işlerin listesi (en üstte) + "Yeni iş" (müşteri adı yazılır).
+2. Yeni işte: aynı müşterinin tamamlanmış işi varsa "bu işin revizyonu mu?" sorusu; "Bilmiyorum (evraktan bulunsun)" seçeneği.
 3. İş türü (yeni işte): BHP · İç tesisat · Kompanzasyon · Diğer.
 4. Not (isteğe bağlı): ör. "tapunun arkası eksik".
 
@@ -93,22 +93,42 @@ yanına `paket.json` yazar (müşteri, iş, tür, not, dosya sırası, telefon s
 
 **Kestirme hataları:** internet yoksa (A) Drive kuyruğa alır; (B) "gönderilemedi, tekrar dene" der, hiçbir şey kaybolmaz.
 
-## 5. Parça 2 — Drive klasör düzeni
+## 5. Parça 2 — Drive klasör düzeni (masaüstü = çizilecek projeler)
+
+Kullanıcının isteği (8 Kasım 2026): **masaüstünde yalnız çizilecek projeler** görünsün. Masaüstü bir iş kuyruğudur;
+bütün müşteri arşivi değil.
 
 ```
 AGY Evrak/
-  0-Gelen/                      kestirmenin bıraktığı ham paketler (işlenince boşalır, paket _arsiv'e taşınır)
-  1-Müşteriler/
-    AHMET YILMAZ – <iş adı>/
-      Tapu.pdf  Kimlik.pdf  Vekaletname.pdf  …   düzeltilmiş, aranabilir (metin katmanlı) PDF'ler
-      Tümü.pdf                                   (isteğe bağlı) dağıtım şirketine tek dosya
-      _orijinal/                                 gelen dosyaların değişmemiş kopyası
-      _bilgi.txt                                 okunan bilgiler, eksik evrak listesi, uyarılar
-  8-Kontrol Et/                 türü/müşterisi belirsiz, bulanık, çelişkili evrak (sebebiyle birlikte)
-  9-Arşiv/                      işlenmiş ham paketler (30 gün sonra silinebilir — karar)
-  Kayıt.csv                     her evrak bir satır (Excel ile açılır)
-  kurallar.json                 tür kelimeleri, adlandırma, iş türüne göre gerekli evrak listeleri
+  0-Gelen/                      kestirmenin bıraktığı ham paketler (işlenince 9-Arşiv'e taşınır)
+  Çizilecek Projeler/           ◄── MASAÜSTÜNDEKİ KISAYOL BURAYI AÇAR
+    01 · HAZIR · 2026-11-03 · AHMET YILMAZ – <iş adı>/
+    02 · HAZIR · 2026-11-05 · …
+    03 · EKSİK EVRAK · 2026-11-06 · …/
+    _LİSTE.txt                  sıra, bekleme günü, eksikler (bir bakışta durum)
+    ✔ Bitti/                    çizimi biten iş klasörü buraya sürüklenir
+  Tamamlanan Projeler/          "Bitti"ye bırakılanlar program tarafından buraya taşınır (masaüstünden kalkar)
+  8-Kontrol Et/                 müşterisi/türü belirsiz evrak (sebebiyle)
+  9-Arşiv/                      işlenmiş ham paketler
+  Kayıt.csv · kurallar.json
+
+İş klasörünün içi (her iki yerde aynı):
+  Tapu.pdf  Kimlik.pdf  Vekaletname.pdf  …   düzeltilmiş, aranabilir PDF'ler
+  Tümü.pdf                                   (isteğe bağlı) dağıtım şirketine tek dosya
+  _orijinal/                                 gelen dosyaların değişmemiş kopyası
+  _bilgi.txt                                 okunan bilgiler, eksik evrak, müşteriye hazır mesaj
 ```
+
+- **Sıra:** en eski iş en üstte (öne konan 01, 02… numarası evrakın ilk geliş tarihine göre). Bekleme günü `_LİSTE.txt`de;
+  X günü geçen iş için uyarı (gecikmeyi önlemek için).
+- **Durum** klasör adının başında: `HAZIR` (iş türünün gerekli evrakı tamam) · `EKSİK EVRAK` (eksikler `_bilgi.txt`de,
+  müşteriye hazır mesajla) · `KONTROL` (çelişki/bulanık evrak). Yeni evrak gelince durum ve ad kendiliğinden güncellenir.
+- **Kimlik:** program klasörü adından değil, içindeki gizli `.is-kimligi` dosyasından tanır; kullanıcı klasör adını
+  değiştirse de evrak doğru klasöre gider ve kullanıcının verdiği ad korunur (yalnız durum öneki güncellenir — karar).
+- **Bitti:** kullanıcı klasörü `✔ Bitti`ye sürükler → program `Tamamlanan Projeler/<yıl>/`e taşır. Tamamlanan işe yeni evrak
+  gelirse (revizyon) iş yeniden `Çizilecek Projeler`e döner ve "REVİZYON" öneki alır.
+- Masaüstüne yalnız `Çizilecek Projeler` klasörünün kısayolu konur; Drive eşitlemesi sayesinde PC'de dosya taşımak/silmek
+  Drive'a da yansır.
 
 Klasör adı kuralları: Türkçe büyük harf (i→İ, ı→I doğru), Windows'ta yasak karakterler (`\ / : * ? " < > |`) temizlenir,
 yol uzunluğu 200 karakteri geçmez, aynı ad varsa ` (2)` eklenir — hiçbir dosyanın üstüne yazılmaz.
@@ -141,7 +161,8 @@ Yerel çalışır; internete yalnız Drive eşitlemesi çıkar (o da Google'ın 
 8. **Birleştirme:** aynı türdeki sayfalar tek PDF (tapunun önü/arkası). Sayfa sırası = paylaşım sırası. İsteğe bağlı `Tümü.pdf`.
 9. **Adlandırma:** klasör `MÜŞTERİ ADI – <iş adı>`; dosya `<Tür>.pdf` (ikinci gelirse `<Tür> (2).pdf`).
    İş adının neyden kurulacağı kullanıcıdan öğrenilecek (bkz. 13. bölüm, soru 1).
-10. **Yerleştirme:** müşteri/iş klasörüne; orijinaller `_orijinal/`e; ham paket `9-Arşiv/`e.
+10. **Yerleştirme:** iş klasörüne (yeni işse `Çizilecek Projeler`de açılır; tamamlanmış işse REVİZYON olarak geri gelir);
+    orijinaller `_orijinal/`e; ham paket `9-Arşiv/`e; `_LİSTE.txt` ve klasör önekleri (sıra, durum) güncellenir.
 11. **Tekrar kontrolü:** aynı dosya (özet değeri) ya da yeniden sıkıştırılmış aynı fotoğraf (görsel benzerlik) ikinci kez
     gelirse yeni kopya oluşturulmaz, kayda "tekrar" yazılır.
 12. **Eksik evrak:** iş türüne göre gerekli liste (`kurallar.json`) ile karşılaştırılır; `_bilgi.txt`de eksikler ve
@@ -172,6 +193,8 @@ Yerel çalışır; internete yalnız Drive eşitlemesi çıkar (o da Google'ın 
 |---|---|
 | PC kapalı | Paket Drive'da bekler; PC açılınca sırayla işlenir |
 | Eşitleme yarıda | Boyutlar sabitlenene kadar beklenir |
+| Kullanıcı iş klasörünün adını değiştirdi | Gizli kimlik dosyasıyla tanınır, yeni evrak yine oraya gider |
+| Bitmiş işe yeni evrak geldi | REVİZYON olarak Çizilecek Projeler'e döner |
 | Aynı müşteri, iki ayrı iş | İş seçimiyle ayrılır; "Bilmiyorum" seçilirse ada/parsel'e göre önerilir, emin değilse Kontrol et |
 | Müşteri adı yazım farkı (Ahmet Yilmaz / AHMET YILMAZ) | Türkçe büyük harfe ve sadeleştirilmiş karşılaştırmaya göre aynı sayılır |
 | Bir pakette iki farklı kişinin evrakı (ör. malik + vekil) | Hepsi seçilen işin klasörüne; kişi adları `_bilgi.txt`ye |
@@ -229,7 +252,9 @@ coexistence ile Cloud API'ye bağlanır; gelen evrak bir web kancasıyla doğrud
 ## 13. Kullanıcıdan beklenen kararlar
 
 1. **İş adı** neyden kurulsun? (ada/parsel · tesisat/abone no · mahalle/adres · iş türü) — örnek bir klasör adı.
-2. **Klasör düzeni:** tek `1-Müşteriler` mi, yıl / iş türü alt klasörleri mi?
+2. **Masaüstü kuyruğu:** (a) iş ilk evrak gelir gelmez mi kuyruğa girsin (EKSİK EVRAK önekiyle), yoksa yalnız evrak
+   tamamlanınca mı? (b) Sıra en eski iş üstte mi, yoksa elle öncelik verilebilsin mi? (c) Kaç gün bekleyen iş uyarı versin?
+   (d) "Bitti" işareti klasörü `✔ Bitti`ye sürüklemek mi olsun? (e) Tamamlananlar yıl / iş türüne göre mi ayrılsın?
 3. **Tümü.pdf** (dağıtım şirketine tek dosya) gerekli mi? Dağıtım şirketinin dosya boyutu / renk / format şartı var mı?
 4. **İş türüne göre gerekli evrak listeleri** (BHP için hangi evraklar, iç tesisat için hangileri…).
 5. Şirket hesabı **Google Workspace** mi (alan adlı e-posta) yoksa Gmail mi? (Workspace'te yönetici kısıtı kontrolü)
