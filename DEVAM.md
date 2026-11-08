@@ -290,7 +290,14 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    Edge --app ile Form.html'in aynısı. Görüntü: kağıt bölgesi (açık + düşük doygunluk) ile sayfa bulma, kenar yöntemi
    yedek; her zaman "sihirli renk" (kanal başına zemin bölme, seviyeler, koyulaştırma, keskinleştirme, soluk kaşe
    doygunluğu ×1,6). Kullanıcı: "evet daha iyi güzel" (1.0.4). Telefon/PC akışı uçtan uca çalıştı.
-   KALAN: (a) her pakette telefona e-posta özeti (kullanıcı istedi; Gmail uygulama şifresi gerek — yapılmadı),
+   BİLDİRİMLER (tamam, 9 Kasım 2026): PC her pakette 7-Bildirim\*.json yazar → Kod.gs bildirimGonder (5 dk tetikleyici)
+   e-posta atar; saatlik tetikleyici 08:xx'te sabahOzeti (iş yoksa "Bekleyen iş yok"); ?durum=1&anahtar=… telefon
+   otomasyonu (Kestirmeler, Şu Saatte 08:30 → URL içeriği → Sözlük "metin" → Bildirim Göster) isim + gün gösterir;
+   PC günlük Windows bildirimi. Kod.gs 1.6 (ANAHTAR ve ALICI satırları kullanıcıda doldurulur), İşleyici 1.0.7.
+   appsscript.json'da açık oauthScopes şart (MailApp izni kendiliğinden istenmedi; izin kaldırılıp "tümünü seç" ile
+   yeniden verildi). Kod.gs değişince: node evrak/apps-script/test/dene.js evrak/apps-script/Kod.gs (1.4'te bildirimGonder
+   yanlışlıkla silinmişti). E-postalar kullanıcı isteğiyle sade.
+   KALAN: (a) [yapıldı] e-posta özeti,
    (b) Faz 2: OCR ile evrak türü adı (Tapu.pdf, Kimlik.pdf…; şimdi "Fotoğraf <WA zamanı>.pdf"), (c) masaüstündeki
    "Çizilecek Projeler.lnk" şahsi Drive yedeklemesinde X gösteriyor (zararsız), (d) bir hafta gerçek kullanım.
    Kişisel veri depoya girmez; kullanıcının gönderdiği gerçek evrak fotoğrafları yalnız oturumda denendi, türevleri silindi.
