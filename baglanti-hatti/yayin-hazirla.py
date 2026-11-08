@@ -5,12 +5,12 @@
 import os, re, shutil, sys
 c = sys.argv[1]
 for d in ('ortak', 'veri', 'baglanti-hatti/logo'): os.makedirs(os.path.join(c, d), exist_ok=True)
-shutil.copy('baglanti-hatti/logo/agy-kapak.png', os.path.join(c, 'baglanti-hatti/logo/agy-kapak.png'))
+for f in ('agy-kapak.png', 'logo-beyaz.png'): shutil.copy('baglanti-hatti/logo/' + f, os.path.join(c, 'baglanti-hatti/logo/' + f))
 for f in ('ortak/bhp.js', 'ortak/bhp-cizim.js', 'ortak/stil.css', 'veri/katalog.js'): shutil.copy(f, os.path.join(c, f))
 shutil.copy('baglanti-hatti/BHP-SABLON.dxf', os.path.join(c, 'baglanti-hatti/BHP-SABLON.txt'))
 s = open('araclar/baglanti-hatti.html', encoding='utf-8').read()
-s = s.replace('../ortak/', 'ortak/').replace('../veri/', 'veri/').replace("'../baglanti-hatti/", "'baglanti-hatti/")
-s = s.replace('<a href="../index.html">← Proje İşleri</a>', '<a href="https://claude.ai/artifact/7ozTZyAZtsX2Yng1KXgvk5" target="_top">← Proje İşleri</a>')
+s = s.replace('../ortak/', 'ortak/').replace('../veri/', 'veri/').replace("'../baglanti-hatti/", "'baglanti-hatti/").replace('"../baglanti-hatti/', '"baglanti-hatti/')
+s = s.replace('href="../index.html">← Proje İşleri</a>', 'href="https://claude.ai/artifact/7ozTZyAZtsX2Yng1KXgvk5" target="_top">← Proje İşleri</a>')
 bas = re.sub(r'<meta[^>]*>\s*', '', re.search(r'<head>(.*?)</head>', s, re.S).group(1))
 govde = re.search(r'<body>(.*)</body>', s, re.S).group(1)
 open(os.path.join(c, 'index.html'), 'w', encoding='utf-8').write(bas.strip() + '\n' + govde.strip() + '\n')

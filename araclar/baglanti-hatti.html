@@ -97,17 +97,85 @@
   #gTaban, #gDetay { position: absolute; left: 0; top: 0; transform-origin: 0 0; background: #fff; pointer-events: none; }
   #gCerceve { position: absolute; border: 3px solid #d00; background: rgba(221,0,0,.08); pointer-events: none; }
   .onizleme h4 { margin: 0 0 4px; font-size: .8rem; color: #555; }
+
+  /* ===== Tasarım: proje sayfası (bilgisayar) ===== */
+  :root { --golge: 0 1px 2px rgba(16,24,40,.05), 0 4px 16px rgba(16,24,40,.06); --yuvarlak: 14px; --vurgu-acik: #fdf1e6; --ana-acik: #e9eef7; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --golge: 0 1px 2px rgba(0,0,0,.4); --vurgu-acik: #3a2a1a; --ana-acik: #1d2a40; } }
+  :root[data-theme="dark"] { --golge: 0 1px 2px rgba(0,0,0,.4); --vurgu-acik: #3a2a1a; --ana-acik: #1d2a40; }
+  body, input, select, textarea, button { font-feature-settings: "calt" 0; }   /* Inter "4x25" → "4×25" yapmasın: x her zaman küçük harf */
+  body { font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; letter-spacing: -.005em; background: var(--zemin); }
+  header.ust { background: var(--kart); color: var(--yazi); border-bottom: 1px solid var(--cizgi); padding: 0; position: sticky; top: 0; z-index: 20; }
+  .ust-ic { max-width: 1500px; margin: 0 auto; padding: 12px 28px; display: flex; align-items: center; gap: 20px; }
+  .ust-logo { height: 46px; width: auto; border-radius: 6px; background: #fff; }
+  .ust-baslik h1 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--baslik); letter-spacing: -.01em; }
+  .ust-baslik p { margin: 2px 0 0; font-size: .85rem; color: var(--soluk); opacity: 1; }
+  .ust-is { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; padding: 6px 14px; border-radius: 10px; background: var(--ana-acik); }
+  .ust-is span { font-weight: 700; color: var(--baslik); }
+  .ust-is small { color: var(--soluk); font-size: .78rem; }
+  .ust-geri { color: var(--soluk) !important; font-size: .85rem; text-decoration: none; white-space: nowrap; }
+  .ust-is[hidden] + .ust-geri { margin-left: auto; }
+  main.duzen { max-width: 1500px; margin: 0 auto; padding: 24px 28px 48px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+  .icerik > .kart, .icerik > div > .kart { margin-bottom: 20px; }
+  .kart { border: 1px solid var(--cizgi); border-radius: var(--yuvarlak); box-shadow: var(--golge); padding: 22px 24px; }
+  .kbas { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+  .kbas .no { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--baslik); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .95rem; }
+  .kbas h2 { margin: 2px 0 2px; font-size: 1.12rem; font-weight: 700; letter-spacing: -.01em; }
+  .kbas p { margin: 0; font-size: .86rem; color: var(--soluk); }
+  .cip { margin-left: auto; flex: none; font-size: .75rem; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--zemin); color: var(--soluk); border: 1px solid var(--cizgi); }
+  .cip.tamam { background: var(--iyi-zemin); color: var(--iyi); border-color: transparent; }
+  .cip.dikkat { background: var(--vurgu-acik); color: var(--vurgu); border-color: transparent; }
+  .blok { border-top: 1px dashed var(--cizgi); padding-top: 16px; margin-top: 18px; }
+  .blok h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--soluk); margin-bottom: 12px; }
+  .yukleme { border: 1.5px dashed var(--cizgi); border-radius: 12px; padding: 16px 18px; background: var(--zemin); transition: border-color .15s; cursor: pointer; }
+  .yukleme:hover { border-color: var(--baslik); }
+  .yukleme b { font-size: .95rem; }
+  input[type=text], input[type=number], select { border-radius: 8px; padding: 9px 10px; background: var(--kart); transition: border-color .15s, box-shadow .15s; }
+  input[type=text]:focus, input[type=number]:focus, select:focus { border-color: var(--baslik); box-shadow: 0 0 0 3px var(--ana-acik); outline: none; }
+  .alanlar label { color: var(--soluk); font-weight: 500; }
+  .ana-dugme { border-radius: 10px; padding: 13px 18px; box-shadow: 0 2px 6px rgba(242,140,40,.25); transition: transform .08s, opacity .15s; }
+  .ana-dugme:not(:disabled):hover { transform: translateY(-1px); }
+  .kucuk-dugme { border-radius: 8px; }
+  .secim button { border-radius: 10px; font-weight: 500; }
+  .kontrol { border-radius: 12px; background: var(--zemin); }
+  .onay { border-radius: 10px; background: var(--ana-acik); }
+  /* sağ panel */
+  aside.panel { position: sticky; top: 88px; }
+  .panel-ic { background: var(--kart); border: 1px solid var(--cizgi); border-radius: var(--yuvarlak); box-shadow: var(--golge); padding: 20px; }
+  .panel-ic h3 { margin: 0 0 12px; font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--soluk); }
+  .adimlar-durum { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 2px; }
+  .adimlar-durum li { display: flex; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px; cursor: pointer; font-size: .9rem; }
+  .adimlar-durum li:hover { background: var(--zemin); }
+  .adimlar-durum li i { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: .72rem; font-weight: 700;
+    border: 1.5px solid var(--cizgi); color: var(--soluk); background: var(--kart); }
+  .adimlar-durum li.tamam i { background: var(--iyi); border-color: var(--iyi); color: #fff; }
+  .adimlar-durum li.dikkat i { background: var(--vurgu); border-color: var(--vurgu); color: #fff; }
+  .adimlar-durum li small { display: block; color: var(--soluk); font-size: .76rem; }
+  .indir-durum { font-size: .84rem; }
+  .indir-durum ul { padding-left: 18px; }
+  .iki.genis-sol { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  table.duz input { min-width: 0 !important; width: 100%; padding: 7px 6px; }
+  table.duz td { padding: 2px 2px; } table.duz th { font-size: .78rem; }
+  .yukleme { max-width: none; }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 </head>
 <body>
-<header>
-  <a href="../index.html">← Proje İşleri</a>
-  <h1>Bağlantı hattı projesi</h1>
-  <p>GDZ bağlantı görüşü + iç tesisat projesi → AutoCAD'de açılacak hazır proje</p>
+<header class="ust">
+  <div class="ust-ic">
+    <img class="ust-logo" src="../baglanti-hatti/logo/logo-beyaz.png" alt="AGY Enerji Mühendislik">
+    <div class="ust-baslik">
+      <h1>Bağlantı Hattı Projesi</h1>
+      <p>GDZ bağlantı görüşü ve iç tesisat projesinden AutoCAD'e hazır proje</p>
+    </div>
+    <div class="ust-is" id="o-is" hidden><span id="o-musteri"></span><small id="o-basvuru"></small></div>
+    <a class="ust-geri" href="../index.html">← Proje İşleri</a>
+  </div>
 </header>
-<main>
-  <div class="kart">
-    <h2 style="margin-top:0">1. GDZ bağlantı görüşü</h2>
+<main class="duzen">
+<div class="icerik">
+  <div class="kart" id="k-gdz">
+    <div class="kbas"><span class="no">1</span><div><h2>GDZ bağlantı görüşü</h2><p>Yazıyı yükleyin; okunan bilgileri yandaki görüntüyle karşılaştırın.</p></div><span class="cip" id="c-gdz">Bekliyor</span></div>
     <label class="yukleme"><b>Bağlantı görüşü (PDF)</b>
       <input type="file" id="f-gdz" accept="application/pdf,.pdf">
       <span class="durum" id="d-gdz">Henüz yüklenmedi</span></label>
@@ -136,14 +204,14 @@
 
   <div id="sayfaHavai" hidden>
     <div class="kart">
-      <h2 style="margin-top:0">Havai hat projesi</h2>
+      <div class="kbas"><span class="no">2</span><div><h2>Havai hat projesi</h2><p>Hazırlanıyor.</p></div></div>
       <p class="not">Havai hat bölümü hazırlanıyor. Bu iş yeraltı ise yukarıdan "Yeraltı"yı seçin.</p>
     </div>
   </div>
 
   <div id="sayfaYeralti" hidden>
-  <div class="kart">
-    <h2 style="margin-top:0">2. İç tesisat projesi</h2>
+  <div class="kart" id="k-ic">
+    <div class="kbas"><span class="no">2</span><div><h2>İç tesisat projesi</h2><p>Projeyi yükleyin; antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.</p></div><span class="cip" id="c-ic">Bekliyor</span></div>
     <label class="yukleme"><b>Onaylı iç tesisat projesi (PDF)</b>
       <input type="file" id="f-ic" accept="application/pdf,.pdf">
       <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
@@ -175,9 +243,8 @@
       </div>
   </div>
 
-  <div class="kart">
-    <h2 style="margin-top:0">3. Okunan bilgileri kontrol edin</h2>
-    <p class="not">Soldaki değerleri sağdaki resimle karşılaştırın; gerekirse düzeltin. Resme tekerlekle yaklaşıp sürükleyerek gezebilirsiniz.</p>
+  <div class="kart" id="k-kontrol">
+    <div class="kbas"><span class="no">3</span><div><h2>Okunan bilgileri kontrol edin</h2><p>Soldaki değerleri sağdaki resimle karşılaştırın. Resme tekerlekle yaklaşın, sürükleyerek gezin.</p></div><span class="cip" id="c-kontrol">Bekliyor</span></div>
     <div id="hatNotu"></div>
     <section class="blok">
       <h3>Antet</h3>
@@ -188,7 +255,7 @@
     </section>
     <section class="blok">
       <h3>Güç dağıtım tablosu</h3>
-      <div class="iki">
+      <div class="iki genis-sol">
         <div>
           <div class="tablo-kutu"><table class="duz" id="satirlar"></table></div>
           <button type="button" class="kucuk-dugme" id="satirEkle" style="margin-top:8px">+ Satır ekle</button>
@@ -227,8 +294,8 @@
     </section>
   </div>
 
-  <div class="kart">
-    <h2 style="margin-top:0">4. Kablo seçimi ve hesap</h2>
+  <div class="kart" id="k-kablo">
+    <div class="kbas"><span class="no">4</span><div><h2>Kablo seçimi ve hesap</h2><p>Gerilim düşümü, akım taşıma ve ana kesici uyumuna göre en uygun kesit önerilir.</p></div><span class="cip" id="c-kablo">Bekliyor</span></div>
     <div class="kablo-satir">
       <div class="secim" id="iletken">
         <button type="button" data-v="cu" aria-pressed="false">Bakır (NYY)</button>
@@ -249,8 +316,8 @@
     <button type="button" class="kucuk-dugme" id="notSifirla">↺</button>
   </div>
 
-  <div class="kart">
-    <h2 style="margin-top:0">5. Vaziyet planı</h2>
+  <div class="kart" id="k-vaziyet">
+    <div class="kbas"><span class="no">5</span><div><h2>Vaziyet planı</h2><p>TKGM parsel görüntüsünü yükleyip enerji noktasını, sayaç panosunu ve parsel sınırını işaretleyin.</p></div><span class="cip" id="c-vaziyet">Bekliyor</span></div>
     <label class="yukleme"><b>TKGM parsel görüntüsü (resim)</b>
       <input type="file" id="f-tkgm" accept="image/*">
       <span class="durum" id="d-tkgm">Henüz yüklenmedi</span></label>
@@ -277,13 +344,17 @@
     </div>
   </div>
 
-  <div class="kart">
-    <h2 style="margin-top:0">6. Projeyi indirin</h2>
+  </div>
+</div>
+<aside class="panel">
+  <div class="panel-ic">
+    <h3>Proje durumu</h3>
+    <ol id="adimListe" class="adimlar-durum"></ol>
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <div id="d-indir" class="indir-durum"></div>
-    <p class="not">Zip'e sağ tıklayıp "Tümünü ayıkla" deyin; çıkan klasördeki 4 dosya (çizim, 2 resim, logo) aynı yerde kalsın. DXF'i AutoCAD'de açıp DWG olarak kaydedin.</p>
+    <p class="not" style="margin:10px 0 0">Zip'e sağ tıklayıp "Tümünü ayıkla" deyin; 4 dosya (çizim, 2 resim, logo) aynı klasörde kalsın. DXF'i AutoCAD'de açıp DWG olarak kaydedin.</p>
   </div>
-  </div>
+</aside>
 </main>
 
 <script src="../veri/katalog.js"></script>
@@ -381,7 +452,8 @@ $('f-ic').addEventListener('change', async e => {
     }
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
     if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
-    else durum('d-ic', (await ornekVar()) ? 'Bu PDF\'teki yazılar çizgi olarak kaydedilmiş. Aşağıda antet, güç tablosu ve kolon şemasını işaretleyip okutun.' : 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
+    else if (await ornekVar()) durum('d-ic', 'Yüklendi. Aşağıda antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.');
+    else durum('d-ic', 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
     alanlariDoldur();
     if (await ornekVar()) await gPanelAc();
   } catch (x) { durum('d-ic', 'Okunamadı: ' + x.message, 'kotu'); }
@@ -769,7 +841,30 @@ function guncelle() {
   $('d-indir').className = 'indir-durum ' + (eksik.length ? 'kotu' : uyari.length ? '' : 'iyi');
   $('d-indir').innerHTML = eksik.length ? '<b>İndirmek için şunlar gerekli:</b>' + liste(eksik) + (uyari.length ? '<b>Dikkat:</b>' + liste(uyari) : '')
     : uyari.length ? '<b>Hazır.</b> Dikkat:' + liste(uyari) : '<b>Hazır.</b>';
+  durumPaneli(eksik);
 }
+// ---- Proje durumu (sağ panel) ve bölüm etiketleri ----
+function durumPaneli(eksik) {
+  const b = bilgiler(), gdzTamam = !!D.gdz && $('gdzOnay').checked;
+  const okundu = ['antet', 'guc', 'pano'].every(a => G.durum && G.durum[a] && G.durum[a] !== 'hata');
+  const kontrolEksik = eksik.some(e => /güç dağıtım|sayaç panosu|sayaç önü|ana kesici değeri/.test(e));
+  const kabloEksik = eksik.some(e => /kablo|bakır/.test(e));
+  const vazTamam = !!D.vaziyet && D.isaret && D.isaret.nokta && D.isaret.bina;
+  const adim = [
+    ['k-gdz', 'GDZ bağlantı görüşü', gdzTamam ? 'tamam' : D.gdz ? 'dikkat' : '', gdzTamam ? (D.gdz.basvuruNo || '') : D.gdz ? 'onay bekliyor' : 'yüklenmedi'],
+    ['k-ic', 'İç tesisat okuma', okundu ? 'tamam' : D.icDoc ? 'dikkat' : '', okundu ? 'üç bölüm okundu' : D.icDoc ? 'işaretleme sürüyor' : 'yüklenmedi'],
+    ['k-kontrol', 'Kontrol ve onay', D.icDoc && !kontrolEksik && D.satirlar.length ? 'tamam' : D.icDoc ? 'dikkat' : '', D.icDoc ? (kontrolEksik ? 'onay / düzeltme bekliyor' : 'onaylandı') : ''],
+    ['k-kablo', 'Kablo ve hesap', D.kablo && !kabloEksik ? 'tamam' : D.iletken ? 'dikkat' : '', D.kablo ? D.kablo.yazi : 'bakır / alüminyum seçin'],
+    ['k-vaziyet', 'Vaziyet planı', vazTamam ? 'tamam' : D.vaziyet ? 'dikkat' : '', vazTamam ? 'işaretlendi' : D.vaziyet ? 'işaretleyin' : 'isteğe bağlı'],
+  ];
+  $('adimListe').innerHTML = adim.map(([id, ad, d, alt], i) =>
+    `<li class="${d}" data-hedef="${id}"><i>${d === 'tamam' ? '✓' : i + 1}</i><div>${ad}${alt ? `<small>${kac(alt)}</small>` : ''}</div></li>`).join('');
+  const cip = (id, d, t) => { const e = $(id); if (!e) return; e.className = 'cip' + (d ? ' ' + d : ''); e.textContent = t; };
+  adim.forEach(([id, , d]) => cip('c-' + id.slice(2), d, d === 'tamam' ? 'Tamam' : d === 'dikkat' ? 'Devam ediyor' : 'Bekliyor'));
+  const mus = String(b.malSahibi || (D.gdz && D.gdz.sahibi) || '').trim();
+  $('o-is').hidden = !mus; $('o-musteri').textContent = mus; $('o-basvuru').textContent = D.gdz && D.gdz.basvuruNo ? 'Başvuru ' + D.gdz.basvuruNo : '';
+}
+$('adimListe').addEventListener('click', e => { const li = e.target.closest('li'); if (li) $(li.dataset.hedef).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 function cizim() {
   const b = bilgiler();
   const notlar = $('notlar').value.split('\n').map(t => t.trim()).filter(Boolean);
