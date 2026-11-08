@@ -278,6 +278,22 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    (ezber kartı + 8 bölüm soru-cevap, kaynaklı). Doğrulama: EIG örneği 630 kVA %6 350 kVAr → h0 5,48 (kaynak 5,5).
    Son ek: harmonikli toplam yük akımı (KOMP.harmonikAkim, Irms = I1·√(1+THDi²), THDi girişi varsayılan %40); hesap adımları otomatik
    numaralanıyor. Kompanzasyon aracı tamamlandı; kullanıcı onayıyla main'e birleştirildi (8 Kasım 2026).
+1z. EVRAK TOPLAYICI (8 Kasım 2026) — kurgu: evrak/KURGU.md (sürüm 4 + Faz 0 sonuçları), kurulum: evrak/KURULUM.md.
+   Akış: iPhone kestirmesi "AGY Evrak" (Paylaşma Sayfası → Tarihi Biçimlendir yyyyMMdd-HHmmss → her öğe için Base64 →
+   URL'nin İçeriğini Al POST JSON {anahtar, ad, uzanti, veri, sira, paket} → Web Görüntüsünü Göster …/exec?form=<paket>)
+   → Apps Script (evrak/apps-script/Kod.gs + Form.html, şirket Gmail, web uygulaması "Herkes", gizli anahtar yalnız kullanıcıda;
+   güncellemede Dağıt → Dağıtımları yönet → kalem → Yeni sürüm, adres değişmez; kurulum gizli pencerede, çok hesapta hata veriyor)
+   → Drive H:\Drive'ım\AGY Evrak\0-Gelen → PC programı evrak/isleyici (Python, GitHub Actions ile Windows .exe,
+   release "evrak-isleyici"; sürüm ayar.py SURUM, şu an 1.0.4) → Çizilecek Projeler (ad: 0 ACİL / 1 HAZIR / 2 BEKLİYOR ·
+   tarih · ELEKTRİKÇİ – Proje · Tür [· REVİZYON][· KONTROL][· YENİ EVRAK]); masaüstüne alınan işe gelen evrak
+   _YENİ GELEN EVRAK'a; bitmiş işe gelen evrak REVİZYON. Evrak Bırak (masaüstü klasörü / Gönder menüsü) → yerel sunucu +
+   Edge --app ile Form.html'in aynısı. Görüntü: kağıt bölgesi (açık + düşük doygunluk) ile sayfa bulma, kenar yöntemi
+   yedek; her zaman "sihirli renk" (kanal başına zemin bölme, seviyeler, koyulaştırma, keskinleştirme, soluk kaşe
+   doygunluğu ×1,6). Kullanıcı: "evet daha iyi güzel" (1.0.4). Telefon/PC akışı uçtan uca çalıştı.
+   KALAN: (a) her pakette telefona e-posta özeti (kullanıcı istedi; Gmail uygulama şifresi gerek — yapılmadı),
+   (b) Faz 2: OCR ile evrak türü adı (Tapu.pdf, Kimlik.pdf…; şimdi "Fotoğraf <WA zamanı>.pdf"), (c) masaüstündeki
+   "Çizilecek Projeler.lnk" şahsi Drive yedeklemesinde X gösteriyor (zararsız), (d) bir hafta gerçek kullanım.
+   Kişisel veri depoya girmez; kullanıcının gönderdiği gerçek evrak fotoğrafları yalnız oturumda denendi, türevleri silindi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
