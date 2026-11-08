@@ -42,7 +42,7 @@ function doGet(e) {
   t.durum = JSON.stringify(k ? paketDurumu(k) : { yok: true, paket: paket });
   t.isler = JSON.stringify(sonIsler());
   t.elektrikciler = JSON.stringify(liste('elektrikciler'));
-  t.turler = JSON.stringify(TURLER.concat(liste('turler')));
+  t.turler = JSON.stringify(liste('turler').concat(TURLER));   // en son kullanılan türler önce
   return t.evaluate().setTitle('AGY Evrak')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1');
 }
@@ -66,7 +66,7 @@ function bilgiKaydet(paket, b) {
   k.createFile('paket.json', JSON.stringify(bilgi, null, 2), 'application/json');
   isEkle({ elektrikci: elektrikci, proje: proje, tur: tur });
   listeyeEkle('elektrikciler', elektrikci, 500);
-  if (TURLER.indexOf(tur) < 0) listeyeEkle('turler', tur, 50);
+  listeyeEkle('turler', tur, 100);
   return { tamam: true, dosyaSayisi: bilgi.dosyaSayisi };
 }
 
