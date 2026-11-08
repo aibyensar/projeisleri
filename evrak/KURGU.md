@@ -275,6 +275,28 @@ saatine göre hesaplanır (PC'nin açıldığı saate göre değil).
 4. `9-Arşiv`deki orijinaller ne kadar saklansın? (öneri: 1 yıl)
 5. Kendi proje klasörün nerede ve şahsi Drive yedeklemesi o klasörü kapsıyor mu? (iş bitince tek kopya orada kalır)
 
+## Faz 0 sonuçları (8 Kasım 2026)
+
+- **A yolu (kestirmeden Drive'a doğrudan kayıt) çalışmıyor:** iOS 26'da Kestirmeler'in kaydetme ekranında Google Drive
+  soluk, seçilemiyor. → **B yolu seçildi** (Apps Script web uygulaması, `evrak/apps-script/Kod.gs`). Kurulum
+  sırasında Chrome'da birden çok Google hesabı açıkken Apps Script yetki penceresi açılmıyor ("dosyayı açamıyoruz") →
+  yalnız şirket hesabıyla gizli pencerede kurulmalı.
+- **Deneme kestirmesi (iOS 26, Türkçe adlar):** Paylaşma Sayfası girişini al → Kestirme Girişi girişinde her öğeyle
+  yinele → Base64 ile Kodla (Yineleme Öğesi) → URL'nin İçeriğini Al (POST, JSON: anahtar, ad = Yineleme Öğesi›Ad,
+  uzanti = Yineleme Öğesi›Dosya Uzantısı, veri = Base64 Kodlanmış, sira = Yineleme Dizini) → Yinelemeyi Bitir.
+- **İlk gerçek deneme başarılı:** WhatsApp'tan 2 PDF + 7 fotoğraf karışık seçildi, 9'u da geldi, açılıyor.
+- **Bulgular:**
+  - Paket dakika değişince ikiye bölündü (deneme sürümü paket adını sunucu dakikasından veriyor) → asıl kestirmede
+    paket kimliği döngüden önce bir kez üretilip her dosyayla gönderilecek.
+  - WhatsApp paylaşım sırası sohbet sırası değil: PDF'ler önce, fotoğraflar sonra geldi. Fotoğraf adları WhatsApp'ın
+    alış zamanını taşıyor (`PHOTO-2026-10-22-10-48-46.jpg`) → işleyici sayfa sırasını bu zamana göre kurar, aynı
+    saniyedekiler paylaşım sırasıyla. Tarih evrakın geliş tarihi olarak da kullanılabilir.
+  - Aynı saniyede gelen birçok fotoğraf aynı adı taşıyor → sıra öneki (`01_`) çakışmayı önlüyor; işleyici de adı değil
+    içeriği esas alacak.
+  - WhatsApp fotoğrafları sıkıştırıyor (175–363 KB) → okunabilirlik kalite denemesinde ölçülecek; önemli evrak için
+    müşteriden "belge olarak" gönderim istenmeli.
+  - PDF adları korunuyor (`WEB TAPU.pdf` gibi) → tür bulmada dosya adı da ipucu olarak kullanılacak.
+
 ## Araştırma notları (dayanaklar)
 
 - Coexistence yalnız Solution Partner / Tech Provider üzerinden: Meta, *Onboard WhatsApp Business app users*.
