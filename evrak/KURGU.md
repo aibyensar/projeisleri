@@ -61,7 +61,7 @@ bunu yapamaz. Bulut sunucusu (Cloud Run vb.) ücretsiz katmanda bile kredi kart�
                                         _orijinal/ …                       9 adlandır · 10 yerleştir
                                     8-Kontrol Et/                         11 kayıt · 12 bildirim
                                     Kayıt.csv · kurallar.json
-                                                                         Masaüstü kısayolu → AGY Evrak
+                                                                         Masaüstü kısayolu → Çizilecek Projeler
 ```
 
 Üç parça, her biri tek başına anlaşılır:
