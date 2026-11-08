@@ -42,6 +42,17 @@ def _sirala(p):
     return np.array([p[np.argmin(t)], p[np.argmin(f)], p[np.argmax(t)], p[np.argmax(f)]], dtype='float32')  # sol-üst, sağ-üst, sağ-alt, sol-alt
 
 
+def _acilar_uygun(p):
+    """Dörtgenin iç açıları 45°–135° arasında mı (perspektifte bile sayfa böyle görünür)."""
+    for i in range(4):
+        a, b, c = p[i - 1].astype(float), p[i].astype(float), p[(i + 1) % 4].astype(float)
+        v1, v2 = a - b, c - b
+        cos = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-9)
+        if not (-0.71 < cos < 0.71):
+            return False
+    return True
+
+
 def sayfa_bul(bgr):
     """Sayfanın 4 köşesi (orijinal ölçekte) ya da None."""
     h, w = bgr.shape[:2]
@@ -51,8 +62,12 @@ def sayfa_bul(bgr):
     alan = k.shape[0] * k.shape[1]
     gri = cv2.GaussianBlur(cv2.cvtColor(k, cv2.COLOR_BGR2GRAY), (5, 5), 0)
     adaylar = []
-    kenar = cv2.dilate(cv2.Canny(gri, 40, 140), np.ones((3, 3), np.uint8), iterations=2)
-    adaylar += list(cv2.findContours(kenar, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0])
+    for alt, ust in ((40, 140), (15, 60)):
+        kenar = cv2.dilate(cv2.Canny(gri, alt, ust), np.ones((3, 3), np.uint8), iterations=2)
+        adaylar += list(cv2.findContours(kenar, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0])
+    egim = cv2.morphologyEx(cv2.cvtColor(k, cv2.COLOR_BGR2HSV)[..., 1], cv2.MORPH_GRADIENT, np.ones((5, 5), np.uint8))
+    _, egim = cv2.threshold(egim, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)   # renkli masa / beyaz kağıt ayrımı
+    adaylar += list(cv2.findContours(cv2.dilate(egim, np.ones((5, 5), np.uint8)), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0])
     _, esik = cv2.threshold(gri, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)   # sayfa zeminden açık
     esik = cv2.morphologyEx(esik, cv2.MORPH_CLOSE, np.ones((15, 15), np.uint8))
     adaylar += list(cv2.findContours(esik, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0])
@@ -60,9 +75,11 @@ def sayfa_bul(bgr):
         a = cv2.contourArea(c)
         if a < 0.2 * alan or a > 0.985 * alan:   # çok küçük ya da zaten bütün kare
             continue
-        yaklasik = cv2.approxPolyDP(c, 0.02 * cv2.arcLength(c, True), True)
-        if len(yaklasik) == 4 and cv2.isContourConvex(yaklasik):
-            return _sirala(yaklasik / s)
+        govde = cv2.convexHull(c)
+        for oran in (0.02, 0.03, 0.045):
+            yaklasik = cv2.approxPolyDP(govde, oran * cv2.arcLength(govde, True), True)
+            if len(yaklasik) == 4 and cv2.isContourConvex(yaklasik) and _acilar_uygun(yaklasik.reshape(4, 2)):
+                return _sirala(yaklasik / s)
         kutu = cv2.boxPoints(cv2.minAreaRect(c))
         if a > 0.85 * cv2.contourArea(kutu.astype('float32')):   # dikdörtgene yakın
             return _sirala(kutu / s)
@@ -130,18 +147,50 @@ def iyilestir(bgr, kalite='tam'):
     bgr = beyaz_dengesi(bgr)
     bilgi['renkli'] = renkli_mi(bgr)
     bgr = _boyutla(bgr)
-    if bilgi['renkli']:
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        if kalite == 'tam':
-            hsv[..., 2] = _zemin_duzelt(hsv[..., 2])
-        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    if kalite != 'tam':
+        if not bilgi['renkli']:
+            return Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)), bilgi
         return Image.fromarray(cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)), bilgi
-    gri = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-    if kalite == 'tam':
-        gri = _zemin_duzelt(gri)
-        # yazıyı biraz koyulaştır (beyaz zemini bozmadan)
-        gri = cv2.LUT(gri, np.array([min(255, int(255 * (i / 255) ** 1.35)) for i in range(256)], dtype=np.uint8))
-    return Image.fromarray(gri), bilgi
+    if bilgi['renkli']:
+        return Image.fromarray(cv2.cvtColor(tarama_renkli(bgr), cv2.COLOR_BGR2RGB)), bilgi
+    return Image.fromarray(tarama_gri(cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY))), bilgi
+
+
+# ---------- tarayıcı görünümü: kağıt bembeyaz, yazı koyu, kenarlar keskin
+_KOYULASTIR = np.array([round(255 * (i / 255) ** 1.5) for i in range(256)], dtype=np.uint8)
+
+
+def _seviyeler(x, beyaz=212):
+    """Kağıt tonunu (≥ beyaz) tam beyaza, en koyu %0,5'i siyaha çeker."""
+    siyah = float(np.percentile(x, 0.5))
+    siyah = min(siyah, beyaz - 60)
+    y = (x.astype(np.float32) - siyah) * (255.0 / (beyaz - siyah))
+    return np.clip(y, 0, 255).astype(np.uint8)
+
+
+def _keskinlestir(x, guc=0.7):
+    bulanik = cv2.GaussianBlur(x, (0, 0), 1.1)
+    return cv2.addWeighted(x, 1 + guc, bulanik, -guc, 0)
+
+
+def tarama_gri(gri):
+    g = _zemin_duzelt(gri)                    # gölge / sarılık yok, kağıt ≈ 255
+    g = _seviyeler(g)
+    g = cv2.LUT(g, _KOYULASTIR)               # yazı koyulaşır, beyaz beyaz kalır
+    return _keskinlestir(g)
+
+
+def tarama_renkli(bgr):
+    """Her kanalın zemini ayrı düzeltilir: kağıt beyaz, mürekkep / mühür / imza rengini korur ("sihirli renk")."""
+    kanallar = [_zemin_duzelt(c) for c in cv2.split(bgr)]
+    gri = cv2.cvtColor(cv2.merge(kanallar), cv2.COLOR_BGR2GRAY)
+    siyah = min(float(np.percentile(gri, 0.5)), 150.0)
+    out = [np.clip((c.astype(np.float32) - siyah) * (255.0 / (212 - siyah)), 0, 255).astype(np.uint8) for c in kanallar]
+    bgr = cv2.merge([cv2.LUT(c, _KOYULASTIR) for c in out])
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV).astype(np.float32)
+    hsv[..., 1] = np.clip(hsv[..., 1] * 1.25, 0, 255)       # renkler biraz canlansın
+    bgr = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+    return _keskinlestir(bgr, 0.5)
 
 
 def pdf_yap(resimler, cikis, jpeg_kalite=85):
