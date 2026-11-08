@@ -20,6 +20,7 @@ import goruntu
 log = logging.getLogger('evrak')
 
 GELEN, KUYRUK, KONTROL, ARSIV = '0-Gelen', 'Çizilecek Projeler', '8-Kontrol Et', '9-Arşiv'
+BILDIRIM = '7-Bildirim'          # Google tarafı buradaki dosyaları e-posta olarak gönderip siler
 YENI_ALT = '_YENİ GELEN EVRAK'
 ORIJINAL = '_orijinal'
 BILGI = '_bilgi.txt'
@@ -169,7 +170,7 @@ class Isleyici:
         self.kok = Path(ayar['kok'])
         self.masaustu = Path(ayar['masaustu'])
         self.bildir = bildir or (lambda baslik, metin: log.info('%s: %s', baslik, metin))
-        for k in (GELEN, KUYRUK, KONTROL, ARSIV):
+        for k in (GELEN, KUYRUK, KONTROL, ARSIV, BILDIRIM):
             (self.kok / k).mkdir(parents=True, exist_ok=True)
         self.kayit = Kayit(self.kok / 'isler.json')
         self._boyutlar = {}          # paket → (boyut imzası, ilk görülme)
@@ -338,24 +339,55 @@ class Isleyici:
             if mevcut_klasor:
                 is_['yeni_evrak'] = simdi().isoformat()
 
+        ad = f"{buyuk(is_['elektrikci'])} – {is_['proje']}"
         if masaustu_klasoru and not eklenen:
-            self.bildir('Evrak zaten var', f"{buyuk(is_['elektrikci'])} – {is_['proje']}: gönderilen evrak işte zaten vardı")
+            self.bildir('Evrak zaten var', f'{ad}: gönderilen evrak işte zaten vardı')
+            self.eposta(f'{ad}: evrak zaten vardı', [f'{ad} işine gönderilen evrakın hepsi işte zaten vardı; yeni dosya eklenmedi.'])
         elif masaustu_klasoru:
             bilgi_yaz(masaustu_klasoru / YENI_ALT, is_, sadece=eklenen)
-            self.bildir('Masaüstündeki işe yeni evrak', f"{buyuk(is_['elektrikci'])} – {is_['proje']}: {len(eklenen)} evrak '{YENI_ALT}' klasörüne kondu")
+            self.bildir('Masaüstündeki işe yeni evrak', f"{ad}: {len(eklenen)} evrak '{YENI_ALT}' klasörüne kondu")
+            self.eposta(f'{ad}: masaüstündeki işe {len(eklenen)} yeni evrak',
+                        [f'İş masaüstündeyken yeni evrak geldi. Klasördeki "{YENI_ALT}" alt klasörüne kondu.', ''] + self._evrak_satirlari(eklenen))
         else:
             tumu_yap(k, is_)
             bilgi_yaz(k, is_)
             k = self.adlandir(is_, k) if not k.name.startswith('.') else self._ilk_ad(is_, k)
             durum = 'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'
-            self.bildir('Evrak işlendi', f"{buyuk(is_['elektrikci'])} – {is_['proje']}: {len(eklenen)} evrak · {durum}"
-                        + (' · KONTROL' if is_['uyarilar'] else ''))
+            self.bildir('Evrak işlendi', f"{ad}: {len(eklenen)} evrak · {durum}" + (' · KONTROL' if is_['uyarilar'] else ''))
+            satir = [f'Durum: {("ACİL · " if is_["acil"] else "") + ("EVRAK TAMAM — çizime hazır" if is_["tamam"] else "EVRAK EKSİK — bekliyor")}',
+                     f"Proje türü: {is_['tur']}", f'Klasör: Çizilecek Projeler\\{k.name}', '', f'Bu gönderimde {len(eklenen)} evrak:']
+            satir += self._evrak_satirlari(eklenen)
+            if is_['uyarilar']:
+                satir += ['', 'KONTROL EDİLECEKLER:'] + [f'  • {u}' for u in is_['uyarilar']]
+            if any(e.get('uyari', '').startswith('bulanık') for e in eklenen):
+                satir += ['', 'Bulanık evrak var: müşteriye gönderilecek hazır mesaj iş klasöründeki _bilgi.txt dosyasında.']
+            gec = [x for x in self.gecikenler(self.kuyruktaki_isler()) if x['id'] != is_['id']]
+            if gec:
+                satir += ['', f'{self.a["gecikme_gun"]} günü geçen işler:'] + [f"  • {buyuk(x['elektrikci'])} – {x['proje']}" for x in gec]
+            konu = f"{ad}: {len(eklenen)} evrak · {'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'}" + (' · KONTROL' if is_['uyarilar'] else '') + (' · ACİL' if is_['acil'] else '')
+            self.eposta(konu, satir)
 
         arsiv = benzersiz(self.kok / ARSIV / p.name)
         shutil.move(str(p), str(arsiv))
         self._boyutlar.pop(p.name, None)
         self.kayit_yaz(kayitlar)
         self.kayit.kaydet()
+
+    @staticmethod
+    def _evrak_satirlari(evraklar):
+        return [f"  • {e['ad']}" + (f"  ({e['aciklama']})" if e.get('aciklama') else '') + (f"  ⚠ {e['uyari']}" if e.get('uyari') else '')
+                for e in evraklar]
+
+    def eposta(self, konu, satirlar):
+        """E-posta özeti: Drive'daki 7-Bildirim klasörüne yazılır; Google tarafı (Kod.gs bildirimGonder) gönderip siler."""
+        if not self.a.get('eposta', True):
+            return
+        try:
+            yol = benzersiz(self.kok / BILDIRIM / f"{simdi():%Y%m%d-%H%M%S}.json")
+            yol.write_text(json.dumps({'konu': 'AGY Evrak — ' + konu, 'metin': '\n'.join(satirlar), 'zaman': simdi().isoformat()},
+                                      ensure_ascii=False, indent=1), encoding='utf-8')
+        except OSError:
+            log.exception('bildirim dosyası yazılamadı')
 
     def _ilk_ad(self, is_, k: Path) -> Path:
         hedef = benzersiz(k.with_name(self.klasor_adi(is_)))
@@ -374,7 +406,7 @@ class Isleyici:
                 im, b = goruntu.iyilestir(goruntu.oku(f), self.a.get('kalite', 'tam'))
                 hedef = benzersiz(k / f'{ad}.pdf')
                 goruntu.pdf_yap([im], hedef, self.a.get('jpeg_kalite', 85))
-                e.update(ad=hedef.name, aciklama=('kırpıldı, ' if b['kirpildi'] else '') + ('renkli' if b['renkli'] else 'gri'),
+                e.update(ad=hedef.name, aciklama='fotoğraftan tarandı' + ('' if b['kirpildi'] else ', kenar bulunamadı'),
                          bulaniklik=b['bulaniklik'])
                 if b['bulaniklik'] < BULANIK_ESIK:
                     e['uyari'] = 'bulanık olabilir, kontrol edin'
@@ -396,6 +428,7 @@ class Isleyici:
         (hedef / 'NEDEN.txt').write_text(neden + '\n', encoding='utf-8')
         self._boyutlar.pop(p.name, None)
         self.bildir('Evrak kontrol bekliyor', f'Bir paket "8-Kontrol Et" klasörüne kondu: {neden}')
+        self.eposta('Evrak kontrol bekliyor', [f'Bir paket "8-Kontrol Et" klasörüne kondu.', f'Sebep: {neden}', f'Paket: {p.name}'])
 
     # ---------- kayıt ve liste
     def kayit_yaz(self, satirlar):

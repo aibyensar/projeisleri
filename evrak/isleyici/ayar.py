@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 UYGULAMA = 'AGY Evrak'
-SURUM = '1.0.4'
+SURUM = '1.0.5'
 
 VARSAYILAN = {
     'kok': r"H:\Drive'ım\AGY Evrak",   # şirket Drive'ındaki AGY Evrak klasörü
@@ -18,6 +18,7 @@ VARSAYILAN = {
     'yeni_evrak_saat': 24,              # "YENİ EVRAK" işareti bu süre sonra kalkar
     'kalite': 'tam',                    # tam | hafif | ham
     'jpeg_kalite': 85,
+    'eposta': True,                     # her pakette e-posta özeti (Google tarafı gönderir)
 }
 
 

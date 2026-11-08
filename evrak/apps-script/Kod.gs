@@ -1,11 +1,13 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.1 (yazarken öneri). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.2 (e-posta özeti). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
 const GELEN = '0-Gelen';
 const FORM_SURESI_SAAT = 24;              // paket bilgisi bu süre içinde girilebilir / düzeltilebilir
 const TURLER = ['İç Tesisat', 'Bağlantı Hattı', 'İç Tesisat + Bağlantı Hattı', 'Kompanzasyon'];
+const BILDIRIM = '7-Bildirim';           // bilgisayardaki program e-posta özetlerini buraya bırakır
+const ALICI = '';                        // boşsa şirket hesabının kendi adresine gönderilir; başka adres yazılabilir
 
 // ---------- Dosya alma (kestirme, her dosya için bir istek) ----------
 // Gövde (JSON): { anahtar, paket, sira, ad, uzanti, veri (base64) }
@@ -68,6 +70,35 @@ function bilgiKaydet(paket, b) {
   listeyeEkle('elektrikciler', elektrikci, 500);
   listeyeEkle('turler', tur, 100);
   return { tamam: true, dosyaSayisi: bilgi.dosyaSayisi };
+}
+
+// ---------- E-posta özeti ----------
+// Bir kez çalıştırın (düzenleyicide işlev listesinden "kurulum" → Çalıştır): 5 dakikada bir bildirimGonder çalışır.
+function kurulum() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'bildirimGonder').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('bildirimGonder').timeBased().everyMinutes(5).create();
+  bildirimGonder();
+  return 'Kuruldu: e-posta özetleri 5 dakikada bir gönderilecek.';
+}
+
+function bildirimGonder() {
+  const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
+  const k = klasorAl(kok, BILDIRIM);
+  const alici = ALICI || Session.getEffectiveUser().getEmail();
+  const dosyalar = [];
+  const it = k.getFiles();
+  while (it.hasNext()) { const f = it.next(); if (/\.json$/i.test(f.getName())) dosyalar.push(f); }
+  dosyalar.sort((a, b) => a.getName() < b.getName() ? -1 : 1);
+  dosyalar.slice(0, 40).forEach(f => {
+    try {
+      const b = JSON.parse(f.getBlob().getDataAsString('UTF-8'));
+      MailApp.sendEmail({ to: alici, subject: String(b.konu || 'AGY Evrak'), body: String(b.metin || ''), name: 'AGY Evrak' });
+      f.setTrashed(true);
+    } catch (hata) {
+      console.error('bildirim gönderilemedi: ' + f.getName() + ' ' + hata);
+      if ((Date.now() - f.getDateCreated().getTime()) > 3 * 86400000) f.setTrashed(true);   // 3 günden eski bozuk dosya
+    }
+  });
 }
 
 // ---------- Yardımcılar ----------
