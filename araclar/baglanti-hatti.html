@@ -73,6 +73,17 @@
   #gPanel { margin-top: 12px; display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px;
     border: 1px solid var(--cizgi); border-radius: 8px; padding: 12px; }
   #gPanel[hidden] { display: none; }
+  #gPanel.kapali { grid-template-columns: minmax(0, 1fr); }
+  #gPanel.kapali .gSag, #gPanel.kapali #gTarif, #gPanel.kapali #gOku, #gPanel.kapali #gYok, #gPanel.kapali .ipucu { display: none; }
+  #gPanel.kapali #gAdimlar { display: flex; flex-wrap: wrap; gap: 8px; }
+  #gPanel.kapali #gAdimlar button { flex: 1 1 180px; }
+  #gKapaliNot { display: none; margin: 0; } #gPanel.kapali #gKapaliNot { display: block; }
+  .yukleme.surukle { border-color: var(--vurgu); background: var(--vurgu-zemin, rgba(242,140,40,.08)); }
+  details.ek { grid-column: 1 / -1; border: 1px dashed var(--cizgi); border-radius: 8px; padding: 8px 12px; }
+  details.ek > summary { cursor: pointer; font-size: .88rem; color: var(--soluk); }
+  details.ek > .alanlar { margin: 10px 0 4px; }
+  #yeniIs { width: 100%; margin-top: 10px; }
+  #yeniIs.dikkat { border-color: var(--kotu); color: var(--kotu); }
   .gSol { display: flex; flex-direction: column; gap: 10px; }
   .gSol .not { margin: 0; }
   .ipucu { font-size: .8rem; }
@@ -219,8 +230,9 @@
   <div id="sayfaYeralti" hidden>
   <div class="kart" id="k-ic">
     <div class="kbas"><span class="no">2</span><div><h2>İç tesisat projesi</h2><p>Projeyi yükleyin; antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.</p></div><span class="cip" id="c-ic">Bekliyor</span></div>
-    <label class="yukleme"><b>Onaylı iç tesisat projesi (PDF)</b>
-      <input type="file" id="f-ic" accept="application/pdf,.pdf">
+    <label class="yukleme"><b>Onaylı iç tesisat projesi (PDF ya da DWG)</b>
+      <input type="file" id="f-ic" accept="application/pdf,.pdf,.dwg,.dxf">
+      <small class="not" style="display:block;margin-top:4px">Uzun paftalarda (PDF'e çevrilemeyen) AutoCAD dosyasını doğrudan yükleyin: DWG ya da DXF.</small>
       <span class="durum" id="d-ic">Henüz yüklenmedi</span></label>
       <div id="gPanel" hidden>
         <div class="gSol">
@@ -230,7 +242,8 @@
           <button type="button" class="ana-dugme" id="gOku" disabled>Çerçevelediğim yeri okut ve devam et</button>
           <button type="button" class="kucuk-dugme" id="gYok">Bu projede güç dağıtım tablosu yok, elle gireceğim</button>
           <span class="durum" id="d-g"></span>
-          <p class="not ipucu">Fare ile: <b>sürükle</b> = çerçeve çiz · <b>tekerlek</b> = yaklaş / uzaklaş · <b>sağ tuşla sürükle</b> = kaydır.</p>
+          <p class="not" id="gKapaliNot">İşaretleme tamam. Bir bölümü yeniden çerçevelemek için yukarıdaki adıma tıklayın.</p>
+          <p class="not ipucu">Fare ile: <b>sürükle</b> = çerçeve çiz · <b>tekerlek</b> = yaklaş / uzaklaş · <b>sağ tuşla sürükle</b> = kaydır · <b>Enter</b> = okut.</p>
         </div>
         <div class="gSag">
           <div class="gArac">
@@ -362,6 +375,7 @@
     <ol id="adimListe" class="adimlar-durum"></ol>
     <button type="button" class="ana-dugme" id="indir" disabled>Projeyi indir (.zip)</button>
     <div id="d-indir" class="indir-durum"></div>
+    <button type="button" class="kucuk-dugme" id="yeniIs">Yeni iş başlat</button>
     <p class="not" style="margin:10px 0 0">Zip'e sağ tıklayıp "Tümünü ayıkla" deyin; 4 dosya (çizim, 2 resim, logo) aynı klasörde kalsın. DXF'i AutoCAD'de açıp DWG olarak kaydedin.</p>
   </div>
 </aside>
@@ -373,6 +387,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module">
 import * as pdfjs from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
+import { cadAc } from '../ortak/cad-oku.js';
+const CAD_WASM_YERI = null;                                   // yayında: DWG okuyucunun .wasm dosyasının yanındaki klasör
 pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
 
 const $ = id => document.getElementById(id);
@@ -469,7 +485,10 @@ $('f-ic').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   durum('d-ic', 'Okunuyor…');
   try {
-    D.icDoc = await pdfAc(f);
+    const cad = /\.(dwg|dxf)$/i.test(f.name);
+    if (cad) durum('d-ic', 'AutoCAD dosyası okunuyor… (ilk seferde okuyucu indirilir; büyük paftalarda birkaç saniye sürebilir)');
+    await new Promise(r => setTimeout(r, 30));
+    D.icDoc = cad ? await cadAc(f, { wasmYeri: CAD_WASM_YERI && new URL(CAD_WASM_YERI, location.href).href.replace(/\/$/, '') }) : await pdfAc(f);
     const s = await sayfaYazilari(D.icDoc);
     D.ic = BHP.icTesisatOku(s.flat());
     D.icYazi = Object.assign({}, D.ic); D.gucElle = false;
@@ -482,11 +501,13 @@ $('f-ic').addEventListener('change', async e => {
     }
     const n = ['malSahibi', 'adres', 'ada', 'parsel', 'kuruluW', 'sigortaA', 'karMA'].filter(k => D.ic[k] && !(typeof D.ic[k] === 'number' && isNaN(D.ic[k]))).length;
     if (n >= 4) durum('d-ic', `Okundu: ${D.ic.malSahibi || ''} · sigorta ${D.ic.sigortaA || '?'} · K.A.R ${D.ic.karMA || '?'}`, 'iyi');
-    else if (await ornekVar()) durum('d-ic', 'Yüklendi. Aşağıda antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.');
-    else durum('d-ic', 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
+    else if (await ornekVar()) durum('d-ic', (D.icDoc.cad ? `AutoCAD çizimi açıldı (${f.name.split('.').pop().toUpperCase()}, ${(f.size / 1048576).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} MB). ` : 'Yüklendi. ')
+      + 'Aşağıda antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.');
+    else durum('d-ic', D.icDoc.cad ? 'Çizimdeki yazılar okunamadı. Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.'
+      : 'Bu PDF\'teki yazılar okunamıyor (çizgi olarak kaydedilmiş). Bilgileri, korumaları ve güç dağılım tablosunu elle doldurun.', 'kotu');
     alanlariDoldur();
     if (await ornekVar()) await gPanelAc();
-  } catch (x) { durum('d-ic', 'Okunamadı: ' + x.message, 'kotu'); }
+  } catch (x) { console.error(x); durum('d-ic', x.kullanici ? x.message : /Invalid PDF/i.test(x.message) ? 'Bu dosya açılamadı: PDF, DWG ya da DXF olmalı.' : 'Okunamadı: ' + x.message, 'kotu'); }
 });
 $('f-tkgm').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
@@ -594,7 +615,7 @@ function hatGoster() {
 }
 
 // ---- Düzenlenebilir alanlar ----
-const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=Kaçak akım rölesi (K.A.R)|tmsyks=YKŞ (kaçak akımlı)|diger=Diğer (yazdığım gibi)';
+const KORUMA = 'select:|sigorta=Sigorta|tms=TMŞ|kar=K.A.R|tmsyks=YKŞ|diger=Diğer (elle)';
 const ALANLAR = [
   ['', [['malSahibi', 'Mal sahibi', 'genis'], ['kullanim', 'Kullanım amacı'], ['adres', 'Adres', 'genis'],
     ['il', 'İl'], ['ilce', 'İlçe'], ['belediye', 'Belediye'], ['mahalle', 'Mahalle'], ['pafta', 'Pafta'], ['ada', 'Ada'], ['parsel', 'Parsel'],
@@ -620,6 +641,12 @@ const ALANLAR = [
     }
   });
   for (const hd in h) $(hd).innerHTML = h[hd];
+  {                                                          // az kullanılan sayaç panosu alanları açılır bölümde
+    const ek = document.createElement('details'); ek.className = 'ek'; ek.id = 'panoEk';
+    ek.innerHTML = '<summary>2. koruma ve tek hat yazısını elle yazma</summary><div class="alanlar"></div>';
+    $('a-sayacAdet').closest('label').before(ek);
+    for (const id of ['k2tur', 'k2deger', 'k1yazi', 'k2yazi']) ek.lastElementChild.appendChild($('a-' + id).closest('label'));
+  }
   const alanlar = { addEventListener: (t, f) => ['alan-antet', 'alan-gdz', 'alan-pano'].forEach(k => $(k).addEventListener(t, f)) };
   const panoTemizle = e => { const id = (e.target.id || '').slice(2); if (D.panoSupheli && D.panoSupheli[id]) { delete D.panoSupheli[id]; panoSupheliGoster(); } };
   alanlar.addEventListener('change', panoTemizle);
@@ -872,6 +899,7 @@ function guncelle() {
     eksik.push('iç tesisat projesi (2. bölüm)');
   }
   $('indir').disabled = eksik.length > 0;
+  if (['k2tur', 'k2deger', 'k1yazi', 'k2yazi'].some(id => $('a-' + id).value)) $('panoEk').open = true;
   const liste = l => '<ul>' + l.map(t => `<li>${kac(t)}</li>`).join('') + '</ul>';
   $('d-indir').className = 'indir-durum ' + (eksik.length ? 'kotu' : uyari.length ? '' : 'iyi');
   $('d-indir').innerHTML = eksik.length ? '<b>İndirmek için şunlar gerekli:</b>' + liste(eksik) + (uyari.length ? '<b>Dikkat:</b>' + liste(uyari) : '')
@@ -901,6 +929,23 @@ function durumPaneli(eksik) {
   const mus = String(b.malSahibi || (D.gdz && D.gdz.sahibi) || '').trim();
   $('o-is').hidden = !mus; $('o-musteri').textContent = mus; $('o-basvuru').textContent = D.gdz && D.gdz.basvuruNo ? 'Başvuru ' + D.gdz.basvuruNo : '';
 }
+document.addEventListener('keydown', e => {                // işaretlemede Enter = "okut ve devam et"
+  if (e.key !== 'Enter' || /INPUT|SELECT|TEXTAREA|BUTTON/.test((document.activeElement || {}).tagName || '')) return;
+  if (!$('gPanel').hidden && !$('gPanel').classList.contains('kapali') && !$('gOku').disabled) { e.preventDefault(); $('gOku').click(); }
+});
+$('yeniIs').addEventListener('click', e => {               // iki adımlı: önce sor, 4 sn içinde ikinci tıklama yeniler
+  const b = e.currentTarget;
+  if (b.dataset.emin) { location.reload(); return; }
+  b.dataset.emin = 1; b.textContent = 'Bütün bilgiler silinecek — onaylamak için tekrar tıklayın'; b.classList.add('dikkat');
+  setTimeout(() => { delete b.dataset.emin; b.textContent = 'Yeni iş başlat'; b.classList.remove('dikkat'); }, 4000);
+});
+document.querySelectorAll('label.yukleme').forEach(l => {     // dosyayı kutunun üstüne sürükleyip bırakma
+  const inp = l.querySelector('input[type=file]'); if (!inp) return;
+  l.addEventListener('dragover', e => { e.preventDefault(); l.classList.add('surukle'); });
+  l.addEventListener('dragleave', () => l.classList.remove('surukle'));
+  l.addEventListener('drop', e => { e.preventDefault(); l.classList.remove('surukle');
+    if (e.dataTransfer && e.dataTransfer.files.length) { inp.files = e.dataTransfer.files; inp.dispatchEvent(new Event('change')); } });
+});
 $('adimListe').addEventListener('click', e => { const li = e.target.closest('li'); if (li) $(li.dataset.hedef).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
 function cizim() {
   const b = bilgiler();
@@ -1330,12 +1375,16 @@ async function gAdimaGit(i) {
   if (yer && yer.p !== G.p) await gSayfaAc(yer.p); else gCerceveCiz();
   gAdimCiz();
 }
-$('gAdimlar').addEventListener('click', e => { const b = e.target.closest('button'); if (b && !G.mesgul) gAdimaGit(+b.dataset.i); });
+$('gAdimlar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || G.mesgul) return;
+  if ($('gPanel').classList.contains('kapali')) { $('gPanel').classList.remove('kapali'); gSigdir(); }   // küçülmüşse yeniden açılır
+  gAdimaGit(+b.dataset.i);
+});
 function gSonraki() {
   const i = ADIMLAR.findIndex((a, j) => j > G.adim && !G.durum[a.ad]);
   const j = i >= 0 ? i : ADIMLAR.findIndex(a => !G.durum[a.ad]);
   if (j >= 0) { gAdimaGit(j); return true; }
-  gAdimCiz(); return false;
+  gAdimCiz(); $('gPanel').classList.add('kapali'); return false;       // üç bölüm de bitti: işaretleme alanı küçülür
 }
 
 // Antet: yalnız PDF yazısından okunamayan bilgiler alınır (yazıdan okunan öncelikli); okunanlar kutularına yazılır
@@ -1409,7 +1458,7 @@ $('gYok').addEventListener('click', () => {
   durum('d-g', 'Güç dağıtım tablosunu 3. bölümde elle girin (daireler aynıysa "Satırları toplu üret").' + (devam ? ` Şimdi ${G.adim + 1}. adım: ${ADIMLAR[G.adim].baslik}.` : ''), 'iyi');
 });
 async function gPanelAc() {
-  $('gPanel').hidden = false;
+  $('gPanel').hidden = false; $('gPanel').classList.remove('kapali');
   G.durum = {}; G.isaret = {}; G.secim = null; G.adim = 0;
   if (D.ic && D.ic.gucKaynak === 'yazı') G.durum.guc = 'yazi';
   $('gSayfa').innerHTML = Array.from({ length: D.icDoc.numPages }, (_, i) => `<option value="${i + 1}">${i + 1}. sayfa</option>`).join('');

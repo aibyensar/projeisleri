@@ -203,7 +203,7 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    GDZ kontrolü: bütün sayfalar değil, yalnız gerekli kısımlar (gdzKirpBul: bilgi tablosu etiketleri, enerji noktası + alt satırı,
    AG bağlantı hattı satırı + başlığı; 70 pt'den uzak kümeler ayrı parça) alt alta tek resim; yazı yoksa 1. sayfa.
 1n. (8 Kasım 2026) Ana kesici: her kesiciye "tek hat yazısı — elle" (k1yazi/k2yazi; satırlar "/" ile; doluysa aynen basılır) ve tür
-   "Diğer (yazdığım gibi)" (diger: düzeltme yok, devre kesici sembolü). Güç tablosu altı: TOPLAM KURULU = kapaktaki (antet) kurulu, BAĞLANTI
+   "Diğer (elle)" (diger: düzeltme yok, devre kesici sembolü). Güç tablosu altı: TOPLAM KURULU = kapaktaki (antet) kurulu, BAĞLANTI
    = talep (kapak). Zip/klasör/DXF adı "MÜŞTERİ ADI BHP" (mal sahibi büyük harf; yoksa BHP-başvuruno), resimler uydu.jpg / vaziyet.jpg
    (zip adları UTF-8 bayraklı; Windows 10+ doğru açar). Montaj detayı kullanıcının onaylı detayına göre: BETON KAİDE YOK; box kendi alt
    çerçevesinde, pano dolu pano ayağında, kazık "DAL.GAL.TOP.KAZ. L=2m 65x65x7 mm" (box işinde iki uçta, direkte pano tarafında);
@@ -228,6 +228,22 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
      "Ø100 PVC KORUMA BORUSU" parsel sınırı çizgisinin üstüne binmez. Deneme: scratchpad cakisma.py + cizgi-kesen.py → 0 (yalnız "24 V" sembolü).
    - Araç: 5. bölümde GDZ krokisi kırpılmadan, TKGM resminin yanında, yakınlaştırılabilir kutuda (uyduGoster/tamKirp; DXF'e giden D.uydu
      aynı). Dosya seç düğmeleri lacivert; Proje durumu panelinde ilerleme çubuğu (x / 5). test/sahte-gdz.py artık 2. sayfada kroki üretir.
+1s. İÇ TESİSAT DWG / DXF (8 Kasım 2026): 5 m'den uzun paftalar PDF'e çevrilemediği için GDZ'ye DWG yükleniyor; araç da artık DWG ve
+   DXF kabul eder. ortak/cad-oku.js: DWG → LibreDWG (@mlightcad/libredwg-web 0.8.2, WebAssembly), DXF → @mlightcad/dxf-json 1.2.8
+   (ikisi GPL-3.0, CDN'den ilk yüklemede gelir). Çizim pdf.js sayfası gibi davranan tek sayfalık "belge"ye çevrilir (getViewport/render/
+   getTextContent) → işaretleme, yakınlaştırma, kesip okutma, yazıdan okuma hiç değişmeden çalışır. Bloklar açılır (iç içe, dizi),
+   kapalı/donmuş/çizdirilmeyen katman ve Defpoints çizilmez, siyah-beyaz; ölçek: ortanca yazı yüksekliği 7 birim (PDF puntosuna yakın).
+   YAYIN: sayfa dış adresten .wasm çekemez → libredwg-web.wasm (~11 MB) yanında yayınlanır: yayin-hazirla.py npm pack ile indirir
+   (baglanti-hatti/kutuphane/), CAD_WASM_YERI'ni ayarlar; publish files'a {"baglanti-hatti/kutuphane/libredwg-web.wasm": {from, contentType:
+   "application/wasm"}} eklenir (dosyalar yayında kalır, her seferinde göndermeye gerek yok). Depoya konmaz.
+   DENEME: baglanti-hatti/test/sahte-ic-cad.py (6 m'lik sahte DXF); isaretle-dene.js jsDelivr'i yerel kopyaya yönlendirir (scratchpad
+   cdn/dxf-json.mjs = esbuild ile tek dosya). LibreDWG örnek DWG'leri (2007/2010/2013/2018) okundu. BU ORTAMDAKİ headless Chromium
+   WebAssembly bellek hatasında sekmeyi çökertiyor (bozuk/eski örnek: example_2000, r14) — normal Chrome'da hata yakalanır ve kullanıcıya
+   "AutoCAD 2018 DWG ya da DXF olarak kaydedin" denir. Gerçek kullanıcı DWG'siyle HENÜZ denenmedi; yayında wasm'ın CSP'den geçtiği
+   kullanıcı denemesiyle doğrulanacak (geçmezse DXF yolu çalışır).
+1t. ARAYÜZ (8 Kasım 2026): işaretleme 3 bölüm bitince küçülür (adıma tıklayınca açılır); sayaç panosunda 2. koruma ve tek hat yazısı
+   açılır bölümde ("2. koruma ve tek hat yazısını elle yazma", değer varsa açık); dosyalar sürükle-bırak; "Yeni iş başlat" (iki tıklama);
+   işaretlemede Enter = okut; kesici seçenekleri kısa (Sigorta, TMŞ, K.A.R, YKŞ, Diğer (elle)).
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) main'e birleştirilmedi (kullanıcıya sorulmadı/cevapsız).

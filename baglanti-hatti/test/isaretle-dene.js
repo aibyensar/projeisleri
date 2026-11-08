@@ -1,5 +1,5 @@
 // İç tesisat işaretleme ekranını sahte cevaplarla dener: yaklaş/uzaklaş/kaydır, antet → güç tablosu → kolon şeması çerçeveleme ve okuma,
-// "tablo yok, elle gireceğim". node isaretle-dene.js <geçici klasör> <iç tesisat.pdf>
+// "tablo yok, elle gireceğim". node isaretle-dene.js <geçici klasör> <iç tesisat.pdf | .dwg | .dxf>
 // (klasörde nd/node_modules: pdfjs-dist, jszip; depo kökünde python3 -m http.server 8765). Sahte PDF: test/sahte-ic.py
 const { chromium } = require('playwright');
 (async () => {
@@ -9,6 +9,10 @@ const { chromium } = require('playwright');
   await p.route('https://cdnjs.cloudflare.com/**', r => { const u = r.request().url();
     const yol = u.includes('pdf.worker') ? NM + 'pdfjs-dist/build/pdf.worker.min.mjs' : u.includes('pdf.min') ? NM + 'pdfjs-dist/build/pdf.min.mjs' : NM + 'jszip/dist/jszip.min.js';
     r.fulfill({ path: yol, contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
+  const LD = NM + '@mlightcad/libredwg-web/';                 // DWG/DXF okuyucular (cdn.jsdelivr.net yerine yerel kopya; dxf-json esbuild ile tek dosya)
+  await p.route('https://cdn.jsdelivr.net/**', r => { const u = r.request().url();
+    const yol = u.includes('dxf-json') ? S + '/cdn/dxf-json.mjs' : u.endsWith('.wasm') ? LD + 'wasm/libredwg-web.wasm' : u.includes('/wasm/') ? LD + 'wasm/libredwg-web.js' : LD + 'dist/libredwg-web.js';
+    r.fulfill({ path: yol, contentType: yol.endsWith('.wasm') ? 'application/wasm' : 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }); });
   p.on('pageerror', e => console.log('HATA', e.message));
   await p.addInitScript(sen => {
     window.__istek = []; window.__senaryo = sen;
