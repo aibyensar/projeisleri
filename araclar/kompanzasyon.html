@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kompanzasyon Hesabı</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../ortak/stil.css">
+<style>
+  .secim { display: flex; gap: 8px; margin-bottom: 14px; }
+  .secim button { flex: 1; min-width: 0; font: inherit; font-size: .9rem; padding: 10px 6px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--cizgi); background: var(--zemin); color: var(--yazi); line-height: 1.25; }
+  .secim button small { display: block; font-size: .74rem; opacity: .8; }
+  .secim button[aria-pressed="true"] { background: var(--baslik); color: #fff; border-color: var(--baslik); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+  .alanlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 12px; }
+  .alanlar label { min-width: 0; } .alanlar input, .alanlar select { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+  .alanlar .genis { grid-column: 1 / -1; }
+  .kutu-sec { flex-direction: row !important; align-items: center; gap: 8px !important; color: var(--yazi) !important; font-size: .88rem !important; }
+  .kutu-sec input { width: auto !important; }
+  .ipucu { font-size: .78rem; color: var(--soluk); margin: 8px 0 0; }
+  .buyuk { font-size: 2.3rem; font-weight: 700; color: var(--baslik-yazi); letter-spacing: -.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .buyuk small { font-size: 1rem; font-weight: 600; color: var(--soluk); }
+  .sonuc-bas { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .rozet { font-size: .78rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; letter-spacing: .03em; }
+  .rozet.iyi { background: var(--iyi-zemin); color: var(--iyi); } .rozet.kotu { background: var(--kotu-zemin); color: var(--kotu); }
+  .rozet.notr { background: var(--ana-acik); color: var(--baslik-yazi); }
+  .uyarilar { margin: 14px 0 0; padding: 10px 12px 10px 30px; border-radius: 10px; background: var(--vurgu-acik); font-size: .86rem; }
+  .uyarilar li + li { margin-top: 4px; }
+  .serit { display: flex; gap: 3px; margin-top: 16px; height: 42px; align-items: stretch; }
+  .serit div { border-radius: 5px; background: var(--baslik); color: #fff; font: 600 .68rem "JetBrains Mono", ui-monospace, monospace; display: grid; place-items: center; min-width: 0; overflow: hidden; }
+  .serit div.sabit { background: var(--soluk); }
+  .serit div.bos { background: transparent; border: 1px dashed var(--cizgi); color: var(--soluk); }
+  .serit-alt { display: flex; justify-content: space-between; font-size: .76rem; color: var(--soluk); margin-top: 4px; }
+  table.liste { font-size: .84rem; }
+  table.liste th { font-size: .72rem; color: var(--soluk); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; white-space: normal; vertical-align: bottom; }
+  table.liste td, table.liste th { text-align: right; } table.liste td:nth-child(-n+2), table.liste th:nth-child(-n+2) { text-align: left; }
+  table.liste tr.ozet td { font-weight: 700; border-top: 2px solid var(--cizgi); }
+  table.liste tr.yedek td { color: var(--soluk); font-style: italic; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: .86rem; }
+  .ayarlar { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .ayar { border: 1px solid var(--cizgi); border-radius: 10px; padding: 10px 12px; }
+  .ayar b { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--soluk); }
+  .ayar span { display: block; font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ayar small { color: var(--soluk); font-size: .78rem; }
+  .adim { padding: 10px 0; border-top: 1px solid var(--cizgi); } .adim:first-child { border-top: 0; padding-top: 0; }
+  .adim b { display: block; font-size: .85rem; color: var(--soluk); font-weight: 600; }
+  .formul { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: .86rem; overflow-wrap: anywhere; }
+  .sema { overflow-x: auto; border: 1px solid var(--cizgi); border-radius: 10px; background: #fff; }
+  .sema svg { display: block; }
+  details > summary { cursor: pointer; font-weight: 600; }
+  details[open] > summary { margin-bottom: 12px; }
+  .kaynak li { font-size: .82rem; color: var(--soluk); } .kaynak li + li { margin-top: 4px; }
+  .ikili { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  @media (max-width: 1100px) { .ikili { grid-template-columns: minmax(0, 1fr); } }
+  .ana-btn { font: inherit; font-size: .88rem; font-weight: 600; padding: 8px 14px; border-radius: 8px; cursor: pointer; border: 1px solid var(--baslik); background: var(--baslik); color: #fff; }
+  [data-yontem]:not(.acik) { display: none; }
+</style>
+</head>
+<body>
+<header class="ust">
+  <div class="ust-ic">
+    <img class="ust-logo" src="../baglanti-hatti/logo/logo-beyaz.png" alt="AGY Enerji Mühendislik">
+    <div class="ust-baslik">
+      <h1>Kompanzasyon Hesabı</h1>
+      <p>Kondansatör gücü, kademe planı, malzeme, röle ayarları ve EPDK reaktif sınır kontrolü · AG 400 V</p>
+    </div>
+    <a class="ust-geri" href="../index.html">← Proje İşleri</a>
+  </div>
+</header>
+
+<main class="genis">
+  <div class="iki-sutun">
+    <div>
+      <div class="kart">
+        <div class="kart-bas"><h2>Tesis bilgileri</h2><small>Gücü hangi yoldan bulacağız?</small></div>
+        <div class="secim" id="yontem">
+          <button type="button" data-v="proje" aria-pressed="true">Proje<small>yeni tesis</small></button>
+          <button type="button" data-v="fatura" aria-pressed="false">Fatura<small>mevcut tesis</small></button>
+          <button type="button" data-v="olcum" aria-pressed="false">Ölçüm<small>analizör</small></button>
+        </div>
+        <div class="alanlar acik" data-yontem="proje">
+          <label>Kurulu güç (kW)<input id="kuruluKW" type="number" min="0" step="any" value="320"></label>
+          <label>Eşzamanlılık katsayısı<input id="esz" type="number" min="0.1" max="1" step="0.05" value="0.6"></label>
+          <label>Mevcut cos φ<input id="cos1p" type="number" min="0.3" max="1" step="0.01" value="0.80"></label>
+        </div>
+        <p class="ipucu acik" data-yontem="proje">Ölçüm yoksa mevcut cos φ = 0,80 alınır (Schneider kılavuzu, basit yöntem).</p>
+        <div class="alanlar" data-yontem="fatura">
+          <label>Aktif enerji (kWh)<input id="fKWh" type="number" min="0" step="any" value="42000"></label>
+          <label>Endüktif reaktif (kVArh)<input id="fInd" type="number" min="0" step="any" value="15300"></label>
+          <label>Kapasitif reaktif (kVArh)<input id="fKap" type="number" min="0" step="any" value="900"></label>
+          <label>Yüklü çalışma (saat/ay)<input id="fSaat" type="number" min="1" step="any" value="220"></label>
+          <label>Reaktif birim bedeli (TL/kVArh)<input id="fBirim" type="number" min="0" step="any" placeholder="faturadan"></label>
+        </div>
+        <p class="ipucu" data-yontem="fatura">En yüklü ayın faturasını girin. Çalışma saati: yükün gerçekten çalıştığı saatler (ör. 22 gün × 10 saat = 220).</p>
+        <div class="alanlar" data-yontem="olcum">
+          <label>Aktif güç P (kW)<input id="oP" type="number" min="0" step="any" value="190"></label>
+          <label>Reaktif güç Q (kVAr)<input id="oQ" type="number" min="0" step="any" value="142"></label>
+        </div>
+        <p class="ipucu" data-yontem="olcum">Ana panodaki enerji analizöründen, yükün en ağır olduğu andaki değerler.</p>
+        <div class="alanlar" style="margin-top:12px">
+          <label>Kurulu güç (kVA) · EPDK sınırı için<input id="kuruluKVA" type="number" min="0" step="any" value="400"></label>
+          <label class="kutu-sec genis"><input id="muaf" type="checkbox"> Mesken, aydınlatma ya da tek fazlı abone (reaktif bedel uygulanmaz)</label>
+        </div>
+      </div>
+
+      <div class="kart">
+        <div class="kart-bas"><h2>Hedef</h2><small>Tebliğ: 0,95–1,00 · ceza sınırı %20 ⇒ cos φ ≥ 0,981</small></div>
+        <div class="alanlar">
+          <label>Hedef cos φ<select id="cos2"><option value="0.95">0,95</option><option value="0.96">0,96</option><option value="0.97">0,97</option><option value="0.98">0,98</option><option value="0.99" selected>0,99 (önerilen)</option><option value="1">1,00</option></select></label>
+          <label>Yedek pay<select id="yedek"><option value="0">Yok</option><option value="0.1" selected>%10</option><option value="0.2">%20</option></select></label>
+          <label>En düşük yük (kW)<input id="Pmin" type="number" min="0" step="any" placeholder="isteğe bağlı"></label>
+        </div>
+        <p class="ipucu">En düşük yük girilirse ilk kademe buna göre küçük tutulur; gece / hafta sonu kapasitife geçmeyi önler.</p>
+      </div>
+
+      <div class="kart">
+        <div class="kart-bas"><h2>Trafo ve harmonikler</h2></div>
+        <div class="alanlar">
+          <label>Özel trafo gücü (kVA)<input id="trafoKVA" type="number" min="0" step="any" value="630" list="trafolar"><datalist id="trafolar"><option value="0"><option value="250"><option value="400"><option value="630"><option value="800"><option value="1000"><option value="1250"><option value="1600"><option value="2000"></datalist></label>
+          <label>Harmonik üreten yükler (kVA)<input id="Gh" type="number" min="0" step="any" value="90"></label>
+          <label>Baskın harmonik<select id="baskin"><option value="5">5. (sürücü, UPS, doğrultucu)</option><option value="3">3. (tek fazlı elektronik, LED, bilgisayar)</option></select></label>
+          <label>Ana şalter (A) · akım trafosu için<input id="InAna" type="number" min="0" step="any" value="800"></label>
+        </div>
+        <p class="ipucu">Trafo 0 ise AG abonesi sayılır, trafo sabit kademesi eklenmez. Harmonik yük: hız kontrol cihazı, UPS, doğrultucu, kaynak makinesi, LED sürücü (yalnız kW biliniyorsa ÷ 0,7).</p>
+      </div>
+
+      <div class="kart">
+        <div class="kart-bas"><h2>Pano tercihleri</h2></div>
+        <div class="alanlar">
+          <label>Röle kademe sayısı<select id="kademeN"><option value="0" selected>Otomatik</option><option>6</option><option>8</option><option>12</option><option>15</option><option>18</option></select></label>
+          <label>Kademe düzeni<select id="duzen"></select></label>
+          <label>Kapasitif reaktif (kVAr)<input id="Qkap" type="number" min="0" step="any" placeholder="boşta ölçülen"></label>
+          <label class="kutu-sec genis"><input id="dengesiz" type="checkbox"> Tek fazlı / dengesiz yükler fazla (3 akım trafolu röle, tek fazlı kademeler)</label>
+        </div>
+        <p class="ipucu">Kapasitif reaktif: tesis boşta ya da düşük yükteyken ölçülen kapasitif güç (uzun kablolar, LED, UPS). Girilirse şönt reaktör önerilir. Fatura yönteminde kapasitif kVArh'tan hesaplanır.</p>
+      </div>
+    </div>
+
+    <div class="kart yapiskan" id="sonucKart">
+      <div class="sonuc-bas"><p class="bolum-etiket" style="margin:0">Gerekli kompanzasyon gücü</p><span class="rozet notr" id="rozet">—</span></div>
+      <div class="buyuk" id="qc">—</div>
+      <div class="not" id="qcAlt"></div>
+      <div class="kontroller" id="kontroller"></div>
+      <ul class="uyarilar" id="uyarilar" hidden></ul>
+      <div class="serit" id="serit"></div>
+      <div class="serit-alt"><span id="seritSol"></span><span id="seritSag"></span></div>
+    </div>
+  </div>
+
+  <div class="kart">
+    <div class="kart-bas"><h2>Kademe ve malzeme listesi</h2><small id="listeAlt"></small></div>
+    <div class="tablo-kutu"><table class="liste" id="liste"></table></div>
+    <p class="ipucu" id="listeNot"></p>
+  </div>
+
+  <div class="kart">
+    <div class="kart-bas"><h2>Kompanzasyon panosu tek hat şeması</h2><small>Projeye eklenecek şemanın taslağı</small></div>
+    <div class="sema" id="sema"></div>
+  </div>
+
+  <div class="ikili">
+    <div class="kart">
+      <div class="kart-bas"><h2>Röle ve akım trafosu ayarları</h2></div>
+      <div class="ayarlar" id="ayarlar"></div>
+      <p class="ipucu">Akım trafosu ana şalterden hemen sonra, bütün yükleri ve kompanzasyon panosunu birlikte görecek yere takılır. Referans (1.) kademe mutlaka üç fazlı kondansatördür; şönt reaktör referans dışındaki bir kademeye bağlanır.</p>
+    </div>
+    <div class="kart" id="cezaKart">
+      <div class="kart-bas"><h2>EPDK reaktif sınır kontrolü</h2><small>Usul ve Esaslar md. 13 · RG 30.04.2022</small></div>
+      <div id="ceza"></div>
+    </div>
+  </div>
+
+  <div class="kart">
+    <div class="kart-bas"><h2>Hesap adımları</h2><button type="button" class="ana-btn" id="kopyala">Hesap raporunu kopyala</button></div>
+    <div id="adimlar"></div>
+  </div>
+
+  <div class="kart">
+    <details>
+      <summary>Motor bireysel kompanzasyonu (kendi kendine uyarma sınırı)</summary>
+      <div class="alanlar">
+        <label>Motor gücü (kW)<input id="mKW" type="number" min="0" step="any" value="75"></label>
+        <label>Devir (d/d)<select id="mDevir"><option>3000</option><option selected>1500</option><option>1000</option><option>750</option></select></label>
+      </div>
+      <p id="motorSonuc" style="margin:12px 0 0"></p>
+      <p class="ipucu">Motor uçlarına bağlanabilecek en büyük kondansatör Qc ≤ 0,9 · √3 · Un · I0 (I0 boşta akım). Daha büyüğü ayrı kontaktörle, motorla birlikte açılmalı.</p>
+    </details>
+  </div>
+
+  <div class="kart">
+    <details>
+      <summary>Dayanak ve kaynaklar</summary>
+      <ul class="kaynak">
+        <li><b>Reaktif sınırlar:</b> EPDK, Tarife Uygulamalarına İlişkin Usul ve Esaslar md. 13 (Kurul kararı 28.04.2022/10961, RG 30.04.2022/31825). 50 kVA altı %33 / %20, 50 kVA ve üstü %20 / %15; mesken, aydınlatma, tek fazlı ve kurulu gücü 15 kW'a kadar olanlar muaf; aşımda ölçülen reaktifin tamamı; takvim yılındaki ilk ihlal tenzil edilir.</li>
+        <li><b>Zorunluluk ve hedef:</b> Elektrik İç Tesisleri Yönetmeliği md. 51/m; Güç Faktörünün İyileştirilmesi İle İlgili Tebliğ (50 kVA ve üstü zorunlu, hedef 0,95–1,00).</li>
+        <li><b>Hesap, trafo, harmonik, koruma ve kablo tabloları:</b> Schneider Electric, Electrical Installation Guide, Power Factor Correction bölümü; IEC 60831-1/2.</li>
+        <li><b>Röle ayarları:</b> ENTES RG3 / RGA &amp; RGSR reaktif güç kontrol rölesi kullanım kılavuzları.</li>
+        <li>Ayrıntılı notlar: depoda kompanzasyon/ARASTIRMA.md.</li>
+      </ul>
+    </details>
+  </div>
+</main>
+
+<script src="../ortak/komp.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const say = (x, b = 1) => (+x).toLocaleString('tr-TR', { minimumFractionDigits: b, maximumFractionDigits: b });
+const kv = x => say(x, x % 1 ? (Math.abs(x * 10 % 1) > 1e-6 ? 2 : 1) : 0);           // 12,5 · 25 · 6,25
+const num = id => { const v = parseFloat(String($(id).value).replace(',', '.')); return isFinite(v) ? v : 0; };
+const secili = id => $(id).querySelector('[aria-pressed="true"]').dataset.v;
+const yuzde = x => '%' + say(x * 100, 1);
+
+$('duzen').innerHTML = Object.entries(KOMP.DUZENLER).map(([k, v]) => `<option value="${k}"${k === '1-2-2' ? ' selected' : ''}>${v.ad}</option>`).join('');
+$('yontem').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('yontem').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('[data-yontem]').forEach(el => el.classList.toggle('acik', el.dataset.yontem === b.dataset.v));
+  hesapla();
+});
+document.querySelectorAll('main input, main select').forEach(el => el.addEventListener('input', hesapla));
+
+let sonRapor = '';
+function hesapla() {
+  const yontem = secili('yontem');
+  let P, cos1, kaynakYazi, fat = null;
+  if (yontem === 'proje') { P = num('kuruluKW') * num('esz'); cos1 = num('cos1p') || 0.8; kaynakYazi = `P = ${say(num('kuruluKW'), 0)} kW × ${say(num('esz'), 2)} = ${say(P, 1)} kW (talep gücü), cos φ1 = ${say(cos1, 2)}`; }
+  else if (yontem === 'fatura') {
+    fat = KOMP.faturadan({ kWh: num('fKWh'), indKVArh: num('fInd'), saat: num('fSaat') });
+    P = fat.P; cos1 = fat.cos1;
+    kaynakYazi = `P = ${say(num('fKWh'), 0)} kWh / ${say(num('fSaat'), 0)} h = ${say(P, 1)} kW; tan φ1 = ${say(num('fInd'), 0)} / ${say(num('fKWh'), 0)} = ${say(fat.t1, 3)} ⇒ cos φ1 = ${say(cos1, 3)}`;
+  } else { P = num('oP'); const Q = num('oQ'); cos1 = P > 0 ? KOMP.cosDan(Q / P) : 1; kaynakYazi = `P = ${say(P, 1)} kW, Q = ${say(Q, 1)} kVAr ⇒ tan φ1 = ${say(P > 0 ? Q / P : 0, 3)}, cos φ1 = ${say(cos1, 3)}`; }
+  const cos2 = +$('cos2').value;
+  // şönt reaktör: elle girilen kapasitif güç ya da faturada kapasitif oran sınırın yarısını geçmişse kapasitif kVArh / saat
+  const kapOran = num('fKWh') > 0 ? num('fKap') / num('fKWh') : 0;
+  const Qkap = $('Qkap').value !== '' ? num('Qkap')
+    : (yontem === 'fatura' && num('fSaat') > 0 && kapOran > KOMP.cezaSiniri(num('kuruluKVA')).kapasitif / 2 ? num('fKap') / num('fSaat') : 0);
+  const t = KOMP.tasarla({ P, cos1, cos2, trafoKVA: num('trafoKVA'), Gh: num('Gh'), baskin: +$('baskin').value, kademeN: +$('kademeN').value || null,
+    duzen: $('duzen').value, yedek: +$('yedek').value, Pmin: num('Pmin'), InAna: num('InAna'), Qkap });
+  const ceza = yontem === 'fatura' ? KOMP.cezaKontrol({ kWh: num('fKWh'), indKVArh: num('fInd'), kapKVArh: num('fKap'), kuruluKVA: num('kuruluKVA'),
+    kuruluKW: yontem === 'proje' ? num('kuruluKW') : 0, muafTur: $('muaf').checked, birimTL: num('fBirim') }) : null;
+  const sinir = KOMP.cezaSiniri(num('kuruluKVA'));
+
+  // ---- sonuç
+  $('qc').innerHTML = `${kv(Math.round(t.q.Qc * 10) / 10)} <small>kVAr</small>`;
+  $('qcAlt').textContent = `${say(P, 1)} kW yükü cos φ ${say(cos1, 3)} → ${say(cos2, 2)} için · ${say(t.q.kvarKW, 3)} kVAr/kW`;
+  let rozet = ['notr', 'GEREKLİ'];
+  if (ceza) rozet = ceza.muaf ? ['iyi', 'MUAF'] : (ceza.indAsim || ceza.kapAsim) ? ['kotu', 'SINIR AŞILMIŞ'] : ['iyi', 'SINIR İÇİNDE'];
+  else if (t.q.Qc <= 0) rozet = ['iyi', 'GEREKMİYOR'];
+  else if (yontem === 'olcum') rozet = Math.tan(Math.acos(cos1)) > sinir.enduktif ? ['kotu', 'ANLIK SINIR ÜSTÜ'] : ['iyi', 'ANLIK SINIR İÇİNDE'];
+  $('rozet').className = 'rozet ' + rozet[0]; $('rozet').textContent = rozet[1];
+  const k = (ad, d, s, cl = '') => `<div class="kontrol-k ${cl}"><b>${ad}</b><div class="d">${d}</div><div class="s">${s}</div></div>`;
+  const indOran = Math.tan(Math.acos(cos1));
+  $('kontroller').innerHTML =
+    k('Mevcut', `cos φ ${say(cos1, 3)}`, `Q/P = ${yuzde(indOran)} · sınır ${yuzde(sinir.enduktif)}`, indOran > sinir.enduktif ? 'kotu' : 'iyi') +
+    k('Kurulacak batarya', `${kv(t.Qtop)} kVAr`, `${t.plan.n} otomatik kademe${t.sabit ? ` + ${kv(t.sabit)} kVAr sabit` : ''}`) +
+    k('Kondansatör', t.h.sinif === 'standart' ? 'Standart' : t.h.sinif === 'agir' ? 'Ağır hizmet' : `Reaktörlü %${say(t.h.p * 100, t.h.p * 100 % 1 ? 1 : 0)}`,
+      `${t.h.UN} V · Gh/Sn = ${num('trafoKVA') > 0 ? yuzde(t.h.oran) : '—'}`, t.h.sinif === 'filtre' ? 'kotu' : '');
+  const uy = t.uyarilar.slice();
+  if ($('dengesiz').checked) uy.push('Dengesiz yük: üç akım trafolu (3 fazdan ölçen) röle ve tek fazlı kondansatör kademeleri kullanın; referans kademe yine üç fazlı olmalı.');
+  if (t.reaktor) uy.push(`Kapasitif reaktif ${say(Qkap, 1)} kVAr: ${kv(t.reaktor)} kVAr şönt reaktör kademesi ekleyin; röle programı "kapasitör + reaktör".`);
+  if (yontem === 'proje' && !(num('kuruluKVA') >= 50) && !$('muaf').checked) uy.push('Kurulu güç 50 kVA altı: tebliğe göre kompanzasyon zorunlu değil; reaktif sınırları %33 / %20.');
+  $('uyarilar').hidden = !uy.length; $('uyarilar').innerHTML = uy.map(x => `<li>${x}</li>`).join('');
+
+  // ---- kademe şeridi
+  const parca = [];
+  if (t.sabit) parca.push(['sabit', t.sabit, 'S']);
+  t.plan.kademeler.forEach((q, i) => parca.push(['', q, 'K' + (i + 1)]));
+  for (let i = 0; i < (t.plan.bos || 0); i++) parca.push(['bos', t.plan.q1 || 1, '—']);
+  const top = parca.reduce((a, b) => a + b[1], 0) || 1;
+  $('serit').innerHTML = parca.map(([c, q, ad]) => `<div class="${c}" style="flex:${q / top}" title="${ad} · ${kv(q)} kVAr">${c === 'bos' ? '' : kv(q)}</div>`).join('');
+  $('seritSol').textContent = t.plan.n ? `${DUZ(t)} · en küçük adım ${kv(t.plan.q1)} kVAr · ${t.plan.adim} farklı güç basamağı` : '';
+  $('seritSag').textContent = t.plan.bos ? `${t.plan.bos} çıkış yedek` : '';
+
+  // ---- malzeme listesi
+  const h = t.h, reak = h.p > 0;
+  const satir = (no, tip, e, cl = '') => `<tr class="${cl}"><td>${no}</td><td>${tip}</td><td>${kv(e.Qnet)}</td><td>${h.sinif === 'standart' ? kv(e.Qnet) + ' / 400 V' : say(e.etiket, 1) + ' / ' + h.UN + ' V'}</td>${reak ? `<td>${kv(e.reaktor)} · %${say(h.p * 100, 0)}</td>` : ''}<td>${say(e.In, 1)}</td><td>${say(e.ayar, 1)} → ${e.sigorta} A</td><td>${kv(e.kontaktor)}</td><td>${e.kablo.cu}</td></tr>`;
+  let rows = '';
+  if (t.sabitEk) rows += satir('S', 'Sabit · trafo boşta', t.sabitEk);
+  t.kademeler.forEach((e, i) => rows += satir('K' + (i + 1), i === 0 ? 'Otomatik · referans (3 faz)' : 'Otomatik', e));
+  for (let i = 0; i < (t.plan.bos || 0); i++) rows += `<tr class="yedek"><td>K${t.plan.n + i + 1}</td><td>Yedek çıkış</td><td colspan="${reak ? 7 : 6}">boş</td></tr>`;
+  if (t.reaktor) rows += `<tr><td>R</td><td>Şönt reaktör</td><td>${kv(t.reaktor)} (endüktif)</td><td>—</td>${reak ? '<td>—</td>' : ''}<td>${say(t.reaktor * 1000 / (Math.sqrt(3) * 400), 1)}</td><td>—</td><td>${kv(KOMP.ekipman(t.reaktor, h).kontaktor)}</td><td>${KOMP.ekipman(t.reaktor, h).kablo.cu}</td></tr>`;
+  rows += `<tr class="ozet"><td>Σ</td><td>Pano besleme</td><td>${kv(t.Qtop)}</td><td>${h.sinif === 'standart' ? '' : say(t.ana.etiket, 1) + ' etiket'}</td>${reak ? '<td></td>' : ''}<td>${say(t.ana.In, 1)}</td><td>${say(t.ana.ayar, 1)} → ${t.ana.sigorta} A</td><td>—</td><td>Cu ${t.ana.kablo.cu} / Al ${t.ana.kablo.al}</td></tr>`;
+  $('liste').innerHTML = `<thead><tr><th>Kademe</th><th>Tip</th><th>Net güç (kVAr)</th><th>Kondansatör etiketi (kVAr / V)</th>${reak ? '<th>Reaktör (kVAr · p)</th>' : ''}<th>In (A)</th><th>Koruma: ${say(h.kKoruma, 2)} × In → sigorta / şalter</th><th>Kontaktör (kVAr)</th><th>Kablo Cu (mm²)</th></tr></thead><tbody>${rows}</tbody>`;
+  $('listeAlt').textContent = `${h.ad}`;
+  $('listeNot').textContent = (reak ? `Reaktörlü kademede kondansatör gerilimi U/(1−p) = ${say(400 / (1 - h.p), 0)} V'a çıkar; ${h.UN} V kondansatör seçilir, etiket gücü Qnet · (${h.UN}/400)² · (1−p). Rezonans ${say(h.fr, 0)} Hz. ` : '') +
+    'Kontaktörler kompanzasyon tipi (ön şarj dirençli) olmalı. Koruma katsayısı IEC 60831 akım dayanımı ve harmonik durumuna göre; kısa devre ayarı 10 × In. Kablo kesitleri havada, 30 °C, düzeltme katsayısız en küçük değerlerdir.';
+
+  // ---- tek hat şeması
+  $('sema').innerHTML = sema(t);
+
+  // ---- röle ayarları
+  const a = (ad, d, s) => `<div class="ayar"><b>${ad}</b><span>${d}</span><small>${s}</small></div>`;
+  $('ayarlar').innerHTML =
+    a('Akım trafosu', t.at ? t.at.ad : '—', t.at ? `ana şalter ${say(num('InAna'), 0)} A · kl. 1, 5 VA${$('dengesiz').checked ? ' · 3 adet' : ''}` : 'ana şalter akımını girin') +
+    a('Hedef cos φ', `${say(Math.min(cos2, 0.99), 2)} endüktif`, 'kapasitife geçmemek için 1,00 seçilmez') +
+    a('C/k (eski röleler)', t.Ck ? say(t.Ck, 3) : '—', t.Ck ? `ilk kademe ${kv(t.plan.q1)} kVAr / AT oranı ${t.at.oran}` : '') +
+    a('Kademe düzeni', DUZ(t), `${t.plan.n} kademe kullanılıyor · ${t.plan.nMaks} çıkışlı röle`) +
+    a('Çekme / bırakma gecikmesi', '10 s', 'fabrika ayarı; hızlı değişen yükte kısaltılır') +
+    a('Deşarj süresi', 'kondansatör kataloğuna göre', 'IEC 60831: 3 dk içinde 75 V; deşarj bobinliyse kısaltılır') +
+    a('Düşük kompanzasyon alarmı', `Q/P > %${say(Math.min(sinir.enduktif * 100 - 5, 15), 0)}`, `endüktif sınır ${yuzde(sinir.enduktif)} aşılmadan uyarsın`) +
+    a('Aşırı kompanzasyon alarmı', `Q/P < −%${say(Math.min(sinir.kapasitif * 100 - 5, 10), 0)}`, `kapasitif sınır ${yuzde(sinir.kapasitif)} aşılmadan uyarsın`) +
+    (t.sabit ? a('Sabit grup', `${kv(t.sabit)} kVAr`, 'trafo boşta reaktifi; röleye kapasitif sabit grup olarak tanıtılır') : '');
+
+  // ---- ceza
+  if (ceza) {
+    const s = ceza.sinir;
+    $('ceza').innerHTML = `<div class="kontroller" style="margin-top:0">
+      ${k('Endüktif oran', yuzde(ceza.ind), `sınır ${yuzde(s.enduktif)} · ${ceza.indAsim ? 'aşılmış' : 'uygun'}`, ceza.indAsim ? 'kotu' : 'iyi')}
+      ${k('Kapasitif oran', yuzde(ceza.kap), `sınır ${yuzde(s.kapasitif)} · ${ceza.kapAsim ? 'aşılmış' : 'uygun'}`, ceza.kapAsim ? 'kotu' : 'iyi')}
+      ${k('Faturalanacak', ceza.muaf ? 'muaf' : `${say(ceza.faturalanan, 0)} kVArh`, ceza.faturalanan && num('fBirim') ? `≈ ${say(ceza.bedel, 2)} TL` : 'birim bedel girilirse TL hesaplanır', ceza.faturalanan ? 'kotu' : '')}
+      </div><p class="ipucu">${s.esik} kurulu güç. Sınır aşılırsa ölçülen reaktifin tamamı faturalanır; ikisi birden aşılırsa büyük olan. Takvim yılındaki ilk ihlal faturada tenzil edilir, sonrakiler ödenir. 35 günü aşan okumada bedel 35 günle sınırlı.</p>`;
+  } else {
+    $('ceza').innerHTML = `<p style="margin:0">${num('kuruluKVA') >= 50 ? '50 kVA ve üstü' : '50 kVA altı'} kurulu güç için sınırlar: endüktif <b>${yuzde(sinir.enduktif)}</b>, kapasitif <b>${yuzde(sinir.kapasitif)}</b> (reaktif / aktif enerji, aylık).</p>
+      <p class="ipucu">cos φ karşılığı: endüktif ${yuzde(sinir.enduktif)} ⇒ cos φ ≥ ${say(KOMP.cosDan(sinir.enduktif), 3)}; kapasitif ${yuzde(sinir.kapasitif)} ⇒ cos φ (kapasitif) ≥ ${say(KOMP.cosDan(sinir.kapasitif), 3)}. Mevcut tesiste fatura yöntemiyle oranlar ve bedel kontrol edilir.</p>`;
+  }
+
+  // ---- hesap adımları
+  const ad = [];
+  ad.push(['1. Yük ve mevcut güç katsayısı', kaynakYazi]);
+  ad.push(['2. Gerekli kondansatör gücü', `Qc = P · (tan φ1 − tan φ2) = ${say(P, 1)} · (${say(t.q.t1, 3)} − ${say(t.q.t2, 3)}) = ${say(t.q.Qc, 1)} kVAr`]);
+  ad.push(['3. Yedek pay ve otomatik kısım', `Qoto = ${say(t.q.Qc, 1)} · (1 + ${say(+$('yedek').value, 2)}) = ${say(t.Qoto, 1)} kVAr → ${t.plan.kademeler.map(kv).join(' + ') || '—'} = ${kv(t.plan.toplam)} kVAr`]);
+  if (t.tr) ad.push(['4. Trafo sabit kademesi', `${t.tr.Sn} kVA trafo boşta ≈ ${say(t.tr.bos, 1)} kVAr (tam yükte ${say(t.tr.tam, 1)}) → sabit ${kv(t.sabit)} kVAr (aşağı yuvarlanır)`]);
+  ad.push([`${t.tr ? 5 : 4}. Harmonik değerlendirmesi`, num('trafoKVA') > 0 ? `Gh / Sn = ${say(num('Gh'), 0)} / ${say(num('trafoKVA'), 0)} = ${yuzde(t.h.oran)} → ${t.h.ad}${t.h.fr ? `; fr = 50 / √p = ${say(t.h.fr, 0)} Hz` : ''}` : `Trafo gücü girilmedi; standart kondansatör kabul edildi.`]);
+  ad.push([`${t.tr ? 6 : 5}. Kademe akımı ve koruma`, `In = Q / (√3 · 400) · ilk kademe ${kv(t.plan.q1)} kVAr → ${say(t.kademeler[0] ? t.kademeler[0].In : 0, 1)} A; koruma ${say(t.h.kKoruma, 2)} × In`]);
+  ad.push([`${t.tr ? 7 : 6}. Kurulu batarya ile`, `tüm kademeler devredeyken cos φ ≈ ${t.cos2Gercek ? say(t.cos2Gercek, 3) : '—'}${t.kapasitifeGecer ? ' (kapasitif)' : ''}; röle hedefe göre kademe seçer.`]);
+  $('adimlar').innerHTML = ad.map(([b, f]) => `<div class="adim"><b>${b}</b><div class="formul">${f}</div></div>`).join('');
+  sonRapor = ['KOMPANZASYON HESABI', ...ad.map(([b, f]) => b + '\n   ' + f), '', 'KADEMELER: ' + parca.map(p => `${p[2]} ${kv(p[1])}`).join(', '),
+    `Kondansatör: ${t.h.ad}`, `Akım trafosu: ${t.at ? t.at.ad : '-'}`, `Pano besleme: ${kv(t.Qtop)} kVAr, In ${say(t.ana.In, 1)} A, koruma ${t.ana.sigorta} A, kablo Cu ${t.ana.kablo.cu} mm²`].join('\n');
+
+  motor();
+}
+const DUZ = t => (KOMP.DUZENLER[t.plan.duzen] || {}).ad || '';
+
+function motor() {
+  const m = KOMP.motorKomp(num('mKW'), $('mDevir').value);
+  $('motorSonuc').innerHTML = !m ? 'Motor gücünü girin.' : m.Qmaks == null ? 'Tablo 450 kW\'a kadar; daha büyük motorda üretici boşta akımıyla hesaplayın.'
+    : `${m.tabloKW} kW, ${$('mDevir').value} d/d motor uçlarına en çok <b>${kv(m.Qmaks)} kVAr</b> bağlanır. Kompanzasyondan sonra motor aşırı akım rölesi ayarı × <b>${say(m.azalt, 2)}</b> küçültülür.`;
+}
+
+// ---- tek hat şeması (SVG): besleme → NH / şalter → bara → her kademe: sigorta, kontaktör, (reaktör), kondansatör
+function sema(t) {
+  const kad = [];
+  if (t.sabit) kad.push({ ad: 'S', q: t.sabit, sabit: true });
+  t.plan.kademeler.forEach((q, i) => kad.push({ ad: 'K' + (i + 1), q }));
+  if (t.reaktor) kad.push({ ad: 'R', q: t.reaktor, reaktor: true });
+  const n = Math.max(kad.length, 1), dx = 70, x0 = 250, W = Math.max(640, x0 + n * dx + 30), yb = 130, H = yb + (t.h.p > 0 || t.reaktor ? 262 : 220);
+  const L = 'stroke="#1a2233" stroke-width="1.6" fill="none"', T = (x, y, s, o = '') => `<text x="${x}" y="${y}" font-size="11" font-family="Inter, Arial" fill="#1a2233" ${o}>${s}</text>`;
+  const reak = t.h.p > 0;
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:none" xmlns="http://www.w3.org/2000/svg">`;
+  // besleme
+  s += `<line x1="70" y1="8" x2="70" y2="62" ${L}/>` + `<circle cx="70" cy="24" r="6" ${L}/>` + T(82, 22, 'ŞEBEKE / TRAFO') + T(82, 36, `AT ${t.at ? t.at.ad : ''}`, 'font-weight="600"');
+  s += `<line x1="20" y1="62" x2="200" y2="62" stroke="#1a2233" stroke-width="5"/>` + T(20, 80, 'ANA DAĞITIM PANOSU', 'font-weight="700"');
+  s += `<path d="M150 62 V86" ${L}/><rect x="143" y="86" width="14" height="22" ${L}/>` + T(162, 101, `NH ${t.ana.sigorta} A`);
+  s += `<path d="M150 108 V${yb} H${x0 - 30}" ${L}/>` + T(160, yb - 6, `Cu ${t.ana.kablo.cu} mm²`);
+  s += `<line x1="${x0 - 30}" y1="${yb}" x2="${x0 + n * dx - 20}" y2="${yb}" stroke="#1a2233" stroke-width="5"/>` + T(x0 - 30, yb - 8, 'KOMPANZASYON PANOSU BARASI', 'font-weight="700"');
+  // röle
+  s += `<rect x="20" y="${yb + 50}" width="120" height="58" rx="4" ${L}/>` + T(30, yb + 70, 'Reaktif güç', 'font-weight="600"') + T(30, yb + 85, 'kontrol rölesi') + T(30, yb + 100, `${t.plan.nMaks} kademe`);
+  s += `<path d="M64 24 H40 V${yb + 50}" stroke="#1a2233" stroke-width="1" stroke-dasharray="4 3" fill="none"/>` + T(44, yb + 40, 'AT sekonder', 'font-size="9" fill="#5b6678"');
+  kad.forEach((k, i) => {
+    const x = x0 + i * dx, y = yb;
+    s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${y + 24}" ${L}/>`;
+    s += `<rect x="${x - 6}" y="${y + 24}" width="12" height="22" ${L}/>`;                       // sigorta
+    s += `<line x1="${x}" y1="${y + 46}" x2="${x}" y2="${y + 62}" ${L}/>`;
+    if (!k.sabit) s += `<line x1="${x}" y1="${y + 62}" x2="${x + 10}" y2="${y + 80}" ${L}/><line x1="${x}" y1="${y + 82}" x2="${x}" y2="${y + 94}" ${L}/><path d="M${x - 4} ${y + 80} h8" ${L}/>`;  // kontaktör
+    else s += `<line x1="${x}" y1="${y + 62}" x2="${x}" y2="${y + 94}" ${L}/>`;
+    let yy = y + 94;
+    if (k.reaktor || (reak && !k.reaktor)) {                                                        // reaktör bobini
+      s += `<path d="M${x} ${yy} v6 a5 5 0 0 1 0 10 a5 5 0 0 1 0 10 a5 5 0 0 1 0 10 v6" ${L}/>`; yy += 42;
+    }
+    if (!k.reaktor) s += `<line x1="${x}" y1="${yy}" x2="${x}" y2="${yy + 14}" ${L}/><line x1="${x - 14}" y1="${yy + 14}" x2="${x + 14}" y2="${yy + 14}" stroke="#1a2233" stroke-width="2.4"/><line x1="${x - 14}" y1="${yy + 21}" x2="${x + 14}" y2="${yy + 21}" stroke="#1a2233" stroke-width="2.4"/>`;
+    const yl = yy + 42;
+    s += T(x, yl, k.ad, 'text-anchor="middle" font-weight="700"') + T(x, yl + 15, `${kv(k.q)} kVAr`, 'text-anchor="middle"');
+    s += T(x, yl + 30, k.reaktor ? 'reaktör' : k.sabit ? 'sabit' : reak ? `%${say(t.h.p * 100, 0)} · ${t.h.UN}V` : `${t.h.UN} V`, 'text-anchor="middle" fill="#5b6678"');
+    if (!k.sabit) s += `<path d="M${x + 10} ${y + 72} H${x + 30}" stroke="#5b6678" stroke-width="0.8" stroke-dasharray="2 2"/>`;
+  });
+  s += T(W - 16, 22, `${t.h.ad}`, 'text-anchor="end" fill="#5b6678"');
+  return s + '</svg>';
+}
+
+$('kopyala').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(sonRapor); $('kopyala').textContent = 'Kopyalandı'; }
+  catch (e) { $('kopyala').textContent = 'Kopyalanamadı'; }
+  setTimeout(() => { $('kopyala').textContent = 'Hesap raporunu kopyala'; }, 2500);
+});
+hesapla();
+</script>
+</body>
+</html>

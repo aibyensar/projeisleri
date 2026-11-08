@@ -80,7 +80,8 @@
   .bolum-bas { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; margin: 0 0 16px; }
   .bolum-bas h2 { font-family: var(--f-baslik); font-size: 1.45rem; font-weight: 700; margin: 0; letter-spacing: -.005em; }
   .bolum-bas small { font-family: var(--f-olcu); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--soluk); }
-  .moduller { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .moduller { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+  @media (max-width: 1180px) { .moduller { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   a.modul { display: flex; flex-direction: column; text-decoration: none; color: var(--yazi); background: var(--kart); border: 1px solid var(--cizgi);
     border-radius: 14px; overflow: hidden; box-shadow: var(--golge); transition: transform .18s, border-color .18s, box-shadow .18s; min-width: 0; }
   a.modul:hover, a.modul:focus-visible { transform: translateY(-3px); border-color: var(--akim); box-shadow: 0 10px 28px rgba(16, 24, 40, .12); outline: none; }
@@ -146,7 +147,7 @@
       </div>
       <div class="gostergeler">
         <div class="gosterge"><b>Pano saati</b><output id="saat">--:--:--</output></div>
-        <div class="gosterge"><b>Devrede</b><output id="devrede">3 <small>/ 12 çıkış</small></output></div>
+        <div class="gosterge"><b>Devrede</b><output id="devrede">4 <small>/ 12 çıkış</small></output></div>
         <div class="gosterge"><b>Bara</b><output>0,4 <small>kV · 50 Hz</small></output></div>
       </div>
     </div>
@@ -170,48 +171,54 @@
         <rect x="268" y="84" width="824" height="12" rx="2" class="bara"/>
         <text x="1092" y="72" text-anchor="end">AG BARA · 0,4 kV</text>
         <!-- akan akım: şebeke → bara -->
-        <path d="M82 90 H146 M218 90 H268 M268 90 H760" class="akan"/>
+        <path d="M82 90 H146 M218 90 H268 M268 90 H850" class="akan"/>
 
-        <!-- F1 kablo kesiti -->
         <a class="fider" href="araclar/kablo-kesiti.html" aria-label="F1 Kablo kesiti ve gerilim düşümü aracını aç">
-          <line x1="360" y1="96" x2="360" y2="232" class="tel"/>
-          <path d="M352 150 l16 16 M368 150 l-16 16" class="tel"/>
-          <path d="M360 96 V232" class="akan"/>
-          <circle cx="378" cy="118" r="4.5" class="led"/>
-          <path d="M352 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
-          <rect x="280" y="256" width="160" height="52" rx="8" class="etiket-kutu"/>
-          <text x="296" y="277" class="kod">F1 · 3x25/16</text>
-          <text x="296" y="297" class="ad">Kablo kesiti</text>
+          <line x1="340" y1="96" x2="340" y2="232" class="tel"/>
+          <path d="M332 150 l16 16 M348 150 l-16 16" class="tel"/>
+          <path d="M340 96 V232" class="akan"/>
+          <circle cx="358" cy="118" r="4.5" class="led"/>
+          <path d="M332 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
+          <rect x="266" y="256" width="148" height="52" rx="8" class="etiket-kutu"/>
+          <text x="280" y="277" class="kod">F1 · 3x25/16</text>
+          <text x="280" y="297" class="ad">Kablo kesiti</text>
         </a>
-        <!-- F2 iç tesisat -->
         <a class="fider" href="araclar/ic-tesisat.html" aria-label="F2 İç tesisat hesabı aracını aç">
-          <line x1="560" y1="96" x2="560" y2="232" class="tel"/>
-          <path d="M552 150 l16 16 M568 150 l-16 16" class="tel"/>
-          <path d="M560 96 V232" class="akan"/>
-          <circle cx="578" cy="118" r="4.5" class="led"/>
-          <path d="M552 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
-          <rect x="480" y="256" width="160" height="52" rx="8" class="etiket-kutu"/>
-          <text x="496" y="277" class="kod">F2 · Σ%e ≤ 1,5</text>
-          <text x="496" y="297" class="ad">İç tesisat</text>
+          <line x1="510" y1="96" x2="510" y2="232" class="tel"/>
+          <path d="M502 150 l16 16 M518 150 l-16 16" class="tel"/>
+          <path d="M510 96 V232" class="akan"/>
+          <circle cx="528" cy="118" r="4.5" class="led"/>
+          <path d="M502 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
+          <rect x="436" y="256" width="148" height="52" rx="8" class="etiket-kutu"/>
+          <text x="450" y="277" class="kod">F2 · Σ%e ≤ 1,5</text>
+          <text x="450" y="297" class="ad">İç tesisat</text>
         </a>
-        <!-- F3 bağlantı hattı -->
         <a class="fider" href="https://claude.ai/artifact/Q1x2gsmhUeXconHbgmPmoK" target="_top" aria-label="F3 Bağlantı hattı projesi aracını aç">
-          <line x1="760" y1="96" x2="760" y2="232" class="tel"/>
-          <path d="M752 150 l16 16 M768 150 l-16 16" class="tel"/>
-          <path d="M760 96 V232" class="akan"/>
-          <circle cx="778" cy="118" r="4.5" class="led"/>
-          <path d="M752 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
-          <rect x="680" y="256" width="160" height="52" rx="8" class="etiket-kutu"/>
-          <text x="696" y="277" class="kod">F3 · GDZ → DXF</text>
-          <text x="696" y="297" class="ad">Bağlantı hattı</text>
+          <line x1="680" y1="96" x2="680" y2="232" class="tel"/>
+          <path d="M672 150 l16 16 M688 150 l-16 16" class="tel"/>
+          <path d="M680 96 V232" class="akan"/>
+          <circle cx="698" cy="118" r="4.5" class="led"/>
+          <path d="M672 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
+          <rect x="606" y="256" width="148" height="52" rx="8" class="etiket-kutu"/>
+          <text x="620" y="277" class="kod">F3 · GDZ → DXF</text>
+          <text x="620" y="297" class="ad">Bağlantı hattı</text>
+        </a>
+        <a class="fider" href="araclar/kompanzasyon.html" aria-label="F4 Kompanzasyon hesabı aracını aç">
+          <line x1="850" y1="96" x2="850" y2="232" class="tel"/>
+          <path d="M842 150 l16 16 M858 150 l-16 16" class="tel"/>
+          <path d="M850 96 V232" class="akan"/>
+          <circle cx="868" cy="118" r="4.5" class="led"/>
+          <path d="M842 232 l8 12 l8 -12 z" fill="var(--pano-yazi)"/>
+          <rect x="776" y="256" width="148" height="52" rx="8" class="etiket-kutu"/>
+          <text x="790" y="277" class="kod">F4 · cos φ 0,99</text>
+          <text x="790" y="297" class="ad">Kompanzasyon</text>
         </a>
         <!-- yedek çıkışlar: açık kesici -->
         <g class="yedek">
-          <line x1="920" y1="96" x2="920" y2="146" class="tel"/><path d="M920 146 l14 -22" class="tel" stroke-dasharray="none"/><line x1="920" y1="168" x2="920" y2="214" class="tel"/>
           <line x1="990" y1="96" x2="990" y2="146" class="tel"/><path d="M990 146 l14 -22" class="tel" stroke-dasharray="none"/><line x1="990" y1="168" x2="990" y2="214" class="tel"/>
           <line x1="1060" y1="96" x2="1060" y2="146" class="tel"/><path d="M1060 146 l14 -22" class="tel" stroke-dasharray="none"/><line x1="1060" y1="168" x2="1060" y2="214" class="tel"/>
-          <text x="990" y="242" text-anchor="middle">YEDEK ÇIKIŞLAR</text>
-          <text x="990" y="260" text-anchor="middle">9 araç sırada</text>
+          <text x="1025" y="242" text-anchor="middle">YEDEK ÇIKIŞLAR</text>
+          <text x="1025" y="260" text-anchor="middle">8 araç sırada</text>
         </g>
       </svg>
     </div>
@@ -226,7 +233,7 @@
 </section>
 
 <main class="kap">
-  <div class="bolum-bas"><h2>Devredeki araçlar</h2><small>3 fider · hepsi hazır</small></div>
+  <div class="bolum-bas"><h2>Devredeki araçlar</h2><small>4 fider · hepsi hazır</small></div>
   <div class="moduller">
     <a class="modul" href="araclar/kablo-kesiti.html">
       <div class="modul-ust"><span class="kod">F1 · HESAP</span><span class="durum-led"><i></i>DEVREDE</span></div>
@@ -255,6 +262,15 @@
         <div class="modul-ac"><b>Aracı aç →</b><span>I ≤ In ≤ Iz</span></div>
       </div>
     </a>
+    <a class="modul" href="araclar/kompanzasyon.html">
+      <div class="modul-ust"><span class="kod">F4 · HESAP</span><span class="durum-led"><i></i>DEVREDE</span></div>
+      <div class="modul-ic">
+        <h3>Kompanzasyon hesabı</h3>
+        <p>Projeden, faturadan ya da ölçümden kondansatör gücü; kademe planı, malzeme listesi, röle ayarları ve EPDK reaktif sınır kontrolü.</p>
+        <ul class="ozellik"><li>%20 / %15 sınırı</li><li>Harmonik · reaktörlü</li><li>Pano tek hat</li></ul>
+        <div class="modul-ac"><b>Aracı aç →</b><span>Qc = P·Δtan φ</span></div>
+      </div>
+    </a>
   </div>
 
   <section class="yedekler">
@@ -263,25 +279,24 @@
       <div class="yedek-grup">
         <h3>Hesap</h3>
         <ul>
-          <li><span class="kod">Y1</span><strong>Kompanzasyon hesabı</strong><span>Gereken kondansatör gücü ve kademeler</span></li>
-          <li><span class="kod">Y2</span><strong>Trafo gücü seçimi</strong><span>Kurulu güç ve eşzamanlılıktan trafo önerisi</span></li>
-          <li><span class="kod">Y3</span><strong>Aydınlatma hesabı</strong><span>Alan ve lüks değerinden armatür sayısı</span></li>
+          <li><span class="kod">Y1</span><strong>Trafo gücü seçimi</strong><span>Kurulu güç ve eşzamanlılıktan trafo önerisi</span></li>
+          <li><span class="kod">Y2</span><strong>Aydınlatma hesabı</strong><span>Alan ve lüks değerinden armatür sayısı</span></li>
         </ul>
       </div>
       <div class="yedek-grup">
         <h3>Evrak ve teklif</h3>
         <ul>
-          <li><span class="kod">Y4</span><strong>Teklif hazırlayıcı</strong><span>Logolu PDF teklif</span></li>
-          <li><span class="kod">Y5</span><strong>Keşif / metraj listesi</strong><span>Malzeme listesi, maliyet, Excel'e aktarım</span></li>
-          <li><span class="kod">Y6</span><strong>Hakediş ve fatura takibi</strong><span>Alacaklar tek ekranda</span></li>
+          <li><span class="kod">Y3</span><strong>Teklif hazırlayıcı</strong><span>Logolu PDF teklif</span></li>
+          <li><span class="kod">Y4</span><strong>Keşif / metraj listesi</strong><span>Malzeme listesi, maliyet, Excel'e aktarım</span></li>
+          <li><span class="kod">Y5</span><strong>Hakediş ve fatura takibi</strong><span>Alacaklar tek ekranda</span></li>
         </ul>
       </div>
       <div class="yedek-grup">
         <h3>İş takibi</h3>
         <ul>
-          <li><span class="kod">Y7</span><strong>Proje takip paneli</strong><span>Projelerin aşamaları</span></li>
-          <li><span class="kod">Y8</span><strong>Müşteri listesi</strong><span>İletişim, geçmiş işler, notlar</span></li>
-          <li><span class="kod">Y9</span><strong>Periyodik kontrol hatırlatıcı</strong><span>Ölçüm ve bakım tarihleri</span></li>
+          <li><span class="kod">Y6</span><strong>Proje takip paneli</strong><span>Projelerin aşamaları</span></li>
+          <li><span class="kod">Y7</span><strong>Müşteri listesi</strong><span>İletişim, geçmiş işler, notlar</span></li>
+          <li><span class="kod">Y8</span><strong>Periyodik kontrol hatırlatıcı</strong><span>Ölçüm ve bakım tarihleri</span></li>
         </ul>
       </div>
     </div>

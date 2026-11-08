@@ -262,6 +262,15 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    çıkışlar (açık kesici, gri). Göstergeler: pano saati, devrede 3/12, bara 0,4 kV. "Mühendis köşesi" formül şeridi (7 formül, 7 sn).
    Altta "Devredeki araçlar" (F1–F3 modül kartları) ve "Yedek çıkışlar" (Y1–Y9, sıradaki araçlar). Yazı: Chakra Petch (başlık),
    Inter, JetBrains Mono. Yeni araç eklenince: fider + modül kartı + gösterge sayısı + yedekten çıkar.
+1x. KOMPANZASYON ARACI (8 Kasım 2026): araclar/kompanzasyon.html + ortak/komp.js (hesap; node ile denenebilir). Araştırma ve
+   bütün sayıların kaynağı: kompanzasyon/ARASTIRMA.md (EPDK md. 13 RG 30.04.2022 Lexpera'dan okundu; Schneider EIG bölüm L;
+   ENTES röle kılavuzları; tebliğ ikincil kaynaktan — EMO sitesi otomatik erişime 404 veriyor). Yöntemler: proje (kurulu × eşz.,
+   cos φ1 0,80), fatura (P = kWh/saat, tanφ1 = kVArh/kWh, ceza kontrolü + TL), ölçüm (P, Q). Çıktılar: Qc, kademe planı (en az
+   fazlalık, ilk kademe ≤ max(0,25·Pmin, Qoto/6), kademe ≤ 50 kVAr, boş çıkış yedek), trafo sabit kademesi (boşta tablo, aşağı
+   yuvarla), harmonik sınıfı (Gh/Sn %10/%20/%50 → standart/ağır hizmet 440 V/%7 veya %14 reaktör 480 V/filtre), kademe ekipmanı
+   (In, koruma k×In: 1,5/1,8/1,31/1,19/1,12, kontaktör kVAr, Cu kablo tablosu), AT ve C/k, röle ayarları, şönt reaktör, motor tablosu,
+   pano tek hat SVG, hesap raporu kopyalama. Ana sayfa: F4 fider + modül kartı, devrede 4/12, yedekler Y1–Y8.
+   Ağ: ortama EPDK, Resmî Gazete, mevzuat, EMO, Entes, dergipark, electrical-installation.org, lexpera izinleri eklendi (kullanıcı onayı).
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
