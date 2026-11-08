@@ -23,6 +23,11 @@
   .anahtar span { font-weight: 600; } .anahtar small { display: block; color: var(--soluk); font-weight: 400; font-size: .8rem; }
   .anahtar input { width: 52px; height: 30px; accent-color: var(--ana); }
   #acil:checked + .renk { color: var(--vurgu); }
+  .durum-satir { padding-bottom: 8px; }
+  .secim { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .secim button { font: inherit; font-size: 15px; font-weight: 700; padding: 13px 6px; border-radius: 10px; border: 2px solid var(--cizgi); background: var(--zemin); color: var(--soluk); }
+  .secim button.eksik.secili { border-color: var(--vurgu); color: var(--vurgu); background: color-mix(in srgb, var(--vurgu) 12%, transparent); }
+  .secim button.tamam.secili { border-color: var(--iyi); color: #fff; background: var(--iyi); }
   button.gonder { width: 100%; font: inherit; font-size: 18px; font-weight: 700; padding: 14px; border: 0; border-radius: 12px; background: var(--ana); color: #fff; }
   button.gonder:disabled { opacity: .6; }
   .alan { position: relative; }
@@ -56,7 +61,11 @@
     </div>
     <div class="kart">
       <div class="anahtar"><span class="renk">ACİL<small>İş listenin en üstüne çıkar</small></span><input type="checkbox" id="acil"></div>
-      <div class="anahtar"><span>Evrak tamam<small>Bütün evrak geldiyse işaretle; iş HAZIR olur</small></span><input type="checkbox" id="tamam"></div>
+      <div class="anahtar durum-satir"><span>Evrak durumu<small>Tamam seçilirse iş HAZIR olur</small></span></div>
+      <div class="secim" id="evrakDurum" role="radiogroup" aria-label="Evrak durumu">
+        <button type="button" data-v="eksik" class="eksik secili" aria-pressed="true">EVRAK EKSİK</button>
+        <button type="button" data-v="tamam" class="tamam" aria-pressed="false">EVRAK TAMAM</button>
+      </div>
     </div>
     <div class="kart">
       <label for="not">Not (isteğe bağlı)</label>
@@ -124,18 +133,24 @@
     const b = DURUM.bilgi;
     if (b) {                                         // daha önce kaydedilmiş: düzeltme
       $('elektrikci').value = b.elektrikci; $('proje').value = b.proje; $('tur').value = b.tur;
-      $('acil').checked = !!b.acil; $('tamam').checked = !!b.evrakTamam; $('not').value = b.not || '';
+      $('acil').checked = !!b.acil; durumSec(b.evrakTamam ? 'tamam' : 'eksik'); $('not').value = b.not || '';
       mesaj('Bu paketin bilgisi daha önce kaydedildi. Değiştirip yeniden kaydedebilirsiniz.', true);
     }
   }
 
+  function durumSec(v) {
+    document.querySelectorAll('#evrakDurum button').forEach(b => { const on = b.dataset.v === v; b.classList.toggle('secili', on); b.setAttribute('aria-pressed', on); });
+  }
+  $('evrakDurum').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) durumSec(b.dataset.v); });
+  const tamamMi = () => document.querySelector('#evrakDurum .secili').dataset.v === 'tamam';
+
   $('f').addEventListener('submit', e => {
     e.preventDefault();
     $('gonder').disabled = true; $('gonder').textContent = 'Kaydediliyor…';
-    const veri = { elektrikci: $('elektrikci').value, proje: $('proje').value, tur: $('tur').value, acil: $('acil').checked, tamam: $('tamam').checked, not: $('not').value };
+    const veri = { elektrikci: $('elektrikci').value, proje: $('proje').value, tur: $('tur').value, acil: $('acil').checked, tamam: tamamMi(), not: $('not').value };
     google.script.run
       .withSuccessHandler(r => {
-        mesaj('✓ Kaydedildi: ' + r.dosyaSayisi + ' evrak → ' + kacis(veri.elektrikci) + ' – ' + kacis(veri.proje) + (veri.tamam ? ' · EVRAK TAMAM' : ''), true);
+        mesaj('✓ Kaydedildi: ' + r.dosyaSayisi + ' evrak → ' + kacis(veri.elektrikci) + ' – ' + kacis(veri.proje) + (veri.tamam ? ' · EVRAK TAMAM' : ' · EVRAK EKSİK'), true);
         $('gonder').disabled = false; $('gonder').textContent = 'Düzelt ve yeniden kaydet';
         window.scrollTo(0, 0);
       })
