@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.2 (e-posta özeti). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.3 (e-posta özeti, sabah özeti, telefon durumu). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -7,7 +7,9 @@ const GELEN = '0-Gelen';
 const FORM_SURESI_SAAT = 24;              // paket bilgisi bu süre içinde girilebilir / düzeltilebilir
 const TURLER = ['İç Tesisat', 'Bağlantı Hattı', 'İç Tesisat + Bağlantı Hattı', 'Kompanzasyon'];
 const BILDIRIM = '7-Bildirim';           // bilgisayardaki program e-posta özetlerini buraya bırakır
-const ALICI = '';                        // boşsa şirket hesabının kendi adresine gönderilir; başka adres yazılabilir
+const ALICI = '';                        // e-postanın gideceği adres; boşsa şirket hesabının kendisi
+const SABAH_SAATI = 8;                   // sabah özeti saati (Türkiye saati, 8 = 08:xx)
+const GECIKME_GUN = 3;                    // bu kadar gün bekleyen iş "gecikiyor" sayılır
 
 // ---------- Dosya alma (kestirme, her dosya için bir istek) ----------
 // Gövde (JSON): { anahtar, paket, sira, ad, uzanti, veri (base64) }
@@ -37,6 +39,12 @@ function doPost(e) {
 // ---------- Sayfalar ----------
 // ?form=<paket> → paket bilgisi formu; parametresiz → durum yazısı
 function doGet(e) {
+  // ?durum=1&anahtar=… → telefon kestirmesi için bekleyen işlerin özeti (JSON)
+  if (e && e.parameter && e.parameter.durum) {
+    if (e.parameter.anahtar !== ANAHTAR) return cevap({ tamam: false, hata: 'anahtar yanlış' });
+    const d = bekleyenler();
+    return cevap({ tamam: true, bekleyen: d.isler.length, geciken: d.geciken, metin: d.kisa });
+  }
   const paket = paketAdi(e && e.parameter && e.parameter.form);
   if (!paket) return ContentService.createTextOutput('AGY Evrak çalışıyor');
   const k = paketKlasoru(paket);
@@ -75,18 +83,71 @@ function bilgiKaydet(paket, b) {
 // ---------- E-posta özeti ----------
 // Bir kez çalıştırın (düzenleyicide işlev listesinden "kurulum" → Çalıştır): 5 dakikada bir bildirimGonder çalışır.
 function kurulum() {
-  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'bildirimGonder').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.getProjectTriggers().filter(t => ['bildirimGonder', 'saatlik'].indexOf(t.getHandlerFunction()) >= 0).forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('bildirimGonder').timeBased().everyMinutes(5).create();
+  ScriptApp.newTrigger('saatlik').timeBased().everyHours(1).create();
   bildirimGonder();
-  return 'Kuruldu: e-posta özetleri 5 dakikada bir gönderilecek.';
+  return 'Kuruldu: e-posta özetleri 5 dakikada bir, sabah özeti her gün ' + SABAH_SAATI + ':00–' + SABAH_SAATI + ':59 arasında.';
+}
+
+function aliciBul() {
+  let a = ALICI || Session.getEffectiveUser().getEmail();
+  if (!a) { try { a = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR).getOwner().getEmail(); } catch (x) { a = ''; } }
+  return a;
+}
+
+// Çizilecek Projeler'deki işler (buluttan; bilgisayar kapalıyken de çalışır). Klasör adı: "<grup> · YYYY-MM-DD · …"
+function bekleyenler() {
+  const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
+  const bul = kok.getFoldersByName('Çizilecek Projeler');
+  const bugun = new Date(Utilities.formatDate(new Date(), 'Europe/Istanbul', 'yyyy-MM-dd') + 'T00:00:00');
+  const isler = [];
+  if (bul.hasNext()) {
+    const it = bul.next().getFolders();
+    while (it.hasNext()) {
+      const ad = it.next().getName();
+      if (ad.charAt(0) === '.') continue;
+      const m = /(\d{4})-(\d{2})-(\d{2})/.exec(ad);
+      const gun = m ? Math.max(0, Math.round((bugun - new Date(m[1] + '-' + m[2] + '-' + m[3] + 'T00:00:00')) / 86400000)) : 0;
+      const parca = ad.split(' · ');
+      const durum = /^0 ACİL/.test(ad) ? 'ACİL · ' + (parca[1] || '') : /^1 HAZIR/.test(ad) ? 'HAZIR' : /^2 BEKLİYOR/.test(ad) ? 'EVRAK EKSİK' : '';
+      const is = parca.filter(x => / – /.test(x))[0] || ad;
+      isler.push({ ad: ad, is: is, gun: gun, durum: durum });
+    }
+  }
+  isler.sort((a, b) => b.gun - a.gun);
+  const geciken = isler.filter(x => x.gun >= GECIKME_GUN).length;
+  const satir = x => (x.gun >= GECIKME_GUN ? '⚠ ' : '   ') + x.gun + ' gündür: ' + x.is + (x.durum ? ' (' + x.durum + ')' : '');
+  return { isler: isler, geciken: geciken, satirlar: isler.map(satir),
+    kisa: isler.length ? isler.length + ' iş bekliyor' + (geciken ? ', ' + geciken + "'si " + GECIKME_GUN + ' günü geçti' : '') : 'Bekleyen iş yok' };
+}
+
+// her saat çalışır; Türkiye saatiyle SABAH_SAATI'nde günde bir kez sabah özeti gönderir
+function saatlik() {
+  const simdi = new Date();
+  const saat = +Utilities.formatDate(simdi, 'Europe/Istanbul', 'H');
+  const gun = Utilities.formatDate(simdi, 'Europe/Istanbul', 'yyyy-MM-dd');
+  const p = PropertiesService.getScriptProperties();
+  if (saat !== SABAH_SAATI || p.getProperty('sabahOzeti') === gun) return;
+  p.setProperty('sabahOzeti', gun);
+  sabahOzeti();
+}
+
+function sabahOzeti() {
+  const d = bekleyenler();
+  if (!d.isler.length) return;
+  const alici = aliciBul();
+  if (!alici) { console.error('Alıcı adresi bulunamadı: ALICI satırına e-posta adresini yazın.'); return; }
+  const konu = 'AGY Evrak — Bugün bekleyen işler: ' + d.isler.length + (d.geciken ? ' (' + d.geciken + "'si gecikiyor)" : '');
+  const metin = ['Çizilecek Projeler — ' + Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy'), ''].concat(d.satirlar)
+    .concat(['', '⚠ = ' + GECIKME_GUN + ' günü geçen iş.']).join('\n');
+  MailApp.sendEmail({ to: alici, subject: konu, body: metin, name: 'AGY Evrak' });
 }
 
 function bildirimGonder() {
   const kok = klasorAl(DriveApp.getRootFolder(), ANA_KLASOR);
   const k = klasorAl(kok, BILDIRIM);
-  // getEffectiveUser().getEmail() ek izin olmadan boş dönebiliyor: klasör sahibinin adresi yedek
-  let alici = ALICI || Session.getEffectiveUser().getEmail();
-  if (!alici) { try { alici = k.getOwner().getEmail(); } catch (x) { alici = ''; } }
+  const alici = aliciBul();
   if (!alici) { console.error('Alıcı adresi bulunamadı: Kod.gs içindeki ALICI satırına e-posta adresini yazın.'); return; }
   const dosyalar = [];
   const it = k.getFiles();

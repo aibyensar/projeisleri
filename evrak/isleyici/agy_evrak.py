@@ -144,12 +144,31 @@ class Uygulama:
                 else:
                     self.durum = 'işliyor…'
                     n = self.isleyici.tur()
+                    self.gunluk_uyari()
                     self.durum = f"çalışıyor · son kontrol {dt.datetime.now():%H:%M}" + (f' · {n} paket işlendi' if n else '')
             except Exception:
                 log.exception('döngü hatası')
                 self.durum = 'hata (kayda bakın)'
             self.simdi_tara.wait(self.ayar['yokla_sn'])
             self.simdi_tara.clear()
+
+    def gunluk_uyari(self):
+        """Günde bir kez (günün ilk kontrolünde): 3 günü geçen iş varsa Windows bildirimi."""
+        dosya = ayarlar.veri_klasoru() / 'son-gunluk-uyari.txt'
+        bugun = dt.date.today().isoformat()
+        try:
+            if dosya.exists() and dosya.read_text().strip() == bugun:
+                return
+        except OSError:
+            pass
+        gec = self.isleyici.gecikenler(self.isleyici.kuyruktaki_isler())
+        if gec:
+            adlar = ', '.join(f"{islem.buyuk(x['elektrikci'])} – {x['proje']}" for x in gec[:3]) + (' …' if len(gec) > 3 else '')
+            bildirim(f"{len(gec)} iş {self.ayar['gecikme_gun']} günü geçti", adlar)
+        try:
+            dosya.write_text(bugun)
+        except OSError:
+            pass
 
     # ---------- "Evrak Bırak" izleyici (saniyede bir; 1,5 sn sabit kalınca form açılır)
     def birak_izle(self):
