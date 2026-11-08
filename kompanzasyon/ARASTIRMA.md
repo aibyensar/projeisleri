@@ -65,6 +65,10 @@ Sınırların cos φ karşılığı: tan φ = Q/P → %20 ⇒ cos φ ≥ 0,981; 
   - 0,10 Sn < Gh ≤ 0,20 Sn → ağır hizmet (heavy duty) ya da %10 yüksek gerilimli kondansatör
   - 0,20 Sn < Gh ≤ 0,50 Sn → ağır hizmet / %20 yüksek gerilimli kondansatör **+ harmonik filtre reaktörü (detuned)**
   - Gh > 0,50 Sn → harmonik filtre (aktif/pasif) etüdü gerekir
+- **Trafosuz AG abonesi** (kendi trafosu olmayan, dağıtım şebekesinden AG'den beslenen tesis): kaynaktaki kural trafo gücüne göre
+  verilmiş; trafo bilinmediği için araç Gh'yi tesisin **kurulu gücüne (kVA)** oranlar. Bu bir mühendislik uyarlamasıdır ve daha
+  temkinlidir (kurulu güç trafodan küçük olduğu için oran büyük çıkar). Trafosuz tesiste trafo sabit kademesi eklenmez; EPDK
+  sınırları ve tebliğin 50 kVA zorunluluğu aynen geçerlidir.
 - Reaktör oranı p: **%5,7 (210 Hz), %7 (189–190 Hz), %14 (135 Hz)**. 5. harmonik baskınsa %7, 3. harmonik baskınsa %14.
   Rezonans frekansı fr = 50 / √p.
 - Reaktörlü kademede kondansatör gerilimi yükselir: Uc = U / (1 − p) → 400 V şebekede **480 V** kondansatör kullanılır.

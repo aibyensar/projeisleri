@@ -122,7 +122,7 @@
           <label>Baskın harmonik<select id="baskin"><option value="5">5. (sürücü, UPS, doğrultucu)</option><option value="3">3. (tek fazlı elektronik, LED, bilgisayar)</option></select></label>
           <label>Ana şalter (A) · akım trafosu için<input id="InAna" type="number" min="0" step="any" value="800"></label>
         </div>
-        <p class="ipucu">Trafo 0 ise AG abonesi sayılır, trafo sabit kademesi eklenmez. Harmonik yük: hız kontrol cihazı, UPS, doğrultucu, kaynak makinesi, LED sürücü (yalnız kW biliniyorsa ÷ 0,7).</p>
+        <p class="ipucu">Trafo 0 ise trafosuz AG abonesi sayılır: trafo sabit kademesi eklenmez, harmonik oranı tesisin kurulu gücüne (kVA) göre bulunur. Harmonik yük: hız kontrol cihazı, UPS, doğrultucu, kaynak makinesi, LED sürücü (yalnız kW biliniyorsa ÷ 0,7).</p>
       </div>
 
       <div class="kart">
@@ -235,7 +235,7 @@ function hesapla() {
   const kapOran = num('fKWh') > 0 ? num('fKap') / num('fKWh') : 0;
   const Qkap = $('Qkap').value !== '' ? num('Qkap')
     : (yontem === 'fatura' && num('fSaat') > 0 && kapOran > KOMP.cezaSiniri(num('kuruluKVA')).kapasitif / 2 ? num('fKap') / num('fSaat') : 0);
-  const t = KOMP.tasarla({ P, cos1, cos2, trafoKVA: num('trafoKVA'), Gh: num('Gh'), baskin: +$('baskin').value, kademeN: +$('kademeN').value || null,
+  const t = KOMP.tasarla({ P, cos1, cos2, trafoKVA: num('trafoKVA'), kuruluKVA: num('kuruluKVA'), Gh: num('Gh'), baskin: +$('baskin').value, kademeN: +$('kademeN').value || null,
     duzen: $('duzen').value, yedek: +$('yedek').value, Pmin: num('Pmin'), InAna: num('InAna'), Qkap });
   const ceza = yontem === 'fatura' ? KOMP.cezaKontrol({ kWh: num('fKWh'), indKVArh: num('fInd'), kapKVArh: num('fKap'), kuruluKVA: num('kuruluKVA'),
     kuruluKW: yontem === 'proje' ? num('kuruluKW') : 0, muafTur: $('muaf').checked, birimTL: num('fBirim') }) : null;
@@ -254,8 +254,8 @@ function hesapla() {
   $('kontroller').innerHTML =
     k('Mevcut', `cos φ ${say(cos1, 3)}`, `Q/P = ${yuzde(indOran)} · sınır ${yuzde(sinir.enduktif)}`, indOran > sinir.enduktif ? 'kotu' : 'iyi') +
     k('Kurulacak batarya', `${kv(t.Qtop)} kVAr`, `${t.plan.n} otomatik kademe${t.sabit ? ` + ${kv(t.sabit)} kVAr sabit` : ''}`) +
-    k('Kondansatör', t.h.sinif === 'standart' ? 'Standart' : t.h.sinif === 'agir' ? 'Ağır hizmet' : `Reaktörlü %${say(t.h.p * 100, t.h.p * 100 % 1 ? 1 : 0)}`,
-      `${t.h.UN} V · Gh/Sn = ${num('trafoKVA') > 0 ? yuzde(t.h.oran) : '—'}`, t.h.sinif === 'filtre' ? 'kotu' : '');
+    k('Kondansatör', t.h.sinif === 'standart' ? 'Standart' : t.h.sinif === 'agir' ? 'Ağır hizmet' : `Reaktörlü %${say(Math.round(t.h.p * 1000) / 10, Math.round(t.h.p * 1000) % 10 ? 1 : 0)}`,
+      `${t.h.UN} V · Gh/${t.h.referans === 'trafo' ? 'Sn' : 'S'} = ${t.h.Sref > 0 ? yuzde(t.h.oran) : '—'}`, t.h.sinif === 'filtre' ? 'kotu' : '');
   const uy = t.uyarilar.slice();
   if ($('dengesiz').checked) uy.push('Dengesiz yük: üç akım trafolu (3 fazdan ölçen) röle ve tek fazlı kondansatör kademeleri kullanın; referans kademe yine üç fazlı olmalı.');
   if (t.reaktor) uy.push(`Kapasitif reaktif ${say(Qkap, 1)} kVAr: ${kv(t.reaktor)} kVAr şönt reaktör kademesi ekleyin; röle programı "kapasitör + reaktör".`);
@@ -321,7 +321,7 @@ function hesapla() {
   ad.push(['2. Gerekli kondansatör gücü', `Qc = P · (tan φ1 − tan φ2) = ${say(P, 1)} · (${say(t.q.t1, 3)} − ${say(t.q.t2, 3)}) = ${say(t.q.Qc, 1)} kVAr`]);
   ad.push(['3. Yedek pay ve otomatik kısım', `Qoto = ${say(t.q.Qc, 1)} · (1 + ${say(+$('yedek').value, 2)}) = ${say(t.Qoto, 1)} kVAr → ${t.plan.kademeler.map(kv).join(' + ') || '—'} = ${kv(t.plan.toplam)} kVAr`]);
   if (t.tr) ad.push(['4. Trafo sabit kademesi', `${t.tr.Sn} kVA trafo boşta ≈ ${say(t.tr.bos, 1)} kVAr (tam yükte ${say(t.tr.tam, 1)}) → sabit ${kv(t.sabit)} kVAr (aşağı yuvarlanır)`]);
-  ad.push([`${t.tr ? 5 : 4}. Harmonik değerlendirmesi`, num('trafoKVA') > 0 ? `Gh / Sn = ${say(num('Gh'), 0)} / ${say(num('trafoKVA'), 0)} = ${yuzde(t.h.oran)} → ${t.h.ad}${t.h.fr ? `; fr = 50 / √p = ${say(t.h.fr, 0)} Hz` : ''}` : `Trafo gücü girilmedi; standart kondansatör kabul edildi.`]);
+  ad.push([`${t.tr ? 5 : 4}. Harmonik değerlendirmesi`, t.h.Sref > 0 ? `Gh / ${t.h.referans === 'trafo' ? 'Sn (trafo)' : 'S (kurulu güç, trafosuz AG abonesi)'} = ${say(num('Gh'), 0)} / ${say(t.h.Sref, 0)} = ${yuzde(t.h.oran)} → ${t.h.ad}${t.h.fr ? `; fr = 50 / √p = ${say(t.h.fr, 0)} Hz` : ''}` : `Trafo ve kurulu güç girilmedi; standart kondansatör kabul edildi.`]);
   ad.push([`${t.tr ? 6 : 5}. Kademe akımı ve koruma`, `In = Q / (√3 · 400) · ilk kademe ${kv(t.plan.q1)} kVAr → ${say(t.kademeler[0] ? t.kademeler[0].In : 0, 1)} A; koruma ${say(t.h.kKoruma, 2)} × In`]);
   ad.push([`${t.tr ? 7 : 6}. Kurulu batarya ile`, `tüm kademeler devredeyken cos φ ≈ ${t.cos2Gercek ? say(t.cos2Gercek, 3) : '—'}${t.kapasitifeGecer ? ' (kapasitif)' : ''}; röle hedefe göre kademe seçer.`]);
   $('adimlar').innerHTML = ad.map(([b, f]) => `<div class="adim"><b>${b}</b><div class="formul">${f}</div></div>`).join('');

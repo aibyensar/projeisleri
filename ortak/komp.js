@@ -151,7 +151,7 @@
   }
 
   // ---------- Hepsi bir arada ----------
-  // g: { P, cos1, cos2, trafoKVA, Gh, baskin, kademeN, duzen, yedek (0..), Pmin, InAna, U, Qkap }
+  // g: { P, cos1, cos2, trafoKVA, kuruluKVA, Gh, baskin, kademeN, duzen, yedek (0..), Pmin, InAna, U, Qkap }
   function tasarla(g) {
     const U = g.U || 400;
     const q = gerekenQ(g.P, g.cos1, g.cos2);
@@ -159,7 +159,9 @@
     const sabit = tr ? tr.sabit : 0;
     const Qhedef = q.Qc * (1 + (g.yedek || 0));                         // yedek pay dahil kurulacak otomatik + sabit
     const Qoto = Math.max(0, Qhedef);                                     // yük kompanzasyonu otomatik kademelerden
-    const h = harmonikSinif(g.Gh || 0, g.trafoKVA || 0, g.baskin || 5);
+    // harmonik oranı: özel trafo varsa trafo gücüne, yoksa (AG abonesi) tesisin kurulu gücüne (kVA) göre
+    const Sref = g.trafoKVA > 0 ? g.trafoKVA : (g.kuruluKVA || 0);
+    const h = Object.assign(harmonikSinif(g.Gh || 0, Sref, g.baskin || 5), { Sref, referans: g.trafoKVA > 0 ? 'trafo' : 'kurulu' });
     const plan = kademePlani(Qoto, g.kademeN, g.duzen, g.Pmin);
     const kademeler = plan.kademeler.map(Q => ekipman(Q, h, U));
     const sabitEk = sabit > 0 ? ekipman(sabit, h, U) : null;
