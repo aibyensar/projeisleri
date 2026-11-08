@@ -257,6 +257,11 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    kayan kutuda, seçilen satıra kendiliğinden kayar. Hesap mantığı DEĞİŞMEDİ. İç tesisat: solda girişler (%e rozetleri), sağda
    yapışkan sonuç + çizim. Ana sayfa: logolu başlık, 3 sütun. Ana sayfa artifact'ı (7oz…) files: araclar/*.html, ortak/stil.css,
    baglanti-hatti/logo/logo-beyaz.png; BHP artifact'ına da yeni stil.css gönderildi.
+1w. ANA SAYFA (8 Kasım 2026, "çok mühendislik, çok şık, eğlenceli"): üstte lacivert "pano" (her iki temada aynı): tek hat şeması
+   şebeke 34,5 kV → TR 34,5/0,4 kV → AG bara → F1/F2/F3 fiderleri (tıklanınca araç açılır; turuncu akan akım, yeşil LED), yedek
+   çıkışlar (açık kesici, gri). Göstergeler: pano saati, devrede 3/12, bara 0,4 kV. "Mühendis köşesi" formül şeridi (7 formül, 7 sn).
+   Altta "Devredeki araçlar" (F1–F3 modül kartları) ve "Yedek çıkışlar" (Y1–Y9, sıradaki araçlar). Yazı: Chakra Petch (başlık),
+   Inter, JetBrains Mono. Yeni araç eklenince: fider + modül kartı + gösterge sayısı + yedekten çıkar.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
