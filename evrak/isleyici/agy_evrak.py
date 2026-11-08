@@ -153,7 +153,7 @@ class Uygulama:
             self.simdi_tara.clear()
 
     def gunluk_uyari(self):
-        """Günde bir kez (günün ilk kontrolünde): 3 günü geçen iş varsa Windows bildirimi."""
+        """Günde bir kez (günün ilk kontrolünde): bekleyen / geciken iş özeti Windows bildirimi (iş yoksa "bekleyen iş yok")."""
         dosya = ayarlar.veri_klasoru() / 'son-gunluk-uyari.txt'
         bugun = dt.date.today().isoformat()
         try:
@@ -161,10 +161,15 @@ class Uygulama:
                 return
         except OSError:
             pass
-        gec = self.isleyici.gecikenler(self.isleyici.kuyruktaki_isler())
+        kuyruk = self.isleyici.kuyruktaki_isler()
+        gec = self.isleyici.gecikenler(kuyruk)
         if gec:
             adlar = ', '.join(f"{islem.buyuk(x['elektrikci'])} – {x['proje']}" for x in gec[:3]) + (' …' if len(gec) > 3 else '')
-            bildirim(f"{len(gec)} iş {self.ayar['gecikme_gun']} günü geçti", adlar)
+            bildirim(f"{len(kuyruk)} iş bekliyor, {len(gec)}'si {self.ayar['gecikme_gun']} günü geçti", adlar)
+        elif kuyruk:
+            bildirim('Bugün bekleyen işler', f'{len(kuyruk)} iş bekliyor; geciken yok.')
+        else:
+            bildirim('Bugün bekleyen iş yok', 'Çizilecek Projeler boş.')
         try:
             dosya.write_text(bugun)
         except OSError:

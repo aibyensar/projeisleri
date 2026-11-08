@@ -135,9 +135,13 @@ function saatlik() {
 
 function sabahOzeti() {
   const d = bekleyenler();
-  if (!d.isler.length) return;
   const alici = aliciBul();
   if (!alici) { console.error('Alıcı adresi bulunamadı: ALICI satırına e-posta adresini yazın.'); return; }
+  if (!d.isler.length) {
+    MailApp.sendEmail({ to: alici, subject: 'AGY Evrak — Bugün bekleyen iş yok', name: 'AGY Evrak',
+      body: 'Çizilecek Projeler — ' + Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy') + '\n\nBekleyen iş yok; liste boş.' });
+    return;
+  }
   const konu = 'AGY Evrak — Bugün bekleyen işler: ' + d.isler.length + (d.geciken ? ' (' + d.geciken + "'si gecikiyor)" : '');
   const metin = ['Çizilecek Projeler — ' + Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy'), ''].concat(d.satirlar)
     .concat(['', '⚠ = ' + GECIKME_GUN + ' günü geçen iş.']).join('\n');
