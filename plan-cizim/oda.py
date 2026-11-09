@@ -93,6 +93,12 @@ def bul(plan, kutu):
             continue
         cv2.line(duvar, iz.px(x1, y1), iz.px(x2, y2), 255, 2)
     duvar = cv2.dilate(duvar, np.ones((2, 2), np.uint8))
+    pencere = np.zeros((iz.h, iz.g), np.uint8)
+    for x1, y1, x2, y2, k in plan.cizgiler:
+        ku = k.upper()
+        if 'PENC' in ku or 'WINDOW' in ku or ku == 'CAM':
+            cv2.line(pencere, iz.px(x1, y1), iz.px(x2, y2), 255, 1)
+    iz.pencere_uzak = cv2.distanceTransform((pencere == 0).astype(np.uint8), cv2.DIST_L2, 5) * PX   # cm
 
     # oda adları
     odalar = []

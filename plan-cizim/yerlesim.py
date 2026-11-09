@@ -8,11 +8,14 @@ import math
 import cv2
 import numpy as np
 
+import guzergah as GZ
 import oda as O
 
-LAMBA_W, APLIK_W, PRIZ_W = 100, 60, 300
+_IZ = None          # yerlestir() içinde kurulur (pencere uzaklığı için)
+
+LAMBA_W, APLIK_W, PRIZ_W = 20, 20, 300          # kullanıcının projeleri: J-20W, C-20W, B-20W (LED)
 AYDINLATMA_W_M2 = 12
-CIHAZ_W = {'Ç': 2000, 'B': 2000, 'F': 2500, 'K': 300, 'KL': 1500}
+CIHAZ_W = {'Ç': 2000, 'B': 2000, 'F': 2500, 'K': 300, 'KL': 2200}
 EN_COK = {'aydinlatma': 9, 'priz': 7}
 
 
@@ -57,6 +60,15 @@ def _kapidan_uzak(o, x, y, mentese_pay=25, kilit_pay=40):
     return True
 
 
+def _pencere_onu(x, y, pay=30):
+    if _IZ is None or getattr(_IZ, 'pencere_uzak', None) is None:
+        return False
+    i, j = _IZ.px(x, y)
+    if not (0 <= j < _IZ.pencere_uzak.shape[0] and 0 <= i < _IZ.pencere_uzak.shape[1]):
+        return False
+    return _IZ.pencere_uzak[j, i] < pay
+
+
 def _duvar_adaylari(o, adim=20, kose=35, kenar_min=70):
     """Duvar boyunca priz konabilecek noktalar: [(x, y, içe_normal, kenar_no)]."""
     aday = []
@@ -67,10 +79,51 @@ def _duvar_adaylari(o, adim=20, kose=35, kenar_min=70):
         while t <= L - kose:
             x = p1[0] + (p2[0] - p1[0]) * t / L
             y = p1[1] + (p2[1] - p1[1]) * t / L
-            if _kapidan_uzak(o, x, y):
+            if _kapidan_uzak(o, x, y) and not _pencere_onu(x, y):
                 aday.append((x, y, n, no))
             t += adim
     return aday
+
+
+def _ic_duvar_mi(o, a, odalar):
+    """Aday noktanın duvarının arkasında başka bir oda var mı (iç duvar)?"""
+    x, y, n, _ = a
+    for d in range(10, 60, 4):
+        i, j = _IZ.px(x - n[0] * d, y - n[1] * d)
+        for b in odalar:
+            if b is not o and b.maske is not None and 0 <= j < b.maske.shape[0] and 0 <= i < b.maske.shape[1] and b.maske[j, i]:
+                return True
+    return False
+
+
+def _duvarda_topla(o, aday, adet, odalar, aralik=45):
+    """Kullanıcının düzeni: prizler bir iç duvarda (tercihen kapıya yakın) toplanır; sığmazsa sonraki duvar."""
+    if not aday or adet <= 0:
+        return []
+    kenarlar = {}
+    for a in aday:
+        kenarlar.setdefault(a[3], []).append(a)
+    kapi = o.kapilar[0].kilit if o.kapilar else (o.x, o.y)
+    def puan(k):
+        aa = kenarlar[k]
+        ic = _ic_duvar_mi(o, aa[len(aa) // 2], odalar)
+        uzak = min(math.hypot(a[0] - kapi[0], a[1] - kapi[1]) for a in aa)
+        return (0 if ic else 400) + uzak - 2 * len(aa)
+    secim = []
+    for k in sorted(kenarlar, key=puan):
+        aa = kenarlar[k]
+        while len(secim) < adet:
+            uygun = [a for a in aa if all(math.hypot(a[0] - s[0], a[1] - s[1]) >= aralik for s in secim)]
+            if not uygun:
+                break
+            # kenar boyunca eşit dağılsın: seçilmişlere en uzak, ilk seçimde kenarın ortası
+            if not any(s[3] == k for s in secim):
+                secim.append(uygun[len(uygun) // 2] if adet - len(secim) == 1 else uygun[len(uygun) // 4])
+            else:
+                secim.append(max(uygun, key=lambda a: min(math.hypot(a[0] - s[0], a[1] - s[1]) for s in secim if s[3] == k)))
+        if len(secim) >= adet:
+            break
+    return secim
 
 
 def _yayil(aday, adet, bas=None):
@@ -129,11 +182,13 @@ def _duvara_otur(iz, maske, x, y, n_tahmin, en_cok=60):
 
 # ---------------------------------------------------------------- odalar
 LAMBA_SAYISI = {'salon': lambda a: 1 if a <= 20 else 2, 'salon_mutfak': lambda a: 2, 'hol': lambda a: 1 if a <= 6 else 2}
-PRIZ_SAYISI = {'salon': 2, 'salon_mutfak': 4, 'oda': 2, 'mutfak': 4, 'hol': 1, 'banyo': 1}
+PRIZ_SAYISI = {'salon': 3, 'salon_mutfak': 4, 'oda': 2, 'mutfak': 4, 'hol': 1, 'banyo': 1}
 DISARIDAN = {'banyo', 'wc', 'kiler', 'balkon'}        # anahtarı kapının dışında olan odalar
 
 
 def yerlestir(iz, odalar, kapilar, plan):
+    global _IZ
+    _IZ = iz
     Y = Yerlesim()
     daireler = sorted({o.daire for o in odalar if o.daire})
     # kapısı bulunamayan oda: duvar ötesindeki en çok temas ettiği daireye
@@ -190,6 +245,7 @@ def _anahtar(Y, iz, o, lambalar, dod=()):
 
 
 def _daire(Y, iz, d, dod, odalar, plan):
+    tum_odalar = odalar
     tum = []
     for o in dod:
         lam = []
@@ -249,8 +305,14 @@ def _daire(Y, iz, d, dod, odalar, plan):
                 x, y, n, _ = s[0]
                 Y.ekle('priz', x, y, _aci(n), o, daire=d, guc=PRIZ_W, sinif='priz', not_='buzdolabı')
         elif o.tur in PRIZ_SAYISI:
-            for x, y, n, _ in _yayil(aday, PRIZ_SAYISI[o.tur]):
+            secilen = _duvarda_topla(o, aday, PRIZ_SAYISI[o.tur], odalar)
+            for x, y, n, _ in secilen:
                 Y.ekle('priz', x, y, _aci(n), o, daire=d, guc=PRIZ_W, sinif='priz')
+            if o.tur in ('salon', 'salon_mutfak'):           # klima (kullanıcının projelerinde salonda 2200 W)
+                kalan = [a for a in aday if all(math.hypot(a[0] - p[0], a[1] - p[1]) > 80 for p in secilen)]
+                k = _yayil([a for a in kalan if a[3] not in {p[3] for p in secilen}] or kalan, 1)
+                if k:
+                    Y.ekle('cihaz_KL', k[0][0], k[0][1], _aci(k[0][2]), o, daire=d, guc=CIHAZ_W['KL'], sinif='cihaz', harf='KL')
             if o.tur in ('salon', 'salon_mutfak'):
                 p = [s for s in Y.semboller if s['oda'] is o and s['tur'] == 'priz']
                 if p:
@@ -309,38 +371,77 @@ def _tablo_ve_linye(Y, iz, d, dod, odalar, isiklar):
         for l in bh[1]:
             l['anahtar'] = sw
 
-    def zincir(liste):
-        """Tablodan başlayan en kısa ağaç (Prim): her sorti bağlı olanların en yakınına bağlanır. s['onceki'] = bağlandığı nokta."""
-        bagli, kalan, yol = [tablo], list(liste), []
-        while kalan:
-            s, b = min(((s, b) for s in kalan for b in bagli), key=lambda sb: math.hypot(sb[0]['x'] - sb[1]['x'], sb[0]['y'] - sb[1]['y']))
-            s['onceki'] = b
-            yol.append(s); kalan.remove(s); bagli.append(s)
-        return yol
+    gz = GZ.Izgara(iz, odalar, list({id(k): k for o in dod for k in o.kapilar}.values()), dod)
+    def ic(sb, d=12):
+        a = math.radians(sb['aci'])
+        return sb['x'] - math.sin(a) * d, sb['y'] + math.cos(a) * d       # sembolün +y yönü (odanın içi)
+    tp = ic(tablo, 18)
+
+    def oda_sirasi(liste):
+        return sorted({id(s['oda']): s['oda'] for s in liste}.values(),
+                      key=lambda o: math.hypot(o.x - tablo['x'], o.y - tablo['y']))
 
     def grupla(liste, en_cok, en_az=1):
+        """Oda oda gruplar (bir odanın sortileri bölünmez), tablodan yakından uzağa."""
+        odalar_ = oda_sirasi(liste)
         k = max(en_az, math.ceil(len(liste) / en_cok))
-        if k <= 1 or len(liste) <= 1:
-            return [liste]
-        # tablodan bakış açısına göre dilimle
-        sirali = sorted(liste, key=lambda s: math.atan2(s['y'] - tablo['y'], s['x'] - tablo['x']))
-        boy = math.ceil(len(sirali) / k)
-        return [sirali[i:i + boy] for i in range(0, len(sirali), boy)]
+        hedef = math.ceil(len(liste) / k)
+        gruplar, g = [], []
+        for o in odalar_:
+            ss = [s for s in liste if s['oda'] is o]
+            if g and (len(g) + len(ss) > en_cok or (len(g) >= hedef and len(gruplar) < k - 1)):
+                gruplar.append(g); g = []
+            g += ss
+        if g:
+            gruplar.append(g)
+        return gruplar
 
     no = 0
+    istek = []
     for grup in grupla(isiklar, EN_COK['aydinlatma'], en_az=2):
         no += 1
-        Y.linyeler.append(dict(daire=d, ad=f'L{no}', sinif='aydinlatma', sira=zincir(grup), tablo=tablo,
-                               guc=sum(s['guc'] for s in grup), sigorta='10 A', kablo='3x2,5 mm² NYA'))
+        L = dict(daire=d, ad=f'L{no}', sinif='aydinlatma', sira=grup, tablo=tablo, cizgiler=[], duz=[],
+                 guc=sum(s['guc'] for s in grup), sigorta='10 A', kablo='3x2,5 mm² NYA')
+        anahtarlar = {id(s['anahtar']): s['anahtar'] for s in grup if s.get('anahtar')}
+        for sw in anahtarlar.values():
+            b = ic(sw, 14)
+            istek.append((L, b, [b]))
+            for s in grup:
+                if s.get('anahtar') is sw:
+                    L['duz'].append((b, (s['x'], s['y'])))
+        for s in grup:
+            if not s.get('anahtar'):
+                istek.append((L, (s['x'], s['y']), [(s['x'], s['y'])]))
+        Y.linyeler.append(L)
     prizler = [s for s in Y.semboller if s.get('daire') == d and s.get('sinif') == 'priz']
     for grup in grupla(prizler, EN_COK['priz']):
         no += 1
-        Y.linyeler.append(dict(daire=d, ad=f'L{no}', sinif='priz', sira=zincir(grup), tablo=tablo,
-                               guc=sum(s['guc'] for s in grup), sigorta='16 A', kablo='3x2,5 mm² NYA'))
+        L = dict(daire=d, ad=f'L{no}', sinif='priz', sira=grup, tablo=tablo, cizgiler=[], duz=[],
+                 guc=sum(s['guc'] for s in grup), sigorta='16 A', kablo='3x2,5 mm² NYA')
+        for o in oda_sirasi(grup):
+            pp = [s for s in grup if s['oda'] is o]
+            r = GZ.priz_hatti(o, iz, pp)
+            if not r:
+                continue
+            ana, baglar = r
+            uc = min((ana[0], ana[-1]), key=lambda q: math.hypot(q[0] - tp[0], q[1] - tp[1]))
+            istek.append((L, uc, [uc]))
+            L['cizgiler'].append(ana)
+            for p, q in baglar:
+                L['duz'].append(((p['x'], p['y']), q))
+        Y.linyeler.append(L)
     for s in [s for s in Y.semboller if s.get('daire') == d and s.get('sinif') == 'cihaz']:
         no += 1
-        Y.linyeler.append(dict(daire=d, ad=f'L{no}', sinif='cihaz', sira=[s], tablo=tablo, guc=s['guc'],
-                               sigorta='16 A', kablo='3x2,5 mm² NYA', harf=s['harf']))
+        b = ic(s, 15)
+        L = dict(daire=d, ad=f'L{no}', sinif='cihaz', sira=[s], tablo=tablo, cizgiler=[], duz=[(b, (s['x'], s['y']))],
+                 guc=s['guc'], sigorta='16 A', kablo='3x2,5 mm² NYA', harf=s['harf'])
+        istek.append((L, b, [b]))
+        Y.linyeler.append(L)
+    # uzaktaki hedefler önce: duvar dibindeki şeridi uzun hatlar alır, kısalar yanına dizilir (kesişme azalır)
+    for L, hedef, ek in sorted(istek, key=lambda r: -math.hypot(r[1][0] - tp[0], r[1][1] - tp[1])):
+        yol = gz.yol(tp, hedef)
+        if yol:
+            L['cizgiler'].insert(0, yol + ek)
     for l in Y.linyeler:
         if l['daire'] == d:
             for s in l['sira']:

@@ -16,7 +16,7 @@ Kaynak: Elektrik İç Tesisleri Yönetmeliği (RG 04.11.1984/18565), değişikli
 ## Güçler (kurulu güç)
 - 🔒 Priz: bir fazlı en az 300 W, üç fazlı en az 600 W.
 - 🔒 Aydınlatma hesabı yapılmayan yerde en az 12 W/m².
-- ⚙ Lamba sortisi 100 W, aplik 60 W (yönetmelikte sorti başına değer yok; yaygın proje uygulaması).
+- 👤 Lamba sortisi 20 W (J-20W), etanj C-20W, balkon B-20W (kullanıcının onaylı projeleri, LED). Klima 2200 W.
   Oda aydınlatma gücü = en büyüğü (sortilerin toplamı, alan × 12 W/m²); fark varsa sorti gücü artırılır.
 - 👤 Ayrı cihaz linyeleri: çamaşır 2000 W, bulaşık 2000 W, kombi (gazlı) 300 W. ⚙ fırın 2500 W, ocak 2500 W (elektrikli ise),
   klima 1500 W (12000 BTU). Elektrikli kombi ve engelli lifti: etiket gücü sorulur (elektrikli kombi çoğunlukla trifaze).
@@ -39,3 +39,10 @@ Kaynak: Elektrik İç Tesisleri Yönetmeliği (RG 04.11.1984/18565), değişikli
 - Lamba oda ortasında; iki lambada oda boyunca eşit aralık. Prizler duvarlara dağıtılır, kapı arkasına gelmez.
 - Banyoda küvet/duş kenarından 60 cm içine priz ve anahtar konmaz (TS HD 60364-7-701).
 - 🔒 Döşemeden 230 cm'ye kadar apliklere koruma iletkeni.
+
+## Çizim düzeni (kullanıcının onaylı projelerinden, 9 Kasım 2026)
+- Tablo (TN) holde, daire girişinin yanında.
+- Linyeler tablodan çıkar, holde duvara paralel yan yana demet hâlinde gider, köşelerde 90° döner, odaya kapıdan girer.
+- Aydınlatma: linye kapı yanındaki anahtara gelir (buat noktası), anahtardan lambalara düz çizgi.
+- Priz: duvar boyunca giden ana hat + her prize kısa dik bağlantı; prizler bir iç duvarda toplanır (pencere ve kapı önüne konmaz).
+- Salonda 3 priz + TV + klima (2200 W, ayrı linye).

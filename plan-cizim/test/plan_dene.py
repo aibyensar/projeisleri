@@ -74,17 +74,15 @@ def main():
     # linyeler
     for l in Y.linyeler:
         r = RENK[l['sinif']]
-        for i, s in enumerate(l['sira']):
-            b = s.get('onceki') or l['tablo']
-            ax.plot([b['x'], s['x']], [b['y'], s['y']], color=r, lw=0.8, zorder=3)
-            if i == 0:
-                mx, my = (b['x'] + s['x']) / 2, (b['y'] + s['y']) / 2
-                ax.text(mx, my, l['ad'], fontsize=6, color=r, weight='bold', zorder=7,
-                        bbox=dict(fc='white', ec='none', pad=0.3))
-    for s in Y.semboller:                               # anahtar → lamba sortisi
-        if s['tur'] in ('anahtar', 'vavien', 'etanj_anahtar'):
-            for l in s.get('bagli') or []:
-                ax.plot([s['x'], l['x']], [s['y'], l['y']], color=RENK['aydinlatma'], lw=0.5, ls=(0, (3, 2)), zorder=3)
+        for k, yol in enumerate(l['cizgiler']):
+            ax.plot([p[0] for p in yol], [p[1] for p in yol], color=r, lw=0.7, zorder=3)
+            if k == 0 and len(yol) > 2:
+                q = yol[-3] if len(yol) > 3 else yol[-2]
+                ax.text(q[0], q[1], l['ad'], fontsize=5, color=r, weight='bold', zorder=7,
+                        bbox=dict(fc='white', ec='none', pad=0.2))
+        for p, q in l['duz']:
+            ax.plot([p[0], q[0]], [p[1], q[1]], color=r, lw=0.7, zorder=3)
+            ax.add_patch(Circle(p, 2.2, fc='white', ec=r, lw=0.6, zorder=4))
     for s in Y.semboller:
         sembol_ciz(ax, s)
 
