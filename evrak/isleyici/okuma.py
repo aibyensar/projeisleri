@@ -90,7 +90,7 @@ def bilgi_cikar(metin: str) -> dict:
         if p:
             b['parsel'] = p.group(1)
     r = re.search(r'\bIL\s*:\s*([A-Z]+)\s*,?\s*ILCE\s*:\s*([A-Z]+)', m)
-    if not r:                                         # "MANISA/YUNUSEMRE" — yalnız gerçek il adıyla
+    if not r:                                         # "IZMIR/BORNOVA" gibi — yalnız gerçek il adıyla
         r = next((x for x in re.finditer(r'\b([A-Z]{3,})\s*/\s*([A-Z]{3,})\b', m) if x.group(1) in ILLER), None)
     if r:
         b['il_ilce'] = f'{r.group(1)}/{r.group(2)}'
