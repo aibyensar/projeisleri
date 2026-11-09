@@ -347,14 +347,17 @@ class Isleyici:
                 is_['yeni_evrak'] = simdi().isoformat()
 
         ad = f"{buyuk(is_['elektrikci'])} – {is_['proje']}"
+        # telefondan gelen pakette e-posta form kaydedilince Google tarafından gönderildi; yeni bir şey yoksa tekrar atılmaz
+        tekrar_yok = bool(b.get('epostaGitti')) and not any(e.get('uyari') for e in eklenen)
         if masaustu_klasoru and not eklenen:
             self.bildir('Evrak zaten var', f'{ad}: gönderilen evrak işte zaten vardı')
             self.eposta(f'{ad} · evrak zaten vardı', ['Gönderilen evrak bu işte zaten vardı, yeni dosya eklenmedi.'])
         elif masaustu_klasoru:
             bilgi_yaz(masaustu_klasoru / YENI_ALT, is_, sadece=eklenen)
             self.bildir('Masaüstündeki işe yeni evrak', f"{ad}: {len(eklenen)} evrak '{YENI_ALT}' klasörüne kondu")
-            self.eposta(f'{ad} · {len(eklenen)} yeni evrak (masaüstündeki iş)',
-                        [f'Masaüstündeki iş klasörüne, "{YENI_ALT}" içine kondu.'] + self._bulanik_satiri(eklenen))
+            if not tekrar_yok:
+                self.eposta(f'{ad} · {len(eklenen)} yeni evrak (masaüstündeki iş)',
+                            [f'Masaüstündeki iş klasörüne, "{YENI_ALT}" içine kondu.'] + self._bulanik_satiri(eklenen))
         else:
             tumu_yap(k, is_)
             bilgi_yaz(k, is_)
@@ -363,7 +366,8 @@ class Isleyici:
             self.bildir('Evrak işlendi', f"{ad}: {len(eklenen)} evrak · {durum}" + (' · KONTROL' if is_['uyarilar'] else ''))
             satir = [f"{len(eklenen)} evrak geldi, Çizilecek Projeler'e kondu."] + self._bulanik_satiri(eklenen)
             konu = f"{ad} · {len(eklenen)} evrak · {'HAZIR' if is_['tamam'] else 'EVRAK EKSİK'}" + (' · ACİL' if is_['acil'] else '')
-            self.eposta(konu, satir)
+            if not (tekrar_yok and not is_['uyarilar']):
+                self.eposta(konu, satir)
 
         arsiv = benzersiz(self.kok / ARSIV / p.name)
         shutil.move(str(p), str(arsiv))

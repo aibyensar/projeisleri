@@ -1,5 +1,5 @@
 // AGY Evrak — telefondaki kestirmeden gelen dosyaları şirket Drive'ına kaydeder ve paket bilgisini (elektrikçi, proje,
-// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.6 (bildirimGonder geri eklendi; tam sürüm). Kurgu: evrak/KURGU.md
+// tür, ACİL, evrak tamam) telefondaki küçük bir formdan alır. Sürüm 1.7 (paket e-postası bilgisayar kapalıyken de gider). Kurgu: evrak/KURGU.md
 // Gizli anahtarı yalnız burada ve telefondaki kestirmede tutun.
 const ANAHTAR = 'BURAYA-KENDİ-GİZLİ-ANAHTARINIZ';
 const ANA_KLASOR = 'AGY Evrak';
@@ -72,6 +72,8 @@ function bilgiKaydet(paket, b) {
     dosyaSayisi: dosyaSayisi(k), kayit: new Date().toISOString(),
   };
   const eski = k.getFilesByName('paket.json');
+  const duzeltme = eski.hasNext();
+  bilgi.epostaGitti = paketEpostasi(bilgi, duzeltme);          // bilgisayar kapalı olsa da e-posta hemen gider
   while (eski.hasNext()) eski.next().setTrashed(true);          // düzeltme: eski bilgi çöpe, yenisi yazılır
   k.createFile('paket.json', JSON.stringify(bilgi, null, 2), 'application/json');
   isEkle({ elektrikci: elektrikci, proje: proje, tur: tur });
@@ -81,6 +83,49 @@ function bilgiKaydet(paket, b) {
 }
 
 // ---------- E-posta özeti ----------
+// Form kaydedilince hemen (bilgisayarı beklemeden). Bilgisayar sonra aynı paket için ayrıca e-posta atmaz
+// (bulanık evrak / kontrol gibi yeni bir şey yoksa).
+function paketEpostasi(b, duzeltme) {
+  try {
+    const alici = aliciBul();
+    if (!alici) return false;
+    const ad = b.elektrikci.toLocaleUpperCase('tr-TR') + ' – ' + b.proje;
+    const konu = 'AGY Evrak — ' + ad + ' · ' + b.dosyaSayisi + ' evrak · ' + (b.evrakTamam ? 'HAZIR' : 'EVRAK EKSİK') +
+      (b.acil ? ' · ACİL' : '') + (duzeltme ? ' (düzeltme)' : '');
+    const satirlar = [b.dosyaSayisi + " evrak telefondan geldi. Bilgisayar açılınca Çizilecek Projeler'e konacak."];
+    if (b.not) satirlar.push('Not: ' + b.not);
+    MailApp.sendEmail({ to: alici, subject: konu, body: satirlar.join('\n'), name: 'AGY Evrak' });
+    return true;
+  } catch (hata) {
+    console.error('paket e-postası gönderilemedi: ' + hata);
+    return false;
+  }
+}
+
+// Saatte bir: telefondan gelip formu 1 saattir doldurulmamış paketler için bir kez hatırlatma (form bağlantısıyla)
+function formsuzPaketler() {
+  const alici = aliciBul();
+  if (!alici) return;
+  const p = PropertiesService.getScriptProperties();
+  const bildirilen = liste('formsuz');
+  const it = gelenKlasoru().getFolders();
+  let url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (x) { url = ''; }
+  while (it.hasNext()) {
+    const k = it.next(), ad = k.getName();
+    if (/-pc$/.test(ad) || bildirilen.indexOf(ad) >= 0 || k.getFilesByName('paket.json').hasNext()) continue;
+    const yas = (Date.now() - k.getDateCreated().getTime()) / 3600000;
+    if (yas < 1 || yas > FORM_SURESI_SAAT) continue;
+    const n = dosyaSayisi(k);
+    if (!n) continue;
+    MailApp.sendEmail({ to: alici, name: 'AGY Evrak', subject: 'AGY Evrak — ' + n + ' evrak geldi, bilgisi girilmedi',
+      body: n + ' evrak telefondan geldi ama elektrikçi / proje bilgisi girilmedi.' +
+        (url ? '\nBilgiyi girmek için: ' + url + '?form=' + ad : '') });
+    bildirilen.unshift(ad);
+  }
+  p.setProperty('formsuz', JSON.stringify(bildirilen.slice(0, 100)));
+}
+
 // Bir kez çalıştırın (düzenleyicide işlev listesinden "kurulum" → Çalıştır): 5 dakikada bir bildirimGonder çalışır.
 function kurulum() {
   ScriptApp.getProjectTriggers().filter(t => ['bildirimGonder', 'saatlik'].indexOf(t.getHandlerFunction()) >= 0).forEach(t => ScriptApp.deleteTrigger(t));
@@ -131,6 +176,7 @@ function saatlik() {
   const saat = +Utilities.formatDate(simdi, 'Europe/Istanbul', 'H');
   const gun = Utilities.formatDate(simdi, 'Europe/Istanbul', 'yyyy-MM-dd');
   const p = PropertiesService.getScriptProperties();
+  try { formsuzPaketler(); } catch (hata) { console.error('formsuz paket denetimi: ' + hata); }
   if (saat !== SABAH_SAATI || p.getProperty('sabahOzeti') === gun) return;
   p.setProperty('sabahOzeti', gun);
   sabahOzeti();

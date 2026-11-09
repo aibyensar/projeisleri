@@ -61,3 +61,15 @@ print(open(kok / 'Kayıt.csv', encoding='utf-8-sig').read()[:600])
 r = next(x for x in (kok / 'Çizilecek Projeler').iterdir() if 'REVİZYON' in x.name)
 print((r / '_bilgi.txt').read_text(encoding='utf-8'))
 print('TMP', tmp)
+
+# telefondan gelen pakette e-postayı Google zaten attıysa (epostaGitti) bilgisayar ikinci e-postayı atmaz
+bk = kok / '7-Bildirim'
+once = len(list(bk.glob('*.json'))) if bk.exists() else 0
+paket('20261111-100000', ['ekran.png'], dict(b, elektrikci='Ali Usta', proje='Deniz Evi', epostaGitti=True))
+tur2()
+sonra = len(list(bk.glob('*.json'))) if bk.exists() else 0
+assert sonra == once, f'epostaGitti pakette tekrar e-posta yazıldı ({once} → {sonra})'
+paket('20261111-110000', ['ekran.png'], dict(b, elektrikci='Can Usta', proje='Göl Evi'))
+tur2()
+assert len(list(bk.glob('*.json'))) == sonra + 1, 'bilgisayardan gelen pakette e-posta yazılmadı'
+print('E-POSTA TEKRARI YOK: TAMAM')

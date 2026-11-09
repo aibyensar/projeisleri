@@ -296,7 +296,7 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    PC günlük Windows bildirimi. Kod.gs 1.6 (ANAHTAR ve ALICI satırları kullanıcıda doldurulur), İşleyici 1.0.7.
    appsscript.json'da açık oauthScopes şart (MailApp izni kendiliğinden istenmedi; izin kaldırılıp "tümünü seç" ile
    yeniden verildi). Kod.gs değişince: node evrak/apps-script/test/dene.js evrak/apps-script/Kod.gs (1.4'te bildirimGonder
-   yanlışlıkla silinmişti). E-postalar kullanıcı isteğiyle sade.
+   yanlışlıkla silinmişti). E-postalar kullanıcı isteğiyle sade. Kod.gs 1.7 / İşleyici 1.1.1: telefondan gelen paketin e-postası form kaydedilince Google tarafından hemen gider (PC kapalıyken de); paket.json'a epostaGitti yazılır, PC o paket için yalnız bulanık/kontrol varsa ikinci e-posta atar. Formu 1 saat doldurulmayan telefon paketi için saatlik bir kez hatırlatma (form bağlantılı).
    KALAN: (a) [yapıldı] e-posta özeti,
    (b) [yapıldı, İşleyici 1.1.0] OCR ile evrak türü adı: evrak/isleyici/okuma.py (TURLER regex puanı, ESIK 4; PDF yazısı
    pypdf, taranmış PDF pypdfium2 + Tesseract tur — CI'da choco'dan alınıp exe'ye gömülür). Aynı türdeki sayfalar tek PDF,
