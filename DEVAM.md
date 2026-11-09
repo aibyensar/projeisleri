@@ -302,7 +302,7 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    pypdf, taranmış PDF pypdfium2 + Tesseract tur — CI'da choco'dan alınıp exe'ye gömülür). Aynı türdeki sayfalar tek PDF,
    _bilgi.txt'ye "Evraklardan okunan: Ada/Parsel/Mahalle/İl-İlçe", farklı ada/parsel uyarısı. Windows dersi: PDF'ler
    bayt olarak okunup hemen kapatılmalı (WinError 32). Tanınmayan tür eski adını korur; kullanıcı bildirdikçe TURLER'e
-   eklenecek. Kullanıcı 1.1.0'ı henüz kurup gerçek evrakla denemedi. (c) masaüstündeki
+   eklenecek. 9 Kasım 2026: kullanıcı Kod.gs 1.7 + İşleyici 1.1.1'i kurdu, PC kapalıyken e-posta ve OCR adlandırma denendi — "herşey yolunda". (c) masaüstündeki
    "Çizilecek Projeler.lnk" şahsi Drive yedeklemesinde X gösteriyor (zararsız), (d) bir hafta gerçek kullanım.
    Kişisel veri depoya girmez; kullanıcının gönderdiği gerçek evrak fotoğrafları yalnız oturumda denendi, türevleri silindi.
 2. Kullanıcı gerçek işlerde deneyip eksikleri bildirecek (iç tesisat okuma sonuçları, "sembollerde hâlâ hata" — hangileri olduğu sorulmadı/
