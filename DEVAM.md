@@ -309,6 +309,11 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
 
+5. YENİ İŞ (9 Kasım 2026): AutoCAD'de otomatik çizim + trafo projesi. Kullanıcı sırası: ÖNCE İÇ TESİSAT, SONRA TRAFO.
+   İç tesisatta: (a) kolon şeması + tek hat/pano şeması (tablodaki sayılardan), (b) sembol yerleştirme + linye/sorti çekme
+   (mimari plandan; önce tek kat denemesi). Trafo: direk, beton köşk, bina içi, metal köşk/kompakt — hepsi çiziliyor.
+   Kullanıcıdan kendi çizdiği bitmiş iç tesisat projesi (DWG tercih, yoksa PDF) + güç tablosu istendi; tarzı birebir kopyalanacak.
+
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
 yayin-hazirla.py → publish → commit/push → DEVAM.md güncelle → kullanıcıya önizleme + örnek zip.
