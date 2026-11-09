@@ -18,8 +18,8 @@ Kaynak: Elektrik İç Tesisleri Yönetmeliği (RG 04.11.1984/18565), değişikli
 - 🔒 Aydınlatma hesabı yapılmayan yerde en az 12 W/m².
 - ⚙ Lamba sortisi 100 W, aplik 60 W (yönetmelikte sorti başına değer yok; yaygın proje uygulaması).
   Oda aydınlatma gücü = en büyüğü (sortilerin toplamı, alan × 12 W/m²); fark varsa sorti gücü artırılır.
-- ⚙ Ayrı cihaz linyeleri: çamaşır 2200 W, bulaşık 2200 W, fırın 2500 W, ocak 2500 W (elektrikli ise), kombi 300 W,
-  klima 1500 W (12000 BTU), engelli lifti etiket değeri (sorulur).
+- 👤 Ayrı cihaz linyeleri: çamaşır 2000 W, bulaşık 2000 W, kombi (gazlı) 300 W. ⚙ fırın 2500 W, ocak 2500 W (elektrikli ise),
+  klima 1500 W (12000 BTU). Elektrikli kombi ve engelli lifti: etiket gücü sorulur (elektrikli kombi çoğunlukla trifaze).
 
 ## Oda başına (en az; 🔒 salon > 20 m² ve mutfak ≥ 2 priz, oda ve banyo ≥ 1 priz)
 | Oda | Lamba | Priz | Ayrıca |
