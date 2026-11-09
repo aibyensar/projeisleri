@@ -120,7 +120,7 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
   gösterilir ve "karşılaştırdım, doğru" kutusu (gucOnay) işaretlenmeden indirilmez. PDF yazısından gelen antet değerleri önceliklidir.
 - Gerçek claude.ai'de (sample) kullanıcı HENÜZ DENEMEDİ; dene.mjs/ resimden-oku-dene.js yalnız akışı sahte cevaplarla dener.
 
-**AÇIK KONULAR (sıradaki)**
+**AÇIK KONULAR** — 9 Kasım 2026: kullanıcı aşağıdakilerin hepsini "tamam" saydı; eksik çıktıkça kendisi bildirecek (sormaya gerek yok).
 1. KAPAK — YAPILDI (7 Kasım 2026, kullanıcı henüz "tamam" demedi): kullanıcı KAPAK.dxf'i (DXF AC1021, 61 MB, rar içinde) gönderdi.
    `baglanti-hatti/kapak-ekle.py KAPAK.dxf BHP-SABLON.dxf` antetin yerine koyar (sablon-olustur.py'den sonra; KAPAK.dxf depoda YOK,
    gerekirse kullanıcıdan istenir). Kapak 1/5 ölçekle antet kutusuna (-267.83..-78.14 x 5394.67..5670.91) oturur; sığsın diye yalnız boş
@@ -309,6 +309,6 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    gelmedi).
 3. Havai hat çizimi yok (örnek istenecek). 4. Dal (claude/laughing-dijkstra-5c7tbv) kullanıcının isteğiyle 8 Kasım 2026'da main'e birleştirildi (main = dal). Sonraki işler yine dalda yapılır, kullanıcı onaylayınca main'e alınır.
 
-**Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; kapak için kullanıcının görüşünü alın (1. madde).
+**Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
 yayin-hazirla.py → publish → commit/push → DEVAM.md güncelle → kullanıcıya önizleme + örnek zip.
