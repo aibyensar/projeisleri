@@ -312,7 +312,12 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
 5. YENİ İŞ (9 Kasım 2026): AutoCAD'de otomatik çizim + trafo projesi. Kullanıcı sırası: ÖNCE İÇ TESİSAT, SONRA TRAFO.
    İç tesisatta: (a) kolon şeması + tek hat/pano şeması (tablodaki sayılardan), (b) sembol yerleştirme + linye/sorti çekme
    (mimari plandan; önce tek kat denemesi). Trafo: direk, beton köşk, bina içi, metal köşk/kompakt — hepsi çiziliyor.
-   Kullanıcıdan kendi çizdiği bitmiş iç tesisat projesi (DWG tercih, yoksa PDF) + güç tablosu istendi; tarzı birebir kopyalanacak.
+   Kullanıcının "sağlıklı" iç tesisat projesi YOK; sıra değişti: ÖNCE PLAN ÇİZİMİ (sembol + linye/sorti, yarı otomatik: oda
+   etiketinden/tıklamayla oda bulunur), kolon/tek hat plandan çıkacak. Kullanıcı 4 mimari DWG gönderdi (depoda YOK; kişisel ad
+   içeriyor). Bulgular: hepsi aynı mimarlık bürosu düzeni, birim cm, 1/50; katmanlar 04-DUVAR, 06-PENCERE, KAPI_PENCERE,
+   11-YAZI (oda etiketi MTEXT "AD\PA=xx M2", oda içinde), 09-TEFRİS, TARAMA (çok sayıda LINE); kapılar "kapı …" blokları,
+   tefriş blokları lavabo/klozet/ocak/eviye, "KOMBİ" yazısı. Okuma: libredwg-web (dwg-oku.mjs) → JSON; çizim önizleme
+   matplotlib (blokları açarak). Başka mimarda etiket olmayabilir → tıklayıp oda türü seçme yedek yol.
 
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
