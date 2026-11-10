@@ -8,6 +8,7 @@ import math
 import cv2
 import numpy as np
 
+import aydinlatma as AY
 import guzergah as GZ
 import oda as O
 
@@ -250,8 +251,14 @@ def _daire(Y, iz, d, dod, odalar, plan):
     for o in dod:
         lam = []
         alan = o.alan_yazi or o.alan
+        # aydınlatma hesabı (lümen yöntemi): armatür sayısı ve gücü
+        jj, ii = np.nonzero(o.maske)
+        (_, _), (ra, rb), _ = cv2.minAreaRect(np.stack([ii, jj], 1).astype(np.float32))
+        oa, ob = ra * O.PX / 100, rb * O.PX / 100
+        adet0 = LAMBA_SAYISI.get(o.tur, lambda a: 1)(alan) if o.tur not in ('banyo', 'wc', 'balkon') else 1
+        o.aydinlatma = AY.hesapla(o.tur, alan, oa, ob, adet0)
         if o.tur in ('salon', 'salon_mutfak', 'oda', 'mutfak', 'hol', 'kiler', 'isyeri', 'diger'):
-            adet = LAMBA_SAYISI.get(o.tur, lambda a: 1)(alan)
+            adet = o.aydinlatma['adet']
             for x, y in _lamba_yerleri(o, iz, adet):
                 lam.append(Y.ekle('lamba', x, y, 0, o, daire=d, guc=LAMBA_W))
         elif o.tur in ('banyo', 'wc'):
@@ -263,13 +270,9 @@ def _daire(Y, iz, d, dod, odalar, plan):
                 yer = _duvara_otur(iz, o.maske, kp.kilit[0] + kp.u[0] * 35, kp.kilit[1] + kp.u[1] * 35, kp.n)
                 if yer:
                     lam.append(Y.ekle('etanj_aplik', yer[0], yer[1], _aci(yer[2]), o, daire=d, guc=APLIK_W))
-        # 12 W/m² alt sınırı
-        if lam:
-            gerek = alan * AYDINLATMA_W_M2
-            top = sum(l['guc'] for l in lam)
-            if top < gerek:
-                for l in lam:
-                    l['guc'] = math.ceil(gerek / len(lam) / 5) * 5
+        # armatür gücü aydınlatma hesabından (yönetmelik: hesap yapılan binada güç hesaptan gelir)
+        for l in lam:
+            l['guc'] = o.aydinlatma['guc']
         _anahtar(Y, iz, o, lam, dod)
         tum += lam
 

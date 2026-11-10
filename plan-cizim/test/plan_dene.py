@@ -93,6 +93,15 @@ def main():
         print(f'{o.no:>2} {o.ad:<10} {o.tur:<8} daire {o.daire}  {o.alan:.1f}/{o.alan_yazi} m²  {o.supheli}')
     for l in Y.linyeler:
         print(f"daire {l['daire']} {l['ad']:<4} {l['sinif']:<10} {len(l['sira'])} sorti  {l['guc']:>5} W  {l['sigorta']}")
+    print('\nAYDINLATMA HESABI (lümen yöntemi)')
+    print(f"{'oda':<10}{'A m²':>6}{'a×b m':>11}{'k':>6}{'η':>6}{'E lx':>6}{'Φ lm':>7}{'gerek W':>8}  armatür   W/m²")
+    for o in odalar:
+        a = getattr(o, 'aydinlatma', None)
+        if a:
+            print(f"{o.ad:<10}{a['alan']:>6}{a['a']:>5}×{a['b']:<5}{a['k']:>6}{a['eta']:>6}{a['E']:>6}{a['phi']:>7}{a['w_gerek']:>8}  {a['adet']}×{a['guc']} W  {a['w_m2']:>5}")
+    for d in sorted({o.daire for o in odalar if o.daire}):
+        top = sum(s.get('guc', 0) or 0 for s in Y.semboller if s.get('daire') == d)
+        print(f'daire {d} kurulu güç: {top} W')
     for u in Y.uyarilar:
         print('UYARI', u)
 
