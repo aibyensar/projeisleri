@@ -319,6 +319,12 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    tefriş blokları lavabo/klozet/ocak/eviye, "KOMBİ" yazısı. Okuma: libredwg-web (dwg-oku.mjs) → JSON; çizim önizleme
    matplotlib (blokları açarak). Başka mimarda etiket olmayabilir → tıklayıp oda türü seçme yedek yol.
 
+6. HAVAİ HAT (12 Kasım 2026): kullanıcı kendi yaptığı "AG Cer Hesabı ve Direk Seçimi" aracını (ag-cer-hesabi.zip: src/cer-core.js
+   hesap çekirdeği, kroki-rapor.js kroki + cer raporu, parsel-bul.js, app.html; testler geçiyor) BHP'nin boş "Havai" sayfasına entegre
+   etmek istiyor. Plan sohbette verildi; kullanıcı "başla" demeden uygulanmayacak. Çelişkiler: %e sınırı (cer aracı %1, BHP %1,5),
+   güç (bağlantı kW vs GDZ talep), DXF yazıcı (R12 ANSI_1254 vs BHP şablonu), doğrulanacak değerler (direk tepe kuvvetleri, ALPEK σ=12
+   ve akımlar, buz yükü bölgesi Manisa ilçeleri). Zip depoda yok (oturum geçici klasöründe).
+
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
 yayin-hazirla.py → publish → commit/push → DEVAM.md güncelle → kullanıcıya önizleme + örnek zip.
