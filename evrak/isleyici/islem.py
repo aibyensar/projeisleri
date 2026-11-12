@@ -330,13 +330,14 @@ class Isleyici:
                 continue
             ozetler.add(oz)
             (k / ORIJINAL).mkdir(parents=True, exist_ok=True)
-            e = self.evrak_isle(f, k)
-            e.update(ozet=oz, tarih=paket_zamani.isoformat(), paket=p.name)
-            is_['evraklar'].append(e)
-            eklenen.append(e)
-            if e.get('uyari'):
-                is_['uyarilar'].append(f"{e['ad']}: {e['uyari']}")
-            kayitlar.append({'tarih': simdi().isoformat(), 'is': is_['id'], 'olay': 'evrak eklendi', 'dosya': e['tur']})
+            sonuc = self.evrak_isle(f, k)
+            for n, e in enumerate(sonuc if isinstance(sonuc, list) else [sonuc]):
+                e.update(ozet=oz if n == 0 else f'{oz}#{n}', tarih=paket_zamani.isoformat(), paket=p.name)
+                is_['evraklar'].append(e)
+                eklenen.append(e)
+                if e.get('uyari'):
+                    is_['uyarilar'].append(f"{e['ad']}: {e['uyari']}")
+                kayitlar.append({'tarih': simdi().isoformat(), 'is': is_['id'], 'olay': 'evrak eklendi', 'dosya': e['tur']})
 
         if len(eklenen) > 1:
             self.ayni_turu_birlestir(k, is_, eklenen)
@@ -435,6 +436,8 @@ class Isleyici:
                 hedef = benzersiz(k / temiz(asil_ad(f.name), 120))
                 shutil.copy2(f, hedef)
                 e.update(ad=hedef.name, uyari=f'resim işlenemedi ({type(hata).__name__}), olduğu gibi kondu')
+        elif uz == '.pdf' and (parcalar := self._pdf_bol(f, k, ad)):
+            return parcalar
         else:
             metin = ''
             if uz == '.pdf':
@@ -448,6 +451,39 @@ class Isleyici:
             shutil.copy2(f, hedef)
             e['ad'] = hedef.name
         return e
+
+    def _pdf_bol(self, f: Path, k: Path, ad: str):
+        """Çok sayfalı PDF'te birden çok belge varsa (CamScanner'da birleştirilmiş tapu + kimlik + …) her belgeyi ayrı PDF
+        yapar → evrak listesi. Tek belgeyse None (dosya olduğu gibi işlenir)."""
+        try:
+            from pypdf import PdfReader, PdfWriter
+            r = PdfReader(io.BytesIO(f.read_bytes()))
+            if r.is_encrypted or len(r.pages) < 2:
+                return None
+            metinler = okuma.pdf_sayfa_metinleri(f)
+            if len(metinler) != len(r.pages):
+                return None
+            bolum = okuma.bolumle(metinler, f.name)
+            if len(bolum) < 2:
+                return None
+            out = []
+            for tur, sayfalar in bolum:
+                yazar = PdfWriter()
+                for i in sayfalar:
+                    yazar.add_page(r.pages[i])
+                s1, s2 = sayfalar[0] + 1, sayfalar[-1] + 1
+                ek = f' (s.{s1})' if s1 == s2 else f' (s.{s1}-{s2})'
+                hedef = benzersiz(k / f'{tur or ad + ek}.pdf')
+                with open(hedef, 'wb') as fp:
+                    yazar.write(fp)
+                metin = '\n'.join(metinler[i] for i in sayfalar)
+                out.append({'ad': hedef.name, 'kaynak': asil_ad(f.name), 'tur': 'pdf', 'evrak_turu': tur,
+                            'okunan': okuma.bilgi_cikar(metin), 'sayfa': len(sayfalar),
+                            'aciklama': f'birleşik PDF\'ten ayrıldı (sayfa {s1}' + (f'-{s2})' if s2 != s1 else ')')})
+            return out
+        except Exception:
+            log.exception('PDF bölünemedi')
+            return None
 
     def ayni_turu_birlestir(self, k: Path, is_, eklenen):
         """Aynı gönderimde aynı türden birden çok PDF (ör. tapunun 1. ve 2. sayfası) tek PDF'te birleşir."""

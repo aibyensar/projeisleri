@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 UYGULAMA = 'AGY Evrak'
-SURUM = '1.1.1'
+SURUM = '1.2.0'
 
 VARSAYILAN = {
     'kok': r"H:\Drive'ım\AGY Evrak",   # şirket Drive'ındaki AGY Evrak klasörü

@@ -124,6 +124,45 @@ def pdf_ilk_sayfa_resmi(yol, dpi=200):
         return None
 
 
+def pdf_sayfa_metinleri(yol, en_cok=30, dpi=200):
+    """Her sayfanın yazısı (sayfada yazı yoksa o sayfa resme çevrilip OCR yapılır). Okunamazsa []."""
+    try:
+        from pypdf import PdfReader
+        bayt = Path(yol).read_bytes()
+        r = PdfReader(io.BytesIO(bayt))
+        if r.is_encrypted:
+            return []
+        metinler = [(s.extract_text() or '') for s in r.pages[:en_cok]]
+    except Exception:
+        return []
+    eksik = [i for i, m in enumerate(metinler) if len(m.strip()) < 40]
+    if eksik:
+        try:
+            import pypdfium2 as pdfium
+            belge = pdfium.PdfDocument(bayt)
+            try:
+                for i in eksik:
+                    metinler[i] = resim_metni(belge[i].render(scale=dpi / 72).to_pil())
+            finally:
+                belge.close()
+        except Exception:
+            log.exception('PDF sayfaları okunamadı')
+    return metinler
+
+
+def bolumle(metinler, dosya_adi=''):
+    """Sayfaları belgelere ayırır: [(tür | None, [sayfa_no, …])]. Türü bulunamayan sayfa öncekinin devamı sayılır
+    (ör. tapunun arka yüzü); türü değişen sayfada yeni belge başlar."""
+    bolum = []
+    for i, m in enumerate(metinler):
+        tur, _ = tur_bul(m, dosya_adi if i == 0 else '')
+        if bolum and (tur is None or tur == bolum[-1][0]):
+            bolum[-1][1].append(i)
+        else:
+            bolum.append((tur, [i]))
+    return bolum
+
+
 _TESS = None
 
 

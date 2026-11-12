@@ -46,6 +46,7 @@ jobs:
           python test/ornek_uret.py "$RUNNER_TEMP/ornek"
           python test/akis_dene.py "$RUNNER_TEMP/ornek"
           python test/ocr_dene.py "$RUNNER_TEMP/ornek"
+          python test/bol_dene.py
       - name: Derle
         run: |
           python simge_yap.py
