@@ -149,7 +149,108 @@
     if (H.kroki && H.kroki.length) kutuyaCiz(c, H.kroki, [x0 + 4, y0 + 5, x1 - 4, y1 - 11]);
   }
 
-  const BHPHavai = { SIL, krokiOzet, kapsam, primCiz, kutuyaCiz, direkListesi, ikinciSayfa, malzemeOner, notlarOner };
+  // ---------- sağ sütun: AG havai hat direk tesis detayları (ölçeksiz) ----------
+  // Değerler: Elektrik Kuvvetli Akım Tesisleri Yönetmeliği (EKAT) md. 44-o (tırmanma engeli), md. 46 Çizelge-8 (en küçük
+  // düşey uzaklıklar, 0–1 kV; (*) işaretlilerde yalıtılmış hava hattı kablosu için 0,5 m azaltılmış); topraklama kazığı ve
+  // iletkeni kullanıcının onaylı bağlantı hattı detayıyla aynı. Temel ölçüleri kaynağı doğrulanamadığı için sayı yazılmaz.
+  const UZAKLIK = [
+    ['Araç geçen köy ve şehir içi yolları', '5,0 *'], ['Araç geçmesine elverişli çayır, tarla, otlak', '4,5 *'],
+    ['Şehirlerarası karayolları', '7,0'], ['Elektriksiz demiryolları (ray üstünden)', '7,0'], ['Otoyollar', '14,0'],
+    ['Üzerine çıkılabilen düz damlı yapılar', '2,5'], ['Üzerine çıkılmayan eğik damlı yapılar', '2,0'],
+    ['Ağaçlar', '1,5'], ['Elektrik hatları', '2,0'], ['İletişim (haberleşme) hatları', '1,0'],
+  ];
+  function direkDetay(c, v, [x0, y0, x1, y1] = [394, 5404, 674, 6283]) {
+    const T = { katman: 'BHP-TABLO' }, D = { katman: 'HAVAI-DETAY' }, K = { katman: 'HAVAI-HAT', renk: 1, kalin: true };
+    const W = x1 - x0;
+    c.kutu(x0, y0, x1, y1, { ...T, kalin: true });
+    c.cizgi(x0, y1 - 10, x1, y1 - 10, T);
+    c.yazi('AG HAVAİ HAT DİREK TESİS DETAYLARI (ÖLÇEKSİZ)', (x0 + x1) / 2, y1 - 5, 3.4, { stil: KALIN, hiza: 'orta' });
+    const etiket = (x, y, tx, ty, satirlar, hiza = 'sol') => {        // ok çizgisi + yazı
+      c.cizgi(x, y, tx, ty, D); c.daire(x, y, 0.6, D);
+      satirlar.forEach((t, i) => c.yazi(t, tx + (hiza === 'sol' ? 1.5 : -1.5), ty - i * 3.6, 2.4, { hiza, stil: i === 0 ? KALIN : 'BHP' }));
+    };
+    const kazik = (x, yz, ad) => {                                  // topraklama kazığı (zeminde)
+      c.cizgi(x, yz - 4, x, yz - 34, { ...D, kalin: true });
+      c.cokgen([[x - 2.5, yz - 34], [x, yz - 39], [x + 2.5, yz - 34]], { ...D, kapali: true });
+      c.yazi(ad, x, yz - 43, 2.4, { stil: KALIN, hiza: 'orta' });
+    };
+    // demir direk yan görünüşü: zeminden h yukarı, temel bloğu, tırmanma engeli
+    const direk = (xd, yz, h) => {
+      c.cizgi(xd - 2.2, yz, xd - 1.4, yz + h, { ...D, kalin: true }); c.cizgi(xd + 2.2, yz, xd + 1.4, yz + h, { ...D, kalin: true });
+      for (let y = yz + 6; y < yz + h - 4; y += 10) c.cizgi(xd - 2.1, y, xd + 2.1, y + 6, D);         // kafes / profil çizgisi
+      c.kutu(xd - 9, yz - 22, xd + 9, yz + 1.5, { ...D, lt: 'BHP-GIZLI' });                            // beton temel (zemin altı)
+      c.dolgu([[xd - 9, yz - 22], [xd + 9, yz - 22], [xd + 9, yz - 21], [xd - 9, yz - 21]], { ...D, renk: 254 });
+      c.cizgi(xd - 5, yz + 28, xd + 5, yz + 28, { ...D, kalin: true }); c.cizgi(xd - 5, yz + 30, xd + 5, yz + 30, D);   // tırmanma engeli
+    };
+    const zemin = (xa, xb, yz) => {
+      c.cizgi(xa, yz, xb, yz, { ...T, kalin: true });
+      for (let x = xa + 2; x < xb; x += 5) c.cizgi(x, yz, x - 3, yz - 3, T);
+    };
+
+    // 1) Nihayet direği
+    const h1 = y1 - 18, yz1 = y1 - 250, xd1 = x0 + 150;
+    c.yazi('1. NİHAYET DİREĞİ (ALPEK gergi bağlantısı, KT + İT)', x0 + 6, h1, 2.8, { stil: KALIN });
+    zemin(x0 + 8, x1 - 8, yz1);
+    const hD = 215;
+    direk(xd1, yz1, hD);
+    const yk = yz1 + hD - 10;                                                                    // konsol yüksekliği
+    c.cizgi(xd1 - 1.5, yk, xd1 - 22, yk, { ...D, kalin: true }); c.cizgi(xd1 - 1.5, yk - 8, xd1 - 22, yk, D);   // gergi konsolu
+    c.cokgen([[xd1 - 22, yk], [xd1 - 30, yk + 1.6], [xd1 - 30, yk - 1.6]], { ...D, kapali: true });               // gergi klemensi
+    const ah = [];                                                                               // ALPEK sehimli
+    for (let i = 0; i <= 20; i++) { const t = i / 20; ah.push([xd1 - 30 - t * 100, yk - 18 * Math.sin(Math.PI * t * 0.5)]); }
+    c.cokgen(ah, K);
+    c.yazi(v.kablo ? v.kablo.yazi : 'ALPEK', xd1 - 80, yk + 6, 2.6, { stil: KALIN, hiza: 'orta', katman: 'HAVAI-HAT' });
+    // en küçük yükseklik ölçüsü (yol)
+    const xo = xd1 - 112, ye = ah[20][1];
+    c.cizgi(xo, yz1, xo, ye, D); [yz1, ye].forEach(y => c.cizgi(xo - 2, y, xo + 2, y, D));
+    c.yazi('en az 5,0 m', xo - 2, (yz1 + ye) / 2 + 2, 2.4, { stil: KALIN, hiza: 'sag' });
+    c.yazi('(yol, ALPEK)', xo - 2, (yz1 + ye) / 2 - 2, 2.2, { hiza: 'sag' });
+    etiket(xd1 - 12, yk - 2, xd1 + 18, yk + 14, ['Gergi konsolu ve', 'ALPEK gergi klemensi']);
+    etiket(xd1 + 2, yz1 + 29, xd1 + 18, yz1 + 52, ['Tırmanma engeli', 'zeminden en az 4 m (EKAT md. 44-o)']);
+    etiket(xd1 + 2, yz1 + 120, xd1 + 18, yz1 + 140, ['AG demir direk', 'tipi direk listesine göre']);
+    etiket(xd1 - 8, yz1 - 14, xd1 - 30, yz1 - 30, ['Beton temel', 'TEDAŞ direk montaj', 'şartnamesine göre'], 'sag');
+    // topraklamalar
+    const kt = xd1 + 45, it = xd1 + 85;
+    c.cizgi(xd1 + 2, yz1 + 3, xd1 + 6, yz1 - 4, D); c.cizgi(xd1 + 6, yz1 - 4, kt, yz1 - 4, D); kazik(kt, yz1, 'KT');
+    c.cizgi(xd1 - 1, yk - 4, xd1 - 6, yk - 30, { ...D, lt: 'BHP-KESIK' });                      // nötr → İT iniş (direk üzerinden)
+    c.cizgi(it, yz1 - 4, kt + 6, yz1 - 4, { ...D, lt: 'BHP-KESIK' }); kazik(it, yz1, 'İT');
+    c.yazi('Galv. kazık 65x65x7 mm, L = 2 m', (kt + it) / 2, yz1 - 50, 2.3, { hiza: 'orta' });
+    c.yazi('1x16 mm² Cu topraklama iletkeni', (kt + it) / 2, yz1 - 54, 2.3, { hiza: 'orta' });
+
+    // 2) Taşıyıcı (ara) direk
+    const ust2 = yz1 - 70, yz2 = ust2 - 200, xd2 = (x0 + x1) / 2;
+    c.cizgi(x0 + 4, ust2 + 6, x1 - 4, ust2 + 6, T);
+    c.yazi('2. TAŞIYICI (ARA) DİREK (ALPEK askı bağlantısı, KT)', x0 + 6, ust2, 2.8, { stil: KALIN });
+    zemin(x0 + 8, x1 - 8, yz2);
+    const hD2 = 170; direk(xd2, yz2, hD2);
+    const yk2 = yz2 + hD2 - 8;
+    c.cizgi(xd2 - 1.5, yk2, xd2 - 14, yk2, { ...D, kalin: true }); c.daire(xd2 - 14, yk2 - 2.5, 2.5, D);            // askı konsolu + klemens
+    const ah2 = [];
+    for (let i = 0; i <= 30; i++) { const t = i / 30; ah2.push([xd2 - 14 + (t - 0.5) * 220, yk2 - 5 - 22 * (4 * (t - 0.5) * (t - 0.5))]); }
+    c.cokgen(ah2, K);
+    etiket(xd2 - 14, yk2, xd2 + 20, yk2 + 14, ['Askı konsolu ve', 'ALPEK askı klemensi']);
+    etiket(xd2 + 2, yz2 + 29, xd2 + 18, yz2 + 48, ['Tırmanma engeli (en az 4 m)']);
+    c.cizgi(xd2 + 2, yz2 + 3, xd2 + 6, yz2 - 4, D); c.cizgi(xd2 + 6, yz2 - 4, xd2 + 45, yz2 - 4, D); kazik(xd2 + 45, yz2, 'KT');
+
+    // 3) En küçük düşey uzaklıklar tablosu
+    const ust3 = yz2 - 60, sh = 7.2, kx = x0 + 6, kv = x1 - 40;
+    c.cizgi(x0 + 4, ust3 + 6, x1 - 4, ust3 + 6, T);
+    c.yazi('3. İLETKENİN EN KÜÇÜK DÜŞEY UZAKLIKLARI (0–1 kV)', x0 + 6, ust3, 2.8, { stil: KALIN });
+    c.yazi('EKAT md. 46, Çizelge-8 · en büyük salgı durumunda', x0 + 6, ust3 - 4.5, 2.2, {});
+    const tu = ust3 - 9, tb = tu - sh * (UZAKLIK.length + 1);
+    c.kutu(kx, tb, x1 - 6, tu, T); c.cizgi(kv, tb, kv, tu, T);
+    c.yazi('İletkenin üzerinden geçtiği yer', kx + 2, tu - sh / 2, 2.4, { stil: KALIN });
+    c.yazi('Uzaklık (m)', (kv + x1 - 6) / 2, tu - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
+    UZAKLIK.forEach(([ad, d], i) => {
+      const y = tu - sh * (i + 1);
+      c.cizgi(kx, y, x1 - 6, y, T);
+      c.yazi(ad, kx + 2, y - sh / 2, 2.3, {}); c.yazi(d, (kv + x1 - 6) / 2, y - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
+    });
+    c.yazi('* Yalıtılmış hava hattı kablosu (ALPEK) için Çizelge-8 değerinden 0,5 m azaltılmıştır.', kx, tb - 4.5, 2.2, {});
+    c.yazi('Direk temeli, gömme derinliği ve tırmanma engeli TEDAŞ direk montaj teknik şartnamesine uygun yapılacaktır.', kx, tb - 9, 2.2, {});
+  }
+
+  const BHPHavai = { SIL, krokiOzet, direkDetay, kapsam, primCiz, kutuyaCiz, direkListesi, ikinciSayfa, malzemeOner, notlarOner };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHPHavai;
   kok.BHPHavai = BHPHavai;
 })(typeof window !== 'undefined' ? window : globalThis);

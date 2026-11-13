@@ -587,7 +587,7 @@
     }
     gucTablosu(c, v, B.guc);
     vaziyet(c, v, bilgi.resim.vaziyet);
-    if (v.havai && kok.BHPHavai) { kok.BHPHavai.krokiOzet(c, v); kok.BHPHavai.ikinciSayfa(c, v, bilgi); }
+    if (v.havai && kok.BHPHavai) { kok.BHPHavai.krokiOzet(c, v); kok.BHPHavai.direkDetay(c, v); kok.BHPHavai.ikinciSayfa(c, v, bilgi); }
     return c;
   }
 
