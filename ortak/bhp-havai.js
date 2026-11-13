@@ -107,7 +107,7 @@
   }
 
   // ---------- malzeme ve notlar ----------
-  function malzemeOner(BHP, b, kablo, H) {
+  function malzemeOner(BHP, b, kablo, H, inis) {
     const yeni = (H.sonuclar || []).filter(d => !d.mev);
     const tipler = {};
     yeni.forEach(d => { tipler[d.type] = (tipler[d.type] || 0) + 1; });
@@ -124,9 +124,17 @@
       { ad: 'İşletme topraklaması (İT), nihayet direği', birim: 'takım', miktar: nih },
     ];
     const eski = BHP.malzemeOner(b, kablo).filter(m => !/yeraltı|kazı|kum|tuğla|ikaz|kablo başlığı|koruma borusu|topraklama kazığı|topraklama iletkeni/i.test(m.ad));
+    if (inis) {                                   // nihayet direğinden yeraltı iniş (kullanıcının onaylı direk bağlantı detayıyla aynı kalemler)
+      const Ly = Math.ceil(inis.yer || 0);
+      r.push({ ad: `${inis.kablo.yazi} kablo (direk inişi ve yeraltı)`, birim: 'm', miktar: Math.ceil(inis.L) },
+        { ad: 'AG kablo başlığı (dış tip)', birim: 'adet', miktar: 1 },
+        { ad: 'Galvanizli çelik koruma borusu (direk inişi, 3 m)', birim: 'adet', miktar: 1 });
+      if (Ly > 0) r.push({ ad: 'Kablo kanalı kazısı ve dolgusu (40x100 cm)', birim: 'm', miktar: Ly }, { ad: 'Kablo altı ve üstü elenmiş kum', birim: 'm', miktar: Ly },
+        { ad: 'Koruma tuğlası', birim: 'adet', miktar: 4 * Ly }, { ad: 'Plastik ikaz şeridi', birim: 'm', miktar: Ly });
+    }
     return r.filter(m => m.miktar > 0).concat(eski);
   }
-  function notlarOner(BHP, b, kablo, H) {
+  function notlarOner(BHP, b, kablo, H, inis) {
     const yer = BHP.notlarOner(b);
     return [
       yer[0],
@@ -134,6 +142,8 @@
       'Yeni demir direklerde koruma topraklaması (KT), nihayet direğinde ayrıca işletme topraklaması (İT) yapılacaktır.',
       'ALPEK askı teli gergi ve askı takımlarıyla direklere tespit edilecektir. İletkenin en büyük salgı durumunda yere, yollara, yapılara ve diğer tesislere olan düşey uzaklıkları Elektrik Kuvvetli Akım Tesisleri Yönetmeliği md. 46 Çizelge-8\'e uygun olacaktır (direk detayındaki tablo).',
       'Yalıtılmış iletkenli küçük aralıklı hat olarak iki direk arası açıklık 60 m\'yi geçmeyecektir (EKAT md. 4-c). Demir direklere zeminden en az 4 m yükseklikte tırmanma engeli takılacaktır (EKAT md. 44-o).',
+      ...(inis ? [`Nihayet direğinden sayaç panosuna ${inis.kablo.yazi} kablo ile inilecektir; direk inişinde galvanizli çelik koruma borusu kullanılacak, direk tarafında kablo başlığı yapılacaktır.`
+        + ((inis.yer || 0) > 0 ? ' Yeraltı kısmında kablo kanalı, kablo kanalı detayına uygun açılacak; kablo altına ve üstüne 10\'ar cm kum, üzerine koruma tuğlası ve ikaz şeridi konacaktır.' : '')] : []),
       'GEREKLİ GEÇİŞ İZİNLERİ ALINMADAN HAT ÇEKİLMEYECEKTİR. Direk yerleri arazide aplikasyonla belirlenecektir.',
       ...yer.slice(5).filter(n => !/kazı/i.test(n)),
     ];

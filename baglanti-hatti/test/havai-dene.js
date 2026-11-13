@@ -15,9 +15,11 @@ const b = BHP.birlestir(g, { kuruluW: 20000, talepW: (H.talepKW || 15) * 1000, s
 b.uzunluk = Math.round(H.hatBoyu);
 b.korumalar = [{ tur: 'sigorta', deger: '4x40A 10kA' }];
 const kablo = BHP.kablolar('alpek', 3).find(k => k.ad === String(H.routeCond).replace(/^AER\s*/, '')) || BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
-const malz = BHPHavai.malzemeOner(BHP, b, kablo, H), notlar = BHPHavai.notlarOner(BHP, b, kablo, H);
+const k2 = BHP.kablolar('al', 3).find(k => k.kesit >= 10 && BHP.hesap(kablo, b.talepW, b.uzunluk, 40).e + BHP.hesap(k, b.talepW, 15, 40).e <= 1 && BHP.hesap(k, b.talepW, 15, 40).kUygun);
+const inis = { kablo: k2, L: 15, yer: 5, h: BHP.hesap(k2, b.talepW, 15, 40) };
+const malz = BHPHavai.malzemeOner(BHP, b, kablo, H, inis), notlar = BHPHavai.notlarOner(BHP, b, kablo, H, inis);
 const v = BHP.cizimVerisi(b, kablo, malz, notlar);
-Object.assign(v, { havai: H, Ldis: v.L, Lic: 0, basvuruNo: b.basvuruNo });
+Object.assign(v, { havai: H, Ldis: v.L, Lic: 0, basvuruNo: b.basvuruNo, inis });
 const bilgi = BHPCizim.bilgiOku(sablon);
 const c = BHPCizim.hepsi(v, bilgi);
 const dxf = BHPCizim.dxfeEkle(BHP.doldur(sablon, BHP.degerler(b, kablo, 'uydu.png', 'vaziyet.png')), c, 'havai', true, BHPHavai.SIL);
@@ -25,6 +27,7 @@ fs.mkdirSync(cikis, { recursive: true });
 fs.writeFileSync(path.join(cikis, `BHP-${b.basvuruNo}.dxf`), dxf);
 const h = BHP.hesap(kablo, b.talepW, b.uzunluk, 40);
 console.log(`kablo ${kablo.yazi} · %e ${h.e.toFixed(3)} (seçim ≤ 1, yazılan < 1,5) · I ${h.I.toFixed(1)} A ≤ ${kablo.iz} A`);
+console.log(`iniş ${k2.yazi} L=15 m · toplam %e ${(h.e + inis.h.e).toFixed(3)}`);
 console.log('malzeme:', malz.map(m => `${m.ad} ${m.miktar} ${m.birim}`).join(' | '));
 console.log('çizim öğesi', c.l.length, 'DXF', Math.round(dxf.length / 1024), 'KB');
 if (!/ALPEK/.test(dxf) || !/HAVAİ BAĞLANTI HATTI/.test(dxf) || !/DİREK LİSTESİ/.test(dxf)) { console.error('HATA: havai bölümleri DXF\'te yok'); process.exit(1); }
