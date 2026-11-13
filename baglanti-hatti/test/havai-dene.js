@@ -10,11 +10,11 @@ const [sonucP, cikis] = process.argv.slice(2);
 const H = JSON.parse(fs.readFileSync(sonucP, 'utf8'));
 const sablon = fs.readFileSync(path.join(__dirname, '../BHP-SABLON.dxf'), 'utf8');
 const g = { basvuruNo: '000000000', sahibi: 'DENEME SAHİBİ', adres: 'ÖRNEK SOK./ÖRNEK MAH./ŞEHZADELER/MANİSA', kullanim: 'MESKEN',
-  kuruluKW: 20, talepKW: 15, bagimsiz: '1', baglantiSekli: 'Direk Bağlantısı', direk: 'C-06', hatTipi: 'HAVAI', uzunluk: 90, ada: '100', parsel: '1' };
-const b = BHP.birlestir(g, { kuruluW: 20000, talepW: 15000, satirlar: [] });
+  kuruluKW: 20, talepKW: H.talepKW || 15, bagimsiz: '1', baglantiSekli: 'Direk Bağlantısı', direk: 'C-06', hatTipi: 'HAVAI', uzunluk: 90, ada: '100', parsel: '1' };
+const b = BHP.birlestir(g, { kuruluW: 20000, talepW: (H.talepKW || 15) * 1000, satirlar: [] });
 b.uzunluk = Math.round(H.hatBoyu);
 b.korumalar = [{ tur: 'sigorta', deger: '4x40A 10kA' }];
-const kablo = BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
+const kablo = BHP.kablolar('alpek', 3).find(k => k.ad === String(H.routeCond).replace(/^AER\s*/, '')) || BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
 const malz = BHPHavai.malzemeOner(BHP, b, kablo, H), notlar = BHPHavai.notlarOner(BHP, b, kablo, H);
 const v = BHP.cizimVerisi(b, kablo, malz, notlar);
 Object.assign(v, { havai: H, Ldis: v.L, Lic: 0, basvuruNo: b.basvuruNo });

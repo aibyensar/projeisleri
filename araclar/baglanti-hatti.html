@@ -916,7 +916,9 @@ function guncelle() {
   let kablo = null;
   const In = BHP.anaKesiciA(b.korumalar);                    // ana kesici akımı: kablo Iz ≥ In olmalı
   if (havai) {
-    if (N > 0 && L > 0) kablo = BHP.kabloOner('alpek', N, L, 0, b.faz, In);   // %1'e göre seçilir, hesapta "< %1,5" yazılır
+    // cer aracında seçilen iletken esas (kroki, cer raporu ve pafta aynı kesiti göstersin); araç %1'e göre seçer, hesapta "< %1,5" yazılır
+    const secili = H && H.routeCond ? BHP.kablolar('alpek', b.faz).find(k => k.ad === H.routeCond.replace(/^AER\s*/, '')) : null;
+    if (N > 0 && L > 0) kablo = secili || BHP.kabloOner('alpek', N, L, 0, b.faz, In);
   } else if (D.iletken && N > 0 && L > 0) {
     const liste = BHP.kablolar(D.iletken, b.faz);
     const oneri = BHP.kabloOner(D.iletken, N, L, parseFloat($('enKucuk').value) || 0, b.faz, In);
@@ -955,6 +957,16 @@ function guncelle() {
     else if (!(H.hatBoyu > 0)) eksik.push('havai hat: ölçek verin ya da KML altlık yükleyin (hat boyu hesaplanamadı)');
     else if (H.sonuclar.some(r => !r.ok || r.kViol)) eksik.push('havai hat: uygun olmayan direk var (4. bölümdeki tabloyu kontrol edin)');
     if (!kablo && N > 0 && L > 0) eksik.push('havai hat: ALPEK kesiti bulunamadı');
+    if (kablo && N > 0 && L > 0) { const h = BHP.hesap(kablo, N, L, In);
+      if (!h.eUygun) eksik.push(`havai hat: ${kablo.yazi} ile gerilim düşümü %${BHP.virgul(h.e, 2)} (> %1,5); cer aracında daha büyük kesit seçin`);
+      else if (h.e > 1) uyari.push(`havai hat: ${kablo.yazi} ile gerilim düşümü %${BHP.virgul(h.e, 2)}; kesit %1'e göre seçilmemiş (cer aracında elle seçilmiş olabilir)`);
+      if (!h.iUygun) eksik.push(`havai hat: akım ${BHP.virgul(h.I, 1)} A, ${kablo.yazi} taşıma akımı ${kablo.iz} A`); }
+    if (H && H.sonuclar) {
+      const uzun = H.sonuclar.filter(r => r.span > 60);
+      if (uzun.length) uyari.push(`havai hat: ${uzun.map(r => r.name).join(', ')} açıklığı 60 m'yi aşıyor; yalıtılmış iletkenli hat büyük aralıklı sayılır (EKAT md. 4-c)`);
+      const gdzL = (bilgiler().Ldis || 0) + (bilgiler().Lic || 0);
+      if (gdzL > 0 && L > 0 && Math.abs(L - gdzL) / gdzL > 0.15) uyari.push(`havai hat: krokideki hat boyu (${L} m) GDZ yazısındaki uzunluktan (${gdzL} m) %15'ten fazla farklı; ölçeği kontrol edin`);
+    }
   } else if (!D.iletken) eksik.push('bakır / alüminyum seçimi (4. bölüm)');
   else if (!kablo) eksik.push('kablo: talep gücü (3. bölüm) ve hat uzunluğu (4. bölüm) girilmeli');
   if (kablo && !In) eksik.push('ana kesici değeri (3. bölüm, sayaç panosu): kablo ana kesiciye göre seçilir');

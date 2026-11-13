@@ -839,7 +839,7 @@ function gomuluGonder() {
     const kp = S.poles.length ? krokiPrims2(krokiModel(), results, S.P, { h, mpu: S.mpu, legend: true }) : [];
     const rp = reportPrims(results, S.P, S.info);
     parent.postMessage({
-      tip: 'havai-sonuc', direkSayisi: S.poles.length, hatBoyu: routeLen(), olcek: S.mpu || 1, routeCond: S.P.routeCond, bolge: S.P.bolge,
+      tip: 'havai-sonuc', talepKW: +$('kW').value || 0, direkSayisi: S.poles.length, hatBoyu: routeLen(), olcek: S.mpu || 1, routeCond: S.P.routeCond, bolge: S.P.bolge,
       sonuclar: results.map(r => ({ name: r.name, catName: r.catName, R: r.R, type: r.type, cap: r.cap, ok: r.ok, kViol: !!r.kViol,
         span: r.span, interior: r.interior, mev: !!(S.poles[r.i] || {}).mev })),
       kroki: kp, rapor: rp, h,
@@ -857,6 +857,8 @@ if (GOMULU) {
     $('lim').value = 1;                                   // kullanıcının kuralı: kesit %1'e göre seçilir (hesapta "%1,5'ten küçük" yazılır)
     if (m.proje) $('projName').value = m.proje;
     S.P.mevAd = m.mevcutAd || '';
+    // EKAT md. 4-c: yalıtılmış iletkenli (ALPEK) küçük aralıklı hatta açıklık en çok 60 m; aşarsa büyük aralıklı hat sayılır
+    $('maxSpan').value = 60;
     readInfo(); readInputs();
   });
   const _refresh = refresh;

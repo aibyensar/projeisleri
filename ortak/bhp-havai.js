@@ -132,7 +132,8 @@
       yer[0],
       `Bağlantı hattı ${kablo.yazi} ile havai olarak çekilecektir. Direk tipleri cer hesabına göre seçilmiştir (direk listesi bu paftada, kroki ve cer hesabı raporu 2. paftada).`,
       'Yeni demir direklerde koruma topraklaması (KT), nihayet direğinde ayrıca işletme topraklaması (İT) yapılacaktır.',
-      'ALPEK askı teli gergi ve askı takımlarıyla direklere tespit edilecek; hattın yapılara, yollara ve diğer tesislere olan mesafeleri Elektrik Kuvvetli Akım Tesisleri Yönetmeliğine uygun olacaktır.',
+      'ALPEK askı teli gergi ve askı takımlarıyla direklere tespit edilecektir. İletkenin en büyük salgı durumunda yere, yollara, yapılara ve diğer tesislere olan düşey uzaklıkları Elektrik Kuvvetli Akım Tesisleri Yönetmeliği md. 46 Çizelge-8\'e uygun olacaktır (direk detayındaki tablo).',
+      'Yalıtılmış iletkenli küçük aralıklı hat olarak iki direk arası açıklık 60 m\'yi geçmeyecektir (EKAT md. 4-c). Demir direklere zeminden en az 4 m yükseklikte tırmanma engeli takılacaktır (EKAT md. 44-o).',
       'GEREKLİ GEÇİŞ İZİNLERİ ALINMADAN HAT ÇEKİLMEYECEKTİR. Direk yerleri arazide aplikasyonla belirlenecektir.',
       ...yer.slice(5).filter(n => !/kazı/i.test(n)),
     ];
