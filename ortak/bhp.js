@@ -220,7 +220,15 @@
   // Katsayılar kullanıcının yöntemi: c = 100/(κ·U²) trifaze 380 V, 200/(κ·U²) monofaze 220 V; κ Cu 56, Al 35
   const C = { 3: { cu: 0.0000124, al: 0.0000198 }, 1: { cu: 0.000074, al: 0.000118 } };
   const BOLEN = { 3: 527, 1: 176 };                  // √3·380·0,8 ve 220·0,8 (cos φ 0,8)
+  // ALPEK (havai hat, PE izoleli Al, askı telli) — Konen Teknik "ALPEK KABLOLARI" tablosu (dağıtım hattı akımı, A),
+  // Öznur Kablo AER tablosuyla aynı. Kopma yükü: askı teli kesiti × 30 kgf/mm² (35 mm² → 1050 kgf).
+  const ALPEK = {
+    3: [['3x16+25', 16, 70, 25], ['3x25+35', 25, 90, 35], ['3x35+50', 35, 115, 50], ['3x50+70', 50, 140, 70], ['3x70+95', 70, 180, 95]],
+    1: [['1x16+25', 16, 75, 25], ['1x25+35', 25, 100, 35], ['1x35+50', 35, 125, 50]],
+  };
   function kablolar(iletken, faz = 3) {
+    if (iletken === 'alpek') return ALPEK[faz].map(([ad, kesit, iz, aski]) =>
+      ({ ad, kesit, iz, aski, tur: 'ALPEK', iletken: 'al', faz, havai: true, yazi: `${ad} mm² ALPEK` }));
     const tur = iletken === 'al' ? 'NAYY' : 'NYY';
     const liste = [];
     for (const t of KATALOG.filter(t => t.kablo === tur)) {
@@ -258,7 +266,9 @@
     }).filter(x => x > 0);
     return l.length ? Math.min(...l) : null;
   }
-  // Kablo uygunluğu: %e ≤ 1,5; I ≤ Iz; koruma uyumu I ≤ In ≤ Iz (In: ana kesici)
+  // Kablo uygunluğu: %e ≤ 1,5 (yazılan sınır); I ≤ Iz; koruma uyumu I ≤ In ≤ Iz (In: ana kesici)
+  // Kullanıcı kuralı (12.11.2026): kesit %e ≤ %1 olacak şekilde SEÇİLİR, hesapta "%1,5'ten küçük" diye yazılır.
+  const SECIM_SINIRI = 1.0;
   function hesap(k, N, L, In) {
     const faz = k.faz || 3, c = C[faz][k.iletken];
     const e = c * N * L / k.kesit, I = N / BOLEN[faz];
@@ -268,7 +278,8 @@
   }
   function kabloOner(iletken, N, L, enKucuk, faz = 3, In) {
     const l = kablolar(iletken, faz);
-    return l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L, In).uygun) || l[l.length - 1];
+    return l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L, In).uygun && hesap(k, N, L, In).e <= SECIM_SINIRI)
+      || l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L, In).uygun) || l[l.length - 1];
   }
 
   // ---------- Bilgileri birleştir ----------
@@ -391,7 +402,7 @@
       MALSAHIBI: b.malSahibi, KULLANIM: b.kullanim, ADRES: b.adres, IL: b.il, ILCE: b.ilce, BELEDIYE: b.belediye,
       MAHALLE: b.mahalle, PAFTA: b.pafta, ADA: b.ada, PARSEL: b.parsel,
       KURULU: `${b.kuruluW} W`, TALEP: `${b.talepW} W`, KURULUW: String(b.kuruluW), TALEPW: String(b.talepW), BB: b.bagimsiz, KAT: b.kat, ALAN: b.alan === '-' ? '-' : `${b.alan} m²`,
-      KABLO: kablo.yazi, UZUNLUK: `${String(L).replace('.', ',')} m`, HATTIPI: 'YERALTI', DIREK: b.direk,
+      KABLO: kablo.yazi, UZUNLUK: `${String(L).replace('.', ',')} m`, HATTIPI: kablo.havai ? 'HAVAİ' : 'YERALTI', DIREK: b.direk,
       ADAPARSEL: `${b.ada}/${b.parsel}`, YAPISINIFI: b.yapiSinifi || '-',
       TARIH: b.projeTarihi || new Date().toLocaleDateString('tr-TR'), BASVURU: b.basvuruNo || '',
       UYDU: '.\\' + uyduDosya, VAZIYET: '.\\' + vaziyetDosya, LOGO: '.\\' + LOGO_DOSYA,

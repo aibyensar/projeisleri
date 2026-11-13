@@ -127,7 +127,7 @@
     const ic = blok(c, B, 'TEK HAT ŞEMASI');
     const X0 = 0, Y0 = 0, X1 = 300, Y1 = 118;
     c.donustur([X0, Y0, X1, Y1], ic, 1.6);
-    const K = { katman: 'BHP-KABLO', lt: 'BHP-KESIK' }, TP = S;            // kullanıcının kuralı: yeraltı kablosu kesik çizgi
+    const K = v.havai ? { katman: 'BHP-KABLO' } : { katman: 'BHP-KABLO', lt: 'BHP-KESIK' }, TP = S;   // kullanıcının kuralı: yeraltı kablosu kesik çizgi, havai hat düz
     const yh = Y0 + 50, kx = X0 + 18, r = 8;
     if (v.baglanti === 'box') c.kutu(kx - r, yh - r, kx + r, yh + r, S); else c.daire(kx, yh, r, S);   // box kare, direk çember
     c.yazi(v.baglanti === 'box' ? 'AG BOX' : 'AG DİREK', kx, yh, 2.1, { stil: KALIN, hiza: 'orta' });
@@ -141,7 +141,7 @@
     c.cizgi(kx + r, yh, px1, yh, { ...K, kalin: true });
     const ox = (kx + r + px1) / 2;
     c.yazi(v.kablo.yazi, ox, yh + 9, 3.2, { stil: KALIN, hiza: 'orta' });
-    c.yazi(`L = ${sayiYaz(v.L)} m  ·  YERALTI`, ox, yh + 4.6, 2.5, { hiza: 'orta' });
+    c.yazi(`L = ${sayiYaz(v.L)} m  ·  ${v.havai ? 'HAVAİ' : 'YERALTI'}`, ox, yh + 4.6, 2.5, { hiza: 'orta' });
     c.yazi(`N = ${v.N} W`, ox, yh - 5.5, 2.5, { hiza: 'orta' });
     // sayaç panosu (mühürlenebilir)
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', kalin: true });
@@ -328,7 +328,7 @@
     const xa = x0, xb = x0 + 80, xc = x0 + 152, ust = yu - bas;
     const satir = [
       ['Bağlantı gücü (eş zamanlı)', 'N', `${v.N} W`],
-      ['Hat uzunluğu', 'L', `${sayiYaz(v.L)} m (${sayiYaz(v.Ldis)} + ${sayiYaz(v.Lic)})`],
+      ['Hat uzunluğu', 'L', v.havai ? `${sayiYaz(v.L)} m (krokiden)` : `${sayiYaz(v.L)} m (${sayiYaz(v.Ldis)} + ${sayiYaz(v.Lic)})`],
       ['Kablo', '', v.kablo.yazi],
       ['Faz iletkeni kesiti', 'S', `${sayiYaz(v.kablo.kesit)} mm²`],
       ['İletkenlik', 'κ', `${k} m/Ω·mm² (${v.kablo.iletken === 'al' ? 'alüminyum' : 'bakır'})`],
@@ -350,7 +350,7 @@
     });
     c.cizgi(xb - 14, ust - sh, xb - 14, ust - sh * (satir.length + 1), T);
     const yn = ust - sh * (satir.length + 1);
-    c.yazi('Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
+    c.yazi(v.havai ? 'Iz: Konen ALPEK kabloları tablosu (havada, dağıtım hattı).' : 'Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
     c.yazi('Bağlantı hattında izin verilen gerilim düşümü: %1,5.', xa + 2, yn - 9, 2.0);
     // sağ üst: hat şeması (kullanıcının hesap çizelgesindeki gibi)
     const X = xc + 6;
@@ -503,7 +503,7 @@
       const a = P(isaret.nokta), b = P(isaret.bina);
       const ara = (isaret.ara || []).map(P);
       const yol = [a, ...ara, b];
-      c.cokgen(yol, { katman: 'BHP-VAZIYET', lt: 'BHP-KESIK', kalin: true, renk: 1 });
+      c.cokgen(yol, { katman: 'BHP-VAZIYET', ...(v.havai ? {} : { lt: 'BHP-KESIK' }), kalin: true, renk: 1 });
       // kullanıcının kuralı: box küçük kare, direk çember
       if (v.baglanti === 'box') c.kutu(a[0] - 2.6, a[1] - 2.6, a[0] + 2.6, a[1] + 2.6, K);
       else c.daire(a[0], a[1], 2.8, K);
@@ -529,12 +529,12 @@
       aciklamaKutusu(c, v, [x0, y0, x1, y1], [a, b, km, ...ara], [
         [1, v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Enerji alınan AG box (GDZ)' : 'Enerji alınan AG direği (GDZ)'],
         [2, 'SAYAÇ PANOSU', `Ada ${v.ada} / Parsel ${v.parsel}`],
-        [3, v.kablo.yazi, `L = ${sayiYaz(v.L)} m, yeraltı`],
+        [3, v.kablo.yazi, `L = ${sayiYaz(v.L)} m, ${v.havai ? 'havai hat' : 'yeraltı'}`],
       ]);
     } else {
       aciklamaKutusu(c, v, [x0, y0, x1, y1], [], [
         [0, v.kaynakAd || (v.baglanti === 'box' ? 'AG BOX' : 'AG DİREĞİ'), v.baglanti === 'box' ? 'Enerji alınan AG box (GDZ)' : 'Enerji alınan AG direği (GDZ)'],
-        [0, v.kablo.yazi, `L = ${sayiYaz(v.L)} m, yeraltı · Ada ${v.ada} / Parsel ${v.parsel}`],
+        [0, v.kablo.yazi, `L = ${sayiYaz(v.L)} m, ${v.havai ? 'havai hat' : 'yeraltı'} · Ada ${v.ada} / Parsel ${v.parsel}`],
       ]);
     }
   }
@@ -577,7 +577,9 @@
     const B = bilgi.bolgeler, c = new Cizim();
     tekHat(c, v, B.tekhat);
     hesap(c, v, B.hesap);
-    if (B.detay) {
+    if (B.detay && v.havai && kok.BHPHavai) {
+      kok.BHPHavai.direkListesi(c, v, B.detay);
+    } else if (B.detay) {
       if (bilgi.duzen) {                                       // düzenlenmiş pafta: ortak çerçeve, eski çizim kutuya büyütülür
         const ic = blok(c, B.detay, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI (ÖLÇEKSİZ)');
         c.donustur([0, 9, 318, 149], ic, 1.3); detay(c, v, [0, 0, 318, 149], true); c.donustur(null);
@@ -585,6 +587,7 @@
     }
     gucTablosu(c, v, B.guc);
     vaziyet(c, v, bilgi.resim.vaziyet);
+    if (v.havai && kok.BHPHavai) { kok.BHPHavai.krokiOzet(c, v); kok.BHPHavai.ikinciSayfa(c, v, bilgi); }
     return c;
   }
 
@@ -636,19 +639,46 @@
     return JSON.parse(sablon.slice(ilk + 1, ikinci).replace(/^BHP /, ''));
   }
   // Şablona ekle: varlıkları ENTITIES bölümünün sonuna koy, $HANDSEED'i güncelle, kullanılmayan detayı çıkar
-  function dxfeEkle(sablon, c, baglanti, pafta2 = true) {
+  // Şablonun model alanındaki, ilk noktası verilen kutulardan birinde olan varlıkları siler (havai: yeraltına özgü detay ve metin)
+  function bolgeSil(s, model, kutular) {
+    const ent = s.indexOf('\nENTITIES\n'), son = s.indexOf('\n  0\nENDSEC', ent);
+    const parca = s.slice(ent, son).split('\n  0\n');
+    const kalan = parca.filter((p, i) => {
+      if (i === 0 || !new RegExp(`\\n330\\n${model}\\n`).test(p)) return true;
+      const xy = [...p.matchAll(/\n 10\n([-\d.eE]+)\n 20\n([-\d.eE]+)/g)].map(m => [+m[1], +m[2]]);
+      const n = /^HATCH/.test(p) ? xy[1] : xy[0];
+      return !(n && kutular.some(([x0, y0, x1, y1]) => n[0] >= x0 && n[0] <= x1 && n[1] >= y0 && n[1] <= y1));
+    });
+    return s.slice(0, ent) + kalan.join('\n  0\n') + s.slice(son);
+  }
+  function dxfeEkle(sablon, c, baglanti, pafta2 = true, silKutular = null) {
     const bilgi = bilgiOku(sablon);
     let s = sablon.slice(sablon.indexOf('\n', sablon.indexOf('\n') + 1) + 1);   // 999 açıklamasını çıkar
+    if (silKutular && silKutular.length) s = bolgeSil(s, bilgi.model, silKutular);
     const tm = s.match(/\$HANDSEED\r?\n\s*5\r?\n([0-9A-Fa-f]+)/);
     const { metin, sonraki } = dxfVarliklar(c, bilgi.model, tm[1]);
     s = s.replace(tm[0], tm[0].replace(tm[1], sonraki));
     const ent = s.indexOf('\nENTITIES\n'), son = s.indexOf('\n  0\nENDSEC', ent);
     s = s.slice(0, son) + '\n' + metin + s.slice(son);
+    // şablonda olmayan katmanlar (ör. havai krokinin HAVAI-*) katman tablosuna eklenir; yoksa bazı programlar göstermez
+    const lt = s.indexOf('\nLAYER\n  5\n'), ltSon = s.indexOf('\n  0\nENDTAB', lt);
+    const var_ = new Set([...s.slice(lt, ltSon).matchAll(/\nAcDbLayerTableRecord\n  2\n([^\n]+)\n/g)].map(m => m[1]));
+    const yeni = [...new Set(c.l.map(e => e.katman || 'BHP'))].filter(k => !var_.has(k));
+    if (yeni.length) {
+      let hh = parseInt(sonraki, 16);
+      const RK = { 'HAVAI-HAT': 1, 'HAVAI-BILESKE': 1, 'HAVAI-MEVCUT': 8, 'HAVAI-PARSEL': 8, 'HAVAI-PARSEL_NO': 8, 'HAVAI-YOL': 8, 'HAVAI-ALTLIK': 8 };
+      const kayit = yeni.map(k => ['  0', 'LAYER', '  5', (hh++).toString(16).toUpperCase(), '330', '1', '100', 'AcDbSymbolTableRecord', '100', 'AcDbLayerTableRecord',
+        '  2', k, ' 70', '0', ' 62', String(RK[k] || 7), '  6', 'Continuous', '370', '18', '390', '13', '347', '21'].join('\n')).join('\n');
+      s = s.slice(0, ltSon) + '\n' + kayit + s.slice(ltSon);
+      s = s.replace(/(\nLAYER\n  5\n[0-9A-Fa-f]+\n330\n0\n100\nAcDbSymbolTable\n 70\n)\s*(\d+)/, (m, on, n) => on + (parseInt(n, 10) + yeni.length));
+      s = s.replace(/(\$HANDSEED\r?\n\s*5\r?\n)[0-9A-Fa-f]+/, '$1' + hh.toString(16).toUpperCase());
+    }
     const sil = katman => {
       s = s.replace(new RegExp(`\\n  0\\nINSERT\\n  5\\n[0-9A-F]+\\n330\\n[0-9A-F]+\\n100\\nAcDbEntity\\n  8\\n${katman}\\n[\\s\\S]*?(?=\\n  0\\n)`), '');
       s = s.replace(new RegExp(`(\\n  2\\n${katman}\\n 70\\n)\\s*0\\n`), '$11\n');
     };
-    sil(baglanti === 'box' ? 'BHP-DETAY-DIREK' : 'BHP-DETAY-BOX');
+    if (baglanti === 'havai') { sil('BHP-DETAY-DIREK'); sil('BHP-DETAY-BOX'); }   // havai: detay yerine direk listesi çizilir
+    else sil(baglanti === 'box' ? 'BHP-DETAY-DIREK' : 'BHP-DETAY-BOX');
     return s;
   }
 

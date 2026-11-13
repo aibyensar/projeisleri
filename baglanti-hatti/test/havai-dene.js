@@ -1,0 +1,31 @@
+// Havai bağlantı hattı DXF denemesi (sahte iş bilgisi, müşteri verisi yok):
+// node baglanti-hatti/test/havai-dene.js <havai-sonuc.json> <çıkış-klasörü>
+// havai-sonuc.json: araclar/havai-cer.html?gomulu=1 sayfasının gönderdiği 'havai-sonuc' iletisi
+const fs = require('fs'), path = require('path');
+global.window = undefined;
+const BHP = require('../../ortak/bhp.js');
+const BHPCizim = require('../../ortak/bhp-cizim.js');
+const BHPHavai = require('../../ortak/bhp-havai.js');
+const [sonucP, cikis] = process.argv.slice(2);
+const H = JSON.parse(fs.readFileSync(sonucP, 'utf8'));
+const sablon = fs.readFileSync(path.join(__dirname, '../BHP-SABLON.dxf'), 'utf8');
+const g = { basvuruNo: '000000000', sahibi: 'DENEME SAHİBİ', adres: 'ÖRNEK SOK./ÖRNEK MAH./ŞEHZADELER/MANİSA', kullanim: 'MESKEN',
+  kuruluKW: 20, talepKW: 15, bagimsiz: '1', baglantiSekli: 'Direk Bağlantısı', direk: 'C-06', hatTipi: 'HAVAI', uzunluk: 90, ada: '100', parsel: '1' };
+const b = BHP.birlestir(g, { kuruluW: 20000, talepW: 15000, satirlar: [] });
+b.uzunluk = Math.round(H.hatBoyu);
+b.korumalar = [{ tur: 'sigorta', deger: '4x40A 10kA' }];
+const kablo = BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
+const malz = BHPHavai.malzemeOner(BHP, b, kablo, H), notlar = BHPHavai.notlarOner(BHP, b, kablo, H);
+const v = BHP.cizimVerisi(b, kablo, malz, notlar);
+Object.assign(v, { havai: H, Ldis: v.L, Lic: 0, basvuruNo: b.basvuruNo });
+const bilgi = BHPCizim.bilgiOku(sablon);
+const c = BHPCizim.hepsi(v, bilgi);
+const dxf = BHPCizim.dxfeEkle(BHP.doldur(sablon, BHP.degerler(b, kablo, 'uydu.png', 'vaziyet.png')), c, 'havai', true, BHPHavai.SIL);
+fs.mkdirSync(cikis, { recursive: true });
+fs.writeFileSync(path.join(cikis, `BHP-${b.basvuruNo}.dxf`), dxf);
+const h = BHP.hesap(kablo, b.talepW, b.uzunluk, 40);
+console.log(`kablo ${kablo.yazi} · %e ${h.e.toFixed(3)} (seçim ≤ 1, yazılan < 1,5) · I ${h.I.toFixed(1)} A ≤ ${kablo.iz} A`);
+console.log('malzeme:', malz.map(m => `${m.ad} ${m.miktar} ${m.birim}`).join(' | '));
+console.log('çizim öğesi', c.l.length, 'DXF', Math.round(dxf.length / 1024), 'KB');
+if (!/ALPEK/.test(dxf) || !/HAVAİ BAĞLANTI HATTI/.test(dxf) || !/DİREK LİSTESİ/.test(dxf)) { console.error('HATA: havai bölümleri DXF\'te yok'); process.exit(1); }
+console.log('HAVAİ DXF: TAMAM');

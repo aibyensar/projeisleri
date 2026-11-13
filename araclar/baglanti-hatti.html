@@ -226,13 +226,6 @@
     </div>
   </div>
 
-  <div id="sayfaHavai" hidden>
-    <div class="kart">
-      <div class="kbas"><span class="no">2</span><div><h2>Havai hat projesi</h2><p>Hazırlanıyor.</p></div></div>
-      <p class="not">Havai hat bölümü hazırlanıyor. Bu iş yeraltı ise yukarıdan "Yeraltı"yı seçin.</p>
-    </div>
-  </div>
-
   <div id="sayfaYeralti" hidden>
   <div class="kart" id="k-ic">
     <div class="kbas"><span class="no">2</span><div><h2>İç tesisat projesi</h2><p>Projeyi yükleyin; antet, güç dağıtım tablosu ve kolon şemasını sırayla çerçeveleyip okutun.</p></div><span class="cip" id="c-ic">Bekliyor</span></div>
@@ -320,6 +313,12 @@
     </section>
   </div>
 
+  <div class="kart" id="k-havai" hidden>
+    <div class="kbas"><span class="no">4</span><div><h2>Havai hat: direkler ve cer hesabı</h2><p>Altlığı (kroki resmi ya da TKGM parsel KML'i) yükleyin, mevcut direği ve yeni direkleri sırayla işaretleyin. Talep gücü ve enerji alınan direk GDZ yazısından gelir; ALPEK kesiti %1 gerilim düşümüne göre seçilir.</p></div><span class="cip" id="c-havai">Bekliyor</span></div>
+    <iframe id="havaiCer" title="Havai hat cer hesabı" src="havai-cer.html?gomulu=1" style="width:100%;height:860px;border:1px solid var(--cizgi);border-radius:10px;background:#fff"></iframe>
+    <div class="sonuc" id="havaiSonuc" style="margin-top:10px"></div>
+  </div>
+
   <div class="kart" id="k-kablo">
     <div class="kbas"><span class="no">4</span><div><h2>Kablo seçimi ve hesap</h2><p>Gerilim düşümü, akım taşıma ve ana kesici uyumuna göre en uygun kesit önerilir.</p></div><span class="cip" id="c-kablo">Bekliyor</span></div>
     <div class="kablo-satir">
@@ -393,6 +392,7 @@
 <script src="../veri/katalog.js"></script>
 <script src="../ortak/bhp.js"></script>
 <script src="../ortak/bhp-cizim.js"></script>
+<script src="../ortak/bhp-havai.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script type="module">
 import * as pdfjs from 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs';
@@ -565,11 +565,29 @@ function yakinKur(id) {
 function yakinSigdir(id) { requestAnimationFrame(() => YK[id] && YK[id].sigdir()); }
 yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('gdzResim'); yakinKur('r-uydu');
 
+// ---- Havai hat: cer aracı (havai-cer.html) iframe içinde; talep gücü ve GDZ direk adı gönderilir, kroki ve cer sonucu gelir ----
+let _havaiImza = '';
+function havaiAyarGonder(yalnizDegisince) {
+  const f = $('havaiCer'); if (!f || !f.contentWindow) return;
+  const b = bilgiler(), imza = [b.talepW, b.faz, kaynakAdi(), b.malSahibi].join('|');
+  if (yalnizDegisince && imza === _havaiImza) return;       // döngü olmasın: cer aracı her ayarda sonuç gönderir
+  _havaiImza = imza;
+  f.contentWindow.postMessage({ tip: 'havai-ayar', talepKW: (b.talepW || 0) / 1000, faz: b.faz, mevcutAd: kaynakAdi(), proje: b.malSahibi || b.basvuruNo }, '*');
+}
+window.addEventListener('message', e => {
+  const f = $('havaiCer'); if (!f || e.source !== f.contentWindow) return;
+  const m = e.data || {};
+  if (m.tip === 'havai-hazir') havaiAyarGonder();
+  else if (m.tip === 'havai-sonuc') { D.havai = m; if (D.hat === 'havai') guncelle(); }
+});
+
 // ---- Hat türü: GDZ'ye göre yeraltı ya da havai sayfası açılır ----
 function hatSec(tur) {
   D.hat = tur;
   for (const x of $('hatTur').children) x.setAttribute('aria-pressed', x.dataset.v === tur);
-  $('sayfaYeralti').hidden = tur !== 'yeralti'; $('sayfaHavai').hidden = tur !== 'havai';
+  $('sayfaYeralti').hidden = false;                          // iç tesisat, kontrol ve vaziyet iki türde de ortak
+  $('k-kablo').hidden = tur === 'havai'; $('k-havai').hidden = tur !== 'havai';
+  if (tur === 'havai') havaiAyarGonder();
   guncelle();
 }
 $('hatTur').addEventListener('click', e => { const b = e.target.closest('button'); if (b) hatSec(b.dataset.v); });
@@ -875,12 +893,31 @@ $('iletken').addEventListener('click', e => {
 $('enKucuk').addEventListener('input', () => { D.elleSecilen = null; guncelle(); });
 $('kesit').addEventListener('change', () => { D.elleSecilen = $('kesit').value; guncelle(); });
 
+function havaiSonucYaz(b, kablo, N, L, In) {
+  const s = $('havaiSonuc'), H = D.havai, v = BHP.virgul; if (!s) return;
+  if (!H || !H.direkSayisi) { s.innerHTML = '<span class="durum">Henüz direk işaretlenmedi.</span>'; return; }
+  const kotu = H.sonuclar.filter(r => !r.ok || r.kViol);
+  let o = `<div class="sonuc-satir"><b>Direkler</b><span class="formul">${H.sonuclar.map(r => `${r.name}: ${r.type}`).join(' · ')}</span>
+    <span class="${kotu.length ? 'degil' : 'uygun'}"> ${kotu.length ? kotu.length + ' direk uygun değil' : 'hepsi uygun'}</span></div>`;
+  if (kablo) {
+    const h = BHP.hesap(kablo, N, L, In);
+    o += `<div class="sonuc-satir"><b>ALPEK kesiti</b><span class="formul">${kablo.yazi} · L = ${L} m · %e = ${v(h.e, 2)} &lt; %1,5 · I = ${v(h.I, 1)} A ≤ ${kablo.iz} A</span>
+      <span class="${h.uygun ? 'uygun' : 'degil'}"> ${h.uygun ? 'uygun' : 'UYGUN DEĞİL'}</span><span class="durum">Kesit %1 gerilim düşümüne göre seçildi; Iz: Konen ALPEK tablosu.</span></div>`;
+  } else o += `<div class="sonuc-satir"><span class="durum">${N > 0 ? 'Hat boyu için ölçek verin ya da KML altlık yükleyin.' : 'Talep gücü (3. bölüm) gerekli.'}</span></div>`;
+  s.innerHTML = o;
+  const cp = $('c-havai'); if (cp) { const t = kablo && !kotu.length && H.direkSayisi >= 2; cp.className = 'cip' + (t ? ' tamam' : ' dikkat'); cp.textContent = t ? 'Tamam' : 'Devam ediyor'; }
+}
+
 function guncelle() {
   const sel = $('kesit'), b = bilgiler();
-  const N = b.talepW, L = b.uzunluk;
+  const havai = D.hat === 'havai', H = D.havai;
+  const N = b.talepW, L = havai ? (H && H.hatBoyu ? Math.round(H.hatBoyu) : 0) : b.uzunluk;
+  if (havai) b.uzunluk = L;
   let kablo = null;
   const In = BHP.anaKesiciA(b.korumalar);                    // ana kesici akımı: kablo Iz ≥ In olmalı
-  if (D.iletken && N > 0 && L > 0) {
+  if (havai) {
+    if (N > 0 && L > 0) kablo = BHP.kabloOner('alpek', N, L, 0, b.faz, In);   // %1'e göre seçilir, hesapta "< %1,5" yazılır
+  } else if (D.iletken && N > 0 && L > 0) {
     const liste = BHP.kablolar(D.iletken, b.faz);
     const oneri = BHP.kabloOner(D.iletken, N, L, parseFloat($('enKucuk').value) || 0, b.faz, In);
     const secili = D.elleSecilen || oneri.ad;
@@ -892,8 +929,9 @@ function guncelle() {
     kablo = liste.find(k => k.ad === secili);
   } else if (D.iletken) { sel.disabled = true; sel.innerHTML = '<option>Güç ve uzunluk gerekli</option>'; }
   D.kablo = kablo;
-  if (kablo && !D.malzemeElle) { D.malzeme = BHP.malzemeOner(b, kablo); malzemeCiz(); }
-  if (!D.notlarElle) $('notlar').value = BHP.notlarOner(b).join('\n');
+  if (kablo && !D.malzemeElle) { D.malzeme = havai ? BHPHavai.malzemeOner(BHP, b, kablo, H || {}) : BHP.malzemeOner(b, kablo); malzemeCiz(); }
+  if (!D.notlarElle) $('notlar').value = (havai && kablo ? BHPHavai.notlarOner(BHP, b, kablo, H || {}) : BHP.notlarOner(b)).join('\n');
+  if (havai) { havaiSonucYaz(b, kablo, N, L, In); havaiAyarGonder(true); }
   const s = $('sonuc');
   if (kablo) {
     const h = BHP.hesap(kablo, N, L, In), v = BHP.virgul;
@@ -912,7 +950,12 @@ function guncelle() {
   if (!D.sablon) eksik.push('çizim şablonu yüklenemedi (sayfayı yenileyin)');
   if (!D.gdz) eksik.push('GDZ bağlantı görüşü (1. bölüm)');
   else if (!$('gdzOnay').checked) eksik.push('GDZ bilgileri: 1. bölümde yazıyla karşılaştırıp "doğru" kutusunu işaretleyin');
-  if (!D.iletken) eksik.push('bakır / alüminyum seçimi (4. bölüm)');
+  if (havai) {
+    if (!H || H.direkSayisi < 2) eksik.push('havai hat: mevcut direği ve en az bir yeni direği işaretleyin (4. bölüm)');
+    else if (!(H.hatBoyu > 0)) eksik.push('havai hat: ölçek verin ya da KML altlık yükleyin (hat boyu hesaplanamadı)');
+    else if (H.sonuclar.some(r => !r.ok || r.kViol)) eksik.push('havai hat: uygun olmayan direk var (4. bölümdeki tabloyu kontrol edin)');
+    if (!kablo && N > 0 && L > 0) eksik.push('havai hat: ALPEK kesiti bulunamadı');
+  } else if (!D.iletken) eksik.push('bakır / alüminyum seçimi (4. bölüm)');
   else if (!kablo) eksik.push('kablo: talep gücü (3. bölüm) ve hat uzunluğu (4. bölüm) girilmeli');
   if (kablo && !In) eksik.push('ana kesici değeri (3. bölüm, sayaç panosu): kablo ana kesiciye göre seçilir');
   else if (kablo && In) { const h = BHP.hesap(kablo, N, L, In);
@@ -946,13 +989,6 @@ function guncelle() {
   $('d-indir').innerHTML = eksik.length ? '<b>İndirmek için şunlar gerekli:</b>' + liste(eksik) + (uyari.length ? '<b>Dikkat:</b>' + liste(uyari) : '')
     : uyari.length ? '<b>Hazır.</b> Dikkat:' + liste(uyari) : '<b>Hazır.</b>';
   durumPaneli(eksik);
-  if (D.hat === 'havai') {                                    // havai hat bölümü henüz yok: panel yeraltı adımlarını saymasın
-    $('adimListe').innerHTML = `<li class="${D.gdz ? 'tamam' : ''}" data-hedef="k-gdz"><i>${D.gdz ? '✓' : 1}</i><div>GDZ bağlantı görüşü<small>havai hat</small></div></li>`
-      + '<li data-hedef="sayfaHavai"><i>2</i><div>Havai hat projesi<small>hazırlanıyor</small></div></li>';
-    $('ilerlemeCubuk').style.width = '0'; $('ilerlemeYazi').textContent = '';
-    $('indir').disabled = true; $('d-indir').className = 'indir-durum';
-    $('d-indir').innerHTML = 'Havai hat projesi henüz hazırlanıyor. Bu iş yeraltı ise 1. bölümde "Yeraltı"yı seçin.';
-  }
 }
 // ---- Proje durumu (sağ panel) ve bölüm etiketleri ----
 function durumPaneli(eksik) {
@@ -965,7 +1001,9 @@ function durumPaneli(eksik) {
     ['k-gdz', 'GDZ bağlantı görüşü', gdzTamam ? 'tamam' : D.gdz ? 'dikkat' : '', gdzTamam ? (D.gdz.basvuruNo || '') : D.gdz ? 'onay bekliyor' : 'yüklenmedi'],
     ['k-ic', 'İç tesisat okuma', okundu ? 'tamam' : D.icDoc ? 'dikkat' : '', okundu ? 'üç bölüm okundu' : D.icDoc ? 'işaretleme sürüyor' : 'yüklenmedi'],
     ['k-kontrol', 'Kontrol ve onay', D.icDoc && !kontrolEksik && D.satirlar.length ? 'tamam' : D.icDoc ? 'dikkat' : '', D.icDoc ? (kontrolEksik ? 'onay / düzeltme bekliyor' : 'onaylandı') : ''],
-    ['k-kablo', 'Kablo ve hesap', D.kablo && !kabloEksik ? 'tamam' : D.iletken ? 'dikkat' : '', D.kablo ? D.kablo.yazi : 'bakır / alüminyum seçin'],
+    D.hat === 'havai'
+      ? ['k-havai', 'Havai hat ve cer', D.kablo && !eksik.some(e => /havai hat/.test(e)) ? 'tamam' : D.havai && D.havai.direkSayisi ? 'dikkat' : '', D.kablo ? D.kablo.yazi : 'direkleri işaretleyin']
+      : ['k-kablo', 'Kablo ve hesap', D.kablo && !kabloEksik ? 'tamam' : D.iletken ? 'dikkat' : '', D.kablo ? D.kablo.yazi : 'bakır / alüminyum seçin'],
     ['k-vaziyet', 'Vaziyet planı', vazTamam ? 'tamam' : D.vaziyet ? 'dikkat' : '', vazTamam ? 'işaretlendi' : D.vaziyet ? 'işaretleyin' : 'isteğe bağlı'],
   ];
   $('adimListe').innerHTML = adim.map(([id, ad, d, alt], i) =>
@@ -999,7 +1037,10 @@ function cizim() {
   const b = bilgiler();
   const notlar = $('notlar').value.split('\n').map(t => t.trim()).filter(Boolean);
   const bilgi = BHPCizim.bilgiOku(D.sablon);
-  return { b, bilgi, c: BHPCizim.hepsi(BHP.cizimVerisi(b, D.kablo, D.malzeme, notlar), bilgi) };
+  if (D.hat === 'havai' && D.havai && D.havai.hatBoyu) b.uzunluk = Math.round(D.havai.hatBoyu);
+  const v = BHP.cizimVerisi(b, D.kablo, D.malzeme, notlar);
+  if (D.hat === 'havai') Object.assign(v, { havai: D.havai || {}, L: b.uzunluk, Ldis: b.uzunluk, Lic: 0, basvuruNo: b.basvuruNo });
+  return { b, bilgi, c: BHPCizim.hepsi(v, bilgi) };
 }
 function onizle() {
   if (!D.kablo) { $('onizleme').innerHTML = ''; return; }
@@ -1015,7 +1056,8 @@ $('indir').addEventListener('click', async () => {
   const musteri = String(b.malSahibi || '').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().toLocaleUpperCase('tr-TR');
   const ad = musteri ? `${musteri} BHP` : `BHP-${b.basvuruNo}`;
   const uyduAd = 'uydu.jpg', vazAd = 'vaziyet.jpg';
-  const dxf = BHPCizim.dxfeEkle(BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd)), c, b.baglanti);
+  const havai = D.hat === 'havai';
+  const dxf = BHPCizim.dxfeEkle(BHP.doldur(D.sablon, BHP.degerler(b, D.kablo, uyduAd, vazAd)), c, havai ? 'havai' : b.baglanti, true, havai ? BHPHavai.SIL : null);
   const zip = new JSZip(), klasor = zip.folder(ad);
   klasor.file(`${ad}.dxf`, dxf);
   if (D.uydu) klasor.file(uyduAd, D.uydu);
@@ -1551,6 +1593,8 @@ Yalnız şu JSON'u döndür:
   finally { btn.disabled = false; }
 });
 satirlariCiz();
+// denemeler (Playwright) için: modül içindeki duruma dışarıdan erişim
+window._bhp = { D, hatSec, guncelle, cizim, bilgiler };
 </script>
 </body>
 </html>

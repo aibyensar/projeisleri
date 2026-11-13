@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AG Cer Hesabı ve Direk Seçimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef0f3;--panel:#fff;--ink:#16191d;--mute:#667080;--line:#dde1e7;--acc:#1b5fd1;--acc2:#e8f0fd;--ok:#16794a;--okbg:#e6f4ec;--bad:#c42b1c;--badbg:#fbeae8;--warn:#9a5b00;--warnbg:#fff4df;--r:10px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:13.5px}
+button,input,select{font:inherit;color:inherit}
+header{height:54px;display:flex;align-items:center;gap:14px;padding:0 16px;background:#13171c;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;white-space:nowrap}
+.brand svg{flex:none}
+#projName{background:#222831;border:1px solid #2f3742;border-radius:8px;color:#fff;padding:7px 10px;min-width:260px;flex:1;max-width:520px}
+#projName::placeholder{color:#8a93a1}
+.hdr-sp{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:500;background:#222831;color:#c9d1dc;white-space:nowrap}
+.chip.ok{background:#173d2a;color:#7fe0aa}.chip.bad{background:#4a1c18;color:#ffaaa1}
+.hbtn{border:1px solid #2f3742;background:#222831;color:#fff;border-radius:8px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.hbtn:hover{background:#2b323c}
+.hbtn.pri{background:var(--acc);border-color:var(--acc)}
+.hbtn.pri:hover{background:#174fb0}
+.app{display:grid;grid-template-columns:350px 1fr;height:calc(100vh - 54px)}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow:auto}
+.sec{border-bottom:1px solid var(--line)}
+.sec>summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;user-select:none}
+.sec>summary::-webkit-details-marker{display:none}
+.sec>summary .n{width:22px;height:22px;border-radius:50%;background:var(--acc2);color:var(--acc);display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none}
+.sec>summary .meta{margin-left:auto;font-weight:400;color:var(--mute);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec>summary::after{content:'';width:7px;height:7px;border-right:1.6px solid var(--mute);border-bottom:1.6px solid var(--mute);transform:rotate(45deg);margin-left:6px;transition:.15s}
+.sec[open]>summary::after{transform:rotate(225deg)}
+.sec .body{padding:2px 16px 16px}
+label.l{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px;font-weight:500}
+input.f,select.f{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:#fff}
+input.f:focus,select.f:focus{outline:2px solid #bcd3f7;border-color:var(--acc)}
+.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}
+.chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:7px 0;cursor:pointer}
+.seg{display:flex;background:#f1f3f6;border-radius:8px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:transparent;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12.5px;color:var(--mute);font-weight:500}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 11px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:#b9c0ca}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.sm{padding:4px 8px;font-size:12px}
+.note{font-size:12px;color:var(--mute);line-height:1.5;margin:8px 0 0}
+.drop{border:1.5px dashed #c3cad4;border-radius:9px;padding:14px;text-align:center;color:var(--mute);font-size:12.5px;cursor:pointer;line-height:1.5;background:#fafbfc}
+.drop:hover,.drop.hov{border-color:var(--acc);color:var(--acc);background:var(--acc2)}
+.drop b{color:var(--ink)}
+.plist{margin-top:8px;max-height:140px;overflow:auto;font-size:12.5px}
+.plist div{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.plist div span{flex:1}
+.x{border:0;background:none;cursor:pointer;color:var(--mute);font-size:15px;line-height:1;padding:0 4px}
+.x:hover{color:var(--bad)}
+main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.tabs{display:flex;gap:2px;padding:8px 14px 0;background:var(--bg)}
+.tab{border:0;background:transparent;padding:9px 14px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:500;color:var(--mute)}
+.tab.on{background:var(--panel);color:var(--ink);box-shadow:0 -1px 0 var(--line) inset}
+.view{display:none;flex:1;min-height:0;flex-direction:column;background:var(--panel)}
+.view.on{display:flex}
+#stage{position:relative;flex:1 1 60%;min-height:300px;background:#dfe3e8;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+.tb{position:absolute;left:12px;top:12px;display:flex;gap:4px;background:#fff;border-radius:10px;padding:4px;box-shadow:0 2px 10px rgba(16,24,40,.14)}
+.tb button{display:flex;align-items:center;gap:6px;border:0;background:transparent;padding:7px 10px;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:#333}
+.tb button:hover{background:#f1f3f6}
+.tb button.on{background:var(--acc);color:#fff}
+.tb kbd{font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.6}
+.tb .sep{width:1px;background:var(--line);margin:4px 2px}
+.tr{position:absolute;right:12px;top:12px;display:flex;gap:6px;align-items:center}
+.tr .seg{background:#fff;box-shadow:0 2px 10px rgba(16,24,40,.14)}
+.tr .btn{box-shadow:0 2px 10px rgba(16,24,40,.14);border:0}
+.hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(19,23,28,.88);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;pointer-events:none;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
+.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.empty div{background:#fff;border-radius:12px;padding:22px 26px;text-align:center;box-shadow:0 2px 14px rgba(16,24,40,.1);max-width:420px;color:var(--mute);line-height:1.6}
+.empty b{color:var(--ink);font-size:15px;display:block;margin-bottom:6px}
+.bottom{flex:0 0 auto;max-height:42%;overflow:auto;border-top:1px solid var(--line);padding:12px 14px;background:#fff}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mute);font-weight:600;text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);background:#fafbfc;position:sticky;top:-12px}
+td{padding:6px 8px;border-bottom:1px solid #eef0f3;font-size:13px;vertical-align:middle}
+tr.sel td{background:#f2f6fe}
+tbody tr{cursor:pointer}
+td.num{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+td input.in{width:66px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px}
+td select{padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:600}
+.pill.ok{background:var(--okbg);color:var(--ok)}.pill.bad{background:var(--badbg);color:var(--bad)}
+.tag{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11.5px;background:#f1f3f6;color:#444}
+.bar{height:6px;background:#eef0f3;border-radius:3px;overflow:hidden;width:70px;display:inline-block;vertical-align:middle;margin-right:6px}.bar i{display:block;height:100%}
+.warns{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.w{padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.45}
+.w.warn{background:var(--warnbg);color:#5d3a00}.w.bad{background:var(--badbg);color:#7a1c12}.w.info{background:#eef4fd;color:#1e3f73}
+.paper{flex:1;overflow:auto;padding:18px;background:#e4e7eb}
+.paper .sheet{background:#fff;box-shadow:0 2px 16px rgba(0,0,0,.14);margin:0 auto;max-width:1400px}
+.paper .sheet svg{display:block;width:100%;height:auto}
+.ptools{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--line);background:#fff}
+.ptools .sp{flex:1}
+.float{position:fixed;right:24px;top:120px;width:300px;background:#fff;border-radius:12px;box-shadow:0 10px 34px rgba(0,0,0,.28);padding:12px 14px;z-index:55;display:none;border-top:4px solid var(--acc)}
+.float.on{display:block}
+.float .fh{display:flex;align-items:center;gap:8px;cursor:move;user-select:none;margin:-4px 0 6px;padding:4px 0}
+.float .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.modal{position:fixed;inset:0;background:rgba(15,20,28,.45);display:none;align-items:center;justify-content:center;z-index:50}
+.modal.on{display:flex}
+.card{background:#fff;border-radius:14px;padding:20px 22px;width:min(460px,94vw);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.card h3{margin:0 0 4px;font-size:16px}
+.card .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.toast{position:fixed;right:18px;bottom:18px;background:#13171c;color:#fff;padding:10px 14px;border-radius:9px;font-size:13px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:60;max-width:420px}
+.toast.on{opacity:1;transform:none}
+.guide{position:absolute;left:12px;top:62px;bottom:12px;height:max-content;max-height:calc(100% - 74px);overflow:auto;width:340px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(16,24,40,.18);padding:14px 16px;border-top:4px solid var(--acc);z-index:5}
+.guide .gh{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.guide .dots{display:flex;gap:4px;margin-left:auto}.guide .dots i{width:7px;height:7px;border-radius:50%;background:#dde1e7}.guide .dots i.d{background:#9fc0f2}.guide .dots i.c{background:var(--acc);width:16px;border-radius:4px}
+.guide h4{margin:8px 0 6px;font-size:15.5px}
+.guide p{margin:0;font-size:13px;line-height:1.55;color:#333}
+.guide .gx{margin-top:10px}
+.guide .gacts{display:flex;gap:6px;margin:14px -16px -14px;padding:10px 16px;align-items:center;position:sticky;bottom:-14px;background:#fff;border-top:1px solid var(--line)}.guide .gacts .sp{flex:1}
+.guide .st{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-top:10px;padding:7px 9px;border-radius:7px;background:#f6f7f9;color:var(--mute)}
+.guide .st.ok{background:var(--okbg);color:var(--ok)}
+.gpill{position:absolute;left:12px;top:62px;border:0;background:var(--acc);color:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:12.5px;cursor:pointer;box-shadow:0 4px 14px rgba(27,95,209,.35);display:none;z-index:5}
+.dbar{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:#fff;padding:6px 8px 6px 12px;border-radius:999px;box-shadow:0 4px 16px rgba(16,24,40,.18);font-size:12.5px;z-index:6}
+.dbar.on{display:flex}
+.selcard{position:absolute;right:12px;top:60px;width:270px;background:#fff;border-radius:12px;box-shadow:0 4px 18px rgba(16,24,40,.16);padding:12px 14px;display:none}
+.selcard.on{display:block}
+.selcard h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
+.selcard .kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px;margin:6px 0}
+.selcard .kv span:nth-child(odd){color:var(--mute)}
+.exrow{display:flex;gap:6px;align-items:center;margin:4px 0}
+.exrow input{flex:1;padding:4px 7px;border:1px solid var(--line);border-radius:6px;font-size:12.5px}
+a{color:var(--acc)}
+@media (max-width:980px){.app{grid-template-columns:1fr;height:auto}aside{max-height:none}#stage{min-height:60vh}header{flex-wrap:wrap;height:auto;padding:8px 12px}#projName{min-width:0}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fb0ff" stroke-width="2"><path d="M12 2v20M6 6h12M8 10h8M4 22h16"/></svg>AG Cer Hesabı</div>
+  <input id="projName" placeholder="Proje adı (ör. Ali Veli AG bağlantı projesi)">
+  <span class="hdr-sp"></span>
+  <span class="chip" id="stChip">Direk yok</span>
+  <button class="hbtn pri" id="dlZip">DXF indir</button>
+</header>
+<div class="app">
+<aside>
+  <details class="sec" open id="s1"><summary><span class="n">1</span>Altlık<span class="meta" id="m1">yüklenmedi</span></summary><div class="body">
+    <div class="drop" id="drop"><b>Kroki resmi, DXF, GeoJSON veya KML</b><br>sürükle, tıkla seç ya da resmi Ctrl+V ile yapıştır</div>
+    <input type="file" id="file" accept="image/*,.dxf,.geojson,.json,.kml" multiple hidden>
+    <div id="dxfPick" style="display:none">
+      <label class="l">Hat polyline'ı (DXF)</label>
+      <select class="f" id="polySel"></select>
+      <div class="row" style="margin-top:6px"><button class="btn" id="usePoly">Köşeleri direk yap</button><button class="btn" id="revPoly">Yönü çevir</button></div>
+    </div>
+    <label class="l">Ölçek</label>
+    <div class="row"><div id="scaleTxt" style="align-self:center;font-size:12.5px">—</div><button class="btn sm" id="scaleBtn" style="flex:none">Ölçek ver (S)</button></div>
+    <label class="l">Parseller <span id="pcount" style="font-weight:400"></span></label>
+    <div class="row"><button class="btn sm" id="parcelBtn">Parsel (P)</button><button class="btn sm" id="parcelClr" style="flex:none">Tümünü sil</button></div>
+    <div id="autoBox" style="display:none;margin-top:8px;padding:10px;border-radius:9px;background:#f4f7fc">
+      <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Otomatik parsel (resimden)</div>
+      <div class="row"><button class="btn sm pri" id="findAll">Tüm parselleri bul</button><button class="btn sm" id="readNums">Numaraları sırayla gir</button></div>
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="autoClick" checked>Tek tıkla bul (Shift+tık: elle köşe)</label>
+      <div class="row" style="align-items:center"><button class="btn sm" id="pickLine" style="flex:none">Sınır rengini seç</button><span class="note" id="lineInfo" style="margin:0">kırmızı çizgiler</span></div>
+    </div>
+    <div class="plist" id="plist"></div>
+    <label class="l">Yollar <span id="rcount" style="font-weight:400"></span></label>
+    <div class="row"><button class="btn sm" id="roadBtn">Yol çiz (Y)</button><button class="btn sm" id="roadClr" style="flex:none">Tümünü sil</button></div>
+    <div class="plist" id="rlist"></div>
+    <p class="note">Beyaz proje altlığı için parselleri ve yolları resmin üzerinden çiz ya da TKGM Parsel Sorgu'dan indirdiğin KML/GeoJSON dosyalarını yükle (ada/parsel numarası dosyanın içinden okunur, koordinatlar ITRF96 TM3'e çevrilir).</p>
+  </div></details>
+
+  <details class="sec" open id="s2"><summary><span class="n">2</span>Hat ve hesap değerleri<span class="meta" id="m2"></span></summary><div class="body">
+    <label class="l">Yeni hat iletkeni</label><select class="f" id="routeCond"></select>
+    <label class="l">Buz yükü bölgesi</label>
+    <select class="f" id="bolge"><option value="1">I. bölge (İzmir, Manisa ovaları)</option><option value="2">II. bölge</option><option value="3">III. bölge</option><option value="4">IV. bölge</option></select>
+    <p class="note">EKAT'a göre I. bölgede rakımı 600 m'yi aşan yerlerde hesap II. bölgeye göre yapılır.</p>
+    <label class="l">K (kafes) direk zorunlu</label>
+    <div class="row"><label class="chk"><input type="checkbox" id="kKose">Köşe</label><label class="chk"><input type="checkbox" id="kBrans">Branşman</label><label class="chk"><input type="checkbox" id="kNih">Nihayet</label></div>
+    <div class="row">
+      <div><label class="l">Düz hat kabul ≥ (°)</label><input class="f" id="straightAng" type="number" step="1"></div>
+      <div><label class="l">Açıklık uyarısı > (m)</label><input class="f" id="maxSpan" type="number" step="1"></div>
+    </div>
+    <div class="row">
+      <div><label class="l">ALPEK σ (kg/mm²)</label><input class="f" id="sigma" type="number" step="0.5"></div>
+      <div><label class="l">Emniyet payı %</label><input class="f" id="margin" type="number" step="5"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="wind">Rüzgarlı tepe kuvvetleriyle kontrol</label>
+    <label class="chk"><input type="checkbox" id="firstMev">Hat mevcut direkten başlar</label>
+  </div></details>
+
+  <details class="sec" id="s3"><summary><span class="n">3</span>Kesit kontrolü<span class="meta" id="m3">güç girilmedi</span></summary><div class="body">
+    <div class="row">
+      <div><label class="l">Bağlantı gücü (kW)</label><input class="f" id="kW" type="number" step="0.5" placeholder="ör. 10"></div>
+      <div><label class="l">Bağlantı</label><select class="f" id="tri"><option value="1">Trifaze 380 V</option><option value="0">Monofaze 220 V</option></select></div>
+    </div>
+    <div class="row">
+      <div><label class="l">cosφ</label><input class="f" id="cos" type="number" step="0.05" value="0.8"></div>
+      <div><label class="l">Toplam mesafe (m)</label><input class="f" id="Lm" type="number" placeholder="gir"></div>
+      <div><label class="l">Sınır %e</label><input class="f" id="lim" type="number" step="0.1" value="1"></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="autoK">Kesiti otomatik seç (en küçük uygun ALPEK)</label>
+    <div class="row"><div><label class="l">Al κ (m/Ω·mm²)</label><input class="f" id="kappa" type="number" step="0.5" value="35"></div><div></div></div>
+    <div id="kesitOut" class="note"></div>
+  </div></details>
+
+  <details class="sec" id="s5"><summary><span class="n">i</span>Kaynaklar ve kabuller</summary><div class="body note" style="margin:0">
+    <b>ALPEK cer</b> = askı teli kesiti × σ (Alpek El Kitabı σ = 12 kg/mm²): 3x16+25 → 300, 3x25+35 → 420, 3x35+50 → 600, 3x50+70 → 840 kg.<br>
+    <b>Çıplak iletken</b> cer'i buz yükü bölgesine göre müşterek hat çekme kuvvetleri tablosundan alınır, tertipler toplanır (3P+R/I = 3×138,5 + 100 + 125 = 640,5 kg, II. bölge).<br>
+    <b>Demir direk</b> rüzgarsız/rüzgarlı tepe kuvvetleri: 8I 300/231, 10I 500/443, 12I 900/786, 10U 700/597, 12U 1200/1086, K1 1000/871 … K5 5000/4806 kg. <b>SBA beton</b>: tip × 100 kg.<br>
+    <b>Topraklama</b>: yeni demir direklerde koruma topraklaması (KT); AG hava hattının nihayet direğinde ayrıca işletme topraklaması (İT).<br>
+    <b>Gerilim düşümü</b>: %e = 100·N·L/(κ·S·U²) trifaze, 200·N·L/(κ·S·U²) monofaze.<br><br>
+    <a href="https://konen.com.tr/dosya/TeknikBilgi/KonenTeknik_tepe-kuvvetleri_008.pdf">Konen – direk tepe kuvvetleri</a> · <a href="https://www.konen.com.tr/dosya/TeknikBilgi/KonenTeknik_iletkenler--buz-yuku-bolgelerine-gore-iletkenlerin-musterek-hat-cekme-kuvvetleri_010.pdf">Konen – iletken çekme kuvvetleri</a> · <a href="https://pdfcoffee.com/alpek-el-kitab-1-pdf-free.html">Alpek El Kitabı</a> · <a href="https://www.emo.org.tr/ekler/5f9e40b7271a4a2_ek.pdf?tipi=1&turu=X&sube=15">EMO – ilçe bazında buz yükü bölgeleri</a> · <a href="https://www.emo.org.tr/ekler/57041ae1aec217e_ek.pdf?dergi=1278">EMO – nihayet direği işletme topraklaması</a>
+  </div></details>
+</aside>
+
+<main>
+  <div class="tabs"><button class="tab on" data-v="vK">Kroki</button><button class="tab" data-v="vR">Cer raporu</button></div>
+  <section class="view on" id="vK">
+    <div id="stage">
+      <canvas id="cv"></canvas>
+      <div class="tb" id="tb">
+        <button data-t="move" title="Seç / taşı (V)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 3l7 18 2.5-7.5L21 11z"/></svg>Seç<kbd>V</kbd></button>
+        <button data-t="add" title="Direk ekle (D)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="8" height="8"/><path d="M12 2v6M12 16v6"/></svg>Direk<kbd>D</kbd></button>
+        <button data-t="ex" title="Mevcut hat yönü (M)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3"><path d="M3 20L21 4"/></svg>Mevcut hat<kbd>M</kbd></button>
+        <span class="sep"></span>
+        <button data-t="parcel" title="Parsel çiz (P)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l9-3 7 6-3 11-12-2z"/></svg>Parsel<kbd>P</kbd></button>
+        <button data-t="road" title="Yol çiz (Y)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 21L10 3M17 21L14 3M12 6v2M12 11v2M12 16v2"/></svg>Yol<kbd>Y</kbd></button>
+        <button data-t="scale" title="Ölçek ver (S)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18M5 13v8M19 13v8M9 15v4M13 15v4M17 15v4"/></svg>Ölçek<kbd>S</kbd></button>
+      </div>
+      <div class="tr">
+        <div class="seg" id="viewSeg"><button data-m="sat" class="on">Uydu</button><button data-m="proj">Proje</button></div>
+        <button class="btn" id="zFit">Sığdır</button>
+      </div>
+      <div class="selcard" id="selCard"></div>
+      <div class="empty" id="empty" style="display:none"></div>
+      <div class="guide" id="guide">
+        <div class="gh"><span id="gStep"></span><div class="dots" id="gDots"></div><button class="x" id="gHide" title="Rehberi gizle">–</button></div>
+        <h4 id="gTitle"></h4><p id="gText"></p><div class="gx" id="gExtra"></div><div id="gStatus"></div>
+        <div class="gacts"><button class="btn sm" id="gBack">Geri</button><span class="sp"></span><button class="btn sm" id="gSkip">Atla</button><button class="btn sm pri" id="gNext">Devam</button></div>
+      </div>
+      <button class="gpill" id="gShow">Adım adım rehber</button>
+      <div class="hint" id="hint"></div>
+      <div class="dbar" id="dbar"><span id="dbarTxt"></span><button class="btn sm pri" onclick="finishDraft()">Bitir (Enter)</button><button class="btn sm" onclick="S.draft.pop();draw()">Son noktayı sil</button><button class="btn sm" onclick="S.draft=[];draw()">İptal (Esc)</button></div>
+    </div>
+    <div class="bottom">
+      <table id="tbl"><thead><tr><th>Direk</th><th>Görevi</th><th>Açıklık (m)</th><th>Hat açısı</th><th style="text-align:right">Bileşke R</th><th>Direk tipi</th><th style="text-align:right">Tepe kuv. P</th><th>Kullanım</th><th>Sonuç</th></tr></thead><tbody></tbody></table>
+      <div class="warns" id="warns"></div>
+    </div>
+  </section>
+  <section class="view" id="vR">
+    <div class="ptools"><b>Mühendislik cer raporu</b><span class="note" style="margin:0">A3 yatay · kabuller, kuvvet tablosu, kuvvet şemaları, kesit kontrolü, sonuç</span><span class="sp"></span><button class="btn" id="dlRepDxf">DXF (kroki + cer)</button><button class="btn" id="dlRepSvg">SVG</button></div>
+    <div class="paper"><div class="sheet" id="repSheet"></div></div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="mevModal"><div class="card">
+  <h3>Mevcut direk</h3><div class="note" style="margin:0">Hattın bağlanacağı mevcut direği ve ona gelen mevcut hattı gir.</div>
+  <label class="l">Direk cinsi</label>
+  <div class="seg" id="mCinsSeg"><button data-c="beton" class="on">Beton (SBA)</button><button data-c="demir">Demir</button><button data-c="agac">Ağaç / diğer</button></div>
+  <div class="row" id="mBetonRow"><div><label class="l">Boy (m)</label><select class="f" id="mBoy"></select></div><div><label class="l">Tip (× 100 kg)</label><select class="f" id="mTip"></select></div></div>
+  <div id="mDemirRow" style="display:none"><label class="l">Demir direk tipi</label><select class="f" id="mDemir"></select></div>
+  <div class="row" id="mAgacRow" style="display:none"><div><label class="l">Tip / açıklama</label><input class="f" id="mAgacAd" placeholder="ör. Ağaç 9 m"></div><div><label class="l">Tepe kuvveti (kg)</label><input class="f" id="mAgacKg" type="number"></div></div>
+  <label class="l">Direğe gelen mevcut hat iletkeni</label>
+  <select class="f" id="mCond"></select>
+  <input class="f" id="mCondOther" placeholder="ör. 4R, 3P+R/I, AER 3x35+50 ya da kg" style="margin-top:6px;display:none">
+  <label class="l">Mevcut hat bu direkte</label>
+  <div class="seg" id="mHatSeg"><button data-h="end" class="on">Bitiyor (tek yön)</button><button data-h="through">Devam ediyor (iki yön)</button><button data-h="none">Yok</button></div>
+  <div class="acts"><button class="btn" id="mCancel">Vazgeç</button><button class="btn pri" id="mOk">Kaydet ve yönü işaretle</button></div>
+</div></div>
+<div class="float" id="askBox"><div class="fh" id="askHandle"><svg width="14" height="14" viewBox="0 0 24 24" fill="#9aa3af"><circle cx="8" cy="6" r="1.6"/><circle cx="16" cy="6" r="1.6"/><circle cx="8" cy="12" r="1.6"/><circle cx="16" cy="12" r="1.6"/><circle cx="8" cy="18" r="1.6"/><circle cx="16" cy="18" r="1.6"/></svg><b id="askTitle"></b><span class="note" style="margin:0 0 0 auto">sürükleyerek taşı</span></div>
+  <div class="note" id="askNote" style="margin:0 0 6px"></div><div id="askFields"></div>
+  <div class="acts"><button class="btn" id="askCancel">Vazgeç</button><button class="btn pri" id="askOk">Tamam</button></div>
+</div>
+<div class="toast" id="toast"></div>
+<datalist id="condList"></datalist>
+
+<script>
+// ===== CER HESABI ÇEKİRDEK (saf fonksiyonlar) =====
+const POLES = [
+  // s: rüzgarsız güçlü eksen, w: zayıf eksen, r: rüzgarlı güçlü eksen (Konen/TEDAŞ AG demir direk tablosu, a=50 m)
+  { n: '8I', s: 300, w: 90, r: 231 },
+  { n: '10I', s: 500, w: 160, r: 443 },
+  { n: '10U', s: 700, w: 170, r: 597 },
+  { n: '12I', s: 900, w: 230, r: 786 },
+  { n: 'K1', s: 1000, w: 1000, r: 871 },
+  { n: '12U', s: 1200, w: 250, r: 1086 },
+  { n: 'K2', s: 2000, w: 2000, r: 1848 },
+  { n: 'K3', s: 3000, w: 3000, r: 2828 },
+  { n: 'K4', s: 4000, w: 4000, r: 3817 },
+  { n: 'K5', s: 5000, w: 5000, r: 4806 },
+  { n: '6.5U', s: 200, w: 80, r: 143, noauto: true },
+  { n: '8U', s: 400, w: 125, r: 343, noauto: true },
+];
+const AER_LIST = ['AER 3x16+25', 'AER 3x25+35', 'AER 3x35+50', 'AER 3x50+70', 'AER 3x70+95'];
+
+const DEFAULTS = { sigma: 12, bolge: 1, wind: false, margin: 0, routeCond: 'AER 3x25+35', kKose: true, kBrans: true, kNih: false, straightAng: 175, firstMev: true };
+// Buz yükü bölgelerine göre çıplak Al iletken müşterek hat çekme kuvvetleri Tmax (kg) — Konen teknik tablo
+const BARE = {
+  ROSE: [70, 100, 147, 148], LILY: [79, 110, 162, 161], IRIS: [92, 125, 189, 175], PANSY: [104.7, 138.5, 188, 189.7],
+  POPPY: [120, 152, 211, 206], ASTER: [137, 170, 230, 224], PHLOX: [157, 194, 259, 244], OXLIP: [168.5, 217.5, 282, 265],
+};
+const BARE_ABBR = { R: 'ROSE', L: 'LILY', I: 'IRIS', P: 'PANSY', PO: 'POPPY', A: 'ASTER', PH: 'PHLOX', O: 'OXLIP' };
+// TEDAŞ AG hat tertipleri (Al) + eski şebekelerde görülen çok iletkenli tertipler
+const TERTIP = ['4R', '5R', '3L+R/L', '3I+R/L', '3P+R/I', '3Po+R/P', '3A+R/P', '3Ph+R/Po', '3O+R/A', '4P', '4P+R', '3A+P+R'];
+// SBA beton direk: boy/tip, tepe kuvveti = tip × 100 kg (TEDAŞ: 600 kg'a kadar 100, sonra 200 kg aralık)
+const SBA_BOY = ['9.30', '10', '11', '12', '13', '14'];
+const SBA_TIP = [2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 33, 35];
+
+// İletken metninden cer (kg): "AER 3x25+35" -> nötr kesit × σ ; "4R", "3A+P+R" -> çıplak iletken toplamı ; "416" -> sayı
+function parseCer(txt, P) {
+  if (txt == null) return 0;
+  const t = String(txt).trim().toUpperCase().replace(/İ/g, 'I');
+  if (/^\d+([.,]\d+)?$/.test(t)) return parseFloat(t.replace(',', '.'));
+  const m = t.match(/3\s*X\s*(\d+)\s*\+\s*(?:1\s*X\s*16\s*\+\s*)?(\d+)/);
+  if (m) return Math.round(parseFloat(m[2]) * P.sigma * 10) / 10;
+  const b = Math.min(4, Math.max(1, +P.bolge || 2)) - 1;
+  let sum = 0;
+  for (const part of t.replace(/\s+/g, '').split(/[+\/]/)) {
+    if (!part) continue;
+    const m = part.match(/^(\d*)X?([A-Z]+)$/); if (!m) return NaN;
+    const nm = BARE[m[2]] ? m[2] : BARE_ABBR[m[2]]; if (!nm) return NaN;
+    sum += (m[1] ? parseInt(m[1]) : 1) * BARE[nm][b];
+  }
+  return Math.round(sum * 10) / 10;
+}
+function fmt(v) { return (Math.round(v * 10) / 10).toString().replace('.', ','); }
+function poleCap(pt, P) { const d = POLES.find(x => x.n === pt); return d ? (P.wind ? d.r : d.s) : 0; }
+
+function poleNames(poles, P) {
+  let d = 0, m = 0;
+  const ad = P && P.mevAd ? String(P.mevAd) : 'MEVCUT';           // AGY: GDZ yazısındaki direk adı (ör. C-06)
+  return poles.map(p => p.mev ? (++m === 1 ? ad : ad + '-' + m) : 'D' + (++d));
+}
+
+// Bir direğe bağlı hatlar: önce ek (mevcut) hatlar, sonra önceki ve sonraki açıklık
+function poleLines(poles, i, P) {
+  const p = poles[i], L = [];
+  const rT = parseCer(P.routeCond, P);
+  (p.ex || []).forEach(e => L.push({ x: e.x, y: e.y, T: parseCer(e.c, P), lab: e.c, kind: 'ex' }));
+  if (i > 0) L.push({ x: poles[i - 1].x, y: poles[i - 1].y, T: rT, lab: P.routeCond, kind: 'route' });
+  if (i < poles.length - 1) L.push({ x: poles[i + 1].x, y: poles[i + 1].y, T: rT, lab: P.routeCond, kind: 'route' });
+  L.forEach(l => { l.ang = Math.atan2(l.y - p.y, l.x - p.x) * 180 / Math.PI; });
+  L.sort((a, b) => b.T - a.T);  // büyük cer sola (örnek projelerdeki gibi)
+  return L;
+}
+
+function computePole(poles, i, P) {
+  const p = poles[i], L = poleLines(poles, i, P);
+  const res = { i, lines: L, kind: L.length === 0 ? 'none' : L.length === 1 ? 'end' : L.length === 2 ? 'two' : 'multi' };
+  // kanonik açı: ilk hat sola (180°)
+  let a = L.map(l => ((180 + l.ang - L[0].ang) % 360 + 360) % 360);
+  if (L.length >= 2 && a[1] > 180 + 1e-9) a = a.map(v => (360 - v) % 360);
+  if (L.length) a[0] = 180;
+  res.can = a;
+  if (res.kind === 'two') {
+    const T1 = L[0].T, T2 = L[1].T, phi = a[1];
+    res.measured = Math.round(180 - phi);
+    const ph = p.angOv > 0 && p.angOv <= 180 ? Math.round(180 - p.angOv) : Math.round(phi);           // örnek projelerdeki gibi tam derece
+    const s = Math.round(T2 * Math.sin(ph * Math.PI / 180));
+    const c = Math.round(T2 * Math.cos(ph * Math.PI / 180));
+    const rx = Math.round((T1 - c) * 10) / 10;
+    res.T1 = T1; res.T2 = T2; res.phi = ph; res.interior = 180 - ph; res.s = s; res.c = c; res.rx = rx;
+    res.R = Math.round(Math.hypot(rx, s));
+    res.dir = [-rx, s];
+  } else if (res.kind === 'end') {
+    res.R = Math.round(L[0].T); res.dir = [-1, 0];
+  } else if (res.kind === 'multi') {
+    let X = 0, Y = 0; L.forEach((l, k) => { X += l.T * Math.cos(a[k] * Math.PI / 180); Y += l.T * Math.sin(a[k] * Math.PI / 180); });
+    res.X = Math.round(X); res.Y = Math.round(Y); res.R = Math.round(Math.hypot(X, Y)); res.dir = [X, Y];
+  } else { res.R = 0; res.dir = [0, 0]; }
+  // direk tipi
+  // direk görevi
+  res.cat = res.kind === 'end' ? 'nihayet' : res.kind === 'multi' ? 'brans' : res.kind === 'two' ? (res.interior >= (P.straightAng || 175) ? 'duz' : 'kose') : '-';
+  res.catName = { nihayet: 'Nihayet', brans: 'Branşman', duz: 'Taşıyıcı (düz)', kose: 'Köşe', '-': '—' }[res.cat];
+  // dünya koordinatında bileşke yönü (sembol yönü için)
+  let wx = 0, wy = 0; L.forEach(l => { const r = l.ang * Math.PI / 180; wx += l.T * Math.cos(r); wy += l.T * Math.sin(r); });
+  res.wdir = Math.hypot(wx, wy) > 1 ? Math.atan2(wy, wx) * 180 / Math.PI : null;
+  res.lineDir = L.length ? L.find(l => l.kind === 'route') ? L.find(l => l.kind === 'route').ang : L[0].ang : 0;
+  const needK = (P.kKose && res.cat === 'kose') || (P.kBrans && res.cat === 'brans') || (P.kNih && res.cat === 'nihayet');
+  res.needK = needK;
+  const need = res.R * (1 + (P.margin || 0) / 100);
+  if (p.mev) { res.type = p.mevName || 'MEVCUT'; res.cap = +p.mevCap || 0; res.auto = false; }
+  else if (p.ov && p.ov !== 'auto') { res.type = p.ov; res.cap = poleCap(p.ov, P); res.auto = false; }
+  else {
+    const d = POLES.find(x => !x.noauto && (!needK || x.n[0] === 'K') && (P.wind ? x.r : x.s) >= need);
+    res.type = d ? d.n : 'K5+'; res.cap = d ? (P.wind ? d.r : d.s) : 0; res.auto = true;
+  }
+  res.ok = res.R <= res.cap && res.cap > 0;
+  res.isIU = /^[\d.]+[IU]$/.test(res.type);
+  res.isK = /^K\d/.test(res.type);
+  res.kViol = needK && !p.mev && !res.isK;
+  return res;
+}
+function computeAll(poles, P) { const names = poleNames(poles, P); return poles.map((p, i) => Object.assign(computePole(poles, i, P), { name: names[i] })); }
+
+// ===== Çizim primitifleri (birim: çizim birimi, y yukarı) =====
+function sheetPrims(results, P) {
+  const pr = [], RH = 6.8, W = 41;
+  const n = results.length, top = n * RH + 2.2;
+  const L = (x1, y1, x2, y2, o) => pr.push(Object.assign({ t: 'line', x1, y1, x2, y2 }, o || {}));
+  const C = (x, y, r) => pr.push({ t: 'circle', x, y, r });
+  const A = (x, y, r, a1, a2) => pr.push({ t: 'arc', x, y, r, a1, a2 });
+  const T = (x, y, s, h, o) => pr.push(Object.assign({ t: 'text', x, y, s, h: h || 0.32 }, o || {}));
+  const arrow = (x, y, dx, dy) => {
+    const ex = x + dx, ey = y + dy; L(x, y, ex, ey); const a = Math.atan2(dy, dx);
+    [1, -1].forEach(sg => { const b = a + Math.PI + sg * 25 * Math.PI / 180; L(ex, ey, ex + 0.35 * Math.cos(b), ey + 0.35 * Math.sin(b)); });
+  };
+  const dirArrow = (cx, cy, deg, len) => { const r = deg * Math.PI / 180; arrow(cx + 0.22 * Math.cos(r), cy + 0.22 * Math.sin(r), len * Math.cos(r), len * Math.sin(r)); };
+  const rT = parseCer(P.routeCond, P);
+  T(0.3, top - 0.6, `CER HESABI  -  HAVAİ ${P.routeCond} mm²  (T = ${fmt(rT)} KG)${P.wind ? '  -  RÜZGARLI TEPE KUVVETLERİ' : ''}`, 0.5, { bold: true });
+  results.forEach((r, k) => {
+    const y0 = top - 1.6 - (k + 1) * RH, yc = y0 + 2.6;
+    pr.push({ t: 'rect', x: 0.3, y: y0, w: W, h: RH - 0.4 });
+    pr.push({ t: 'rect', x: 0.3, y: y0 + RH - 1.3, w: 3.2, h: 0.9 }); T(0.45, y0 + RH - 1.1, r.name, 0.5);
+    const capTxt = `${r.name} (${r.type}) = ${r.cap} kg`;
+    const okTxt = r.ok ? 'UYGUNDUR' : 'UYGUN DEĞİL';
+    const okCol = r.ok ? null : 1;
+    const can = r.can, Ls = r.lines;
+    // Panel 1: kuvvetler
+    C(6, yc, 0.22);
+    Ls.forEach((l, j) => {
+      const len = 3.2; dirArrow(6, yc, can[j], len);
+      const rr = can[j] * Math.PI / 180, lx = 6 + (len + 0.3) * Math.cos(rr), ly = yc + (len + 0.3) * Math.sin(rr);
+      T(lx - (Math.cos(rr) < -0.3 ? 1.1 : 0), ly - (Math.abs(Math.sin(rr)) < 0.3 ? 0.75 : 0), `${fmt(l.T)} KG`);
+    });
+    if (r.kind === 'two') { A(6, yc, 1.2, r.phi, 180); T(5.4, yc + 1.45, `${r.interior}°`, 0.3); }
+    T(4.2, yc - 1.5, capTxt, 0.26);
+    // Panel 2: bileşenler
+    if (r.kind === 'two') {
+      C(17, yc, 0.22); dirArrow(17, yc, 180, 3.2); dirArrow(17, yc, r.phi, 3.2);
+      T(13.6, yc - 0.75, `${fmt(r.T1)} KG`);
+      if (r.phi > 0.5 && r.phi < 179.5) L(17, yc + 0.22, 17, yc + 3.0, { dash: true });
+      T(13.0, yc + 3.25, `sin ${r.phi} x ${fmt(r.T2)} = ${r.s} KG`);
+      T(17.9, yc - 0.75, `cos ${r.phi} x ${fmt(r.T2)} = ${r.c} KG`);
+    } else if (r.kind === 'end') {
+      C(17, yc, 0.22); dirArrow(17, yc, 180, 3.2); T(13.6, yc - 0.75, `${fmt(r.lines[0].T)} KG`);
+      T(18.0, yc + 0.6, 'NİHAYET DİREĞİ', 0.3); T(18.0, yc - 0.1, 'çekme tek yönlü', 0.28);
+    } else if (r.kind === 'multi') {
+      T(13.0, yc + 1.6, 'Hatlar vektörel toplanır:', 0.3);
+      Ls.forEach((l, j) => T(13.0, yc + 0.9 - j * 0.55, `${fmt(l.T)} KG  @ ${Math.round(can[j])}°`, 0.28));
+    }
+    // Panel 3: net bileşenler
+    const mx = Math.max(1, ...Ls.map(l => l.T));
+    if (r.kind === 'two') {
+      C(27, yc, 0.22);
+      const lx = 0.6 + 2.4 * Math.abs(r.rx) / mx, ly = 0.6 + 2.4 * Math.abs(r.s) / mx;
+      if (Math.abs(r.rx) > 0.05) dirArrow(27, yc, r.rx > 0 ? 180 : 0, lx);
+      if (r.s > 0) dirArrow(27, yc, 90, ly);
+      const cs = r.c < 0 ? `${fmt(r.T1)} + ${-r.c}` : r.rx >= 0 ? `${fmt(r.T1)} - ${r.c}` : `${r.c} - ${fmt(r.T1)}`;
+      T(23.4, yc - 0.75, `${cs} = ${fmt(Math.abs(r.rx))} KG`);
+      if (r.s > 0) T(27.2, yc + ly + 0.1, `${r.s} KG`);
+    } else if (r.kind === 'multi') {
+      C(27, yc, 0.22);
+      if (Math.abs(r.X) > 0) dirArrow(27, yc, r.X < 0 ? 180 : 0, 0.6 + 2.4 * Math.abs(r.X) / mx);
+      if (Math.abs(r.Y) > 0) dirArrow(27, yc, r.Y > 0 ? 90 : 270, 0.6 + 2.4 * Math.abs(r.Y) / mx);
+      T(23.4, yc - 0.75, `Top. X = ${Math.abs(r.X)} KG   Top. Y = ${Math.abs(r.Y)} KG`);
+    }
+    // Panel 4: bileşke
+    C(35.5, yc, 0.22);
+    if (r.R > 0) {
+      const d = Math.atan2(r.dir[1], r.dir[0]) * 180 / Math.PI, len = 0.8 + 2.2 * Math.min(1, r.R / mx);
+      dirArrow(35.5, yc, d, len);
+      const rr = d * Math.PI / 180; T(35.5 + (len + 0.3) * Math.cos(rr) - 0.6, yc + (len + 0.3) * Math.sin(rr) + 0.1, `${r.R} KG`);
+    }
+    T(35.95, yc - 0.15, `${r.R} KG  ${okTxt}`, 0.32, { bold: true, color: okCol });
+    T(34.0, yc - 1.5, capTxt, 0.26);
+    if (!r.ok) T(23.4, yc - 1.5, r.cap ? `${r.R} > ${r.cap} kg  - DİREK TİPİNİ BÜYÜT` : 'Uygun direk yok', 0.28, { color: 1 });
+  });
+  // Özet
+  const sm = summaryLines(results, P);
+  let y = top - 1.6 - n * RH - 1.6;
+  sm.forEach(s => { if (s) T(0.5, y, s, 0.45); y -= s ? 0.85 : 0.45; });
+  return { prims: pr, w: W + 0.6, top, bottom: y - 0.5 };
+}
+
+function summaryLines(results, P) {
+  const out = [], seen = new Set();
+  const order = POLES.map(p => p.n);
+  const types = [...new Set(results.filter(r => !r.lines.length || true).map(r => r.type))];
+  // direk taşıma satırları (önce yeni tipler, sonra mevcut)
+  results.filter(r => !r.isMev).forEach(() => {});
+  const newT = types.filter(t => order.includes(t)).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  const mevT = results.filter(r => !order.includes(r.type));
+  newT.forEach(t => out.push(`${t} DİREK ${poleCap(t, P)} KG TAŞIR`));
+  mevT.forEach(r => { const k = r.type + '|' + r.cap; if (!seen.has(k)) { seen.add(k); out.push(`${r.type} DİREK ${r.cap} KG TAŞIR`); } });
+  out.push('');
+  const conds = new Map();
+  conds.set(P.routeCond, parseCer(P.routeCond, P));
+  results.forEach(r => r.lines.filter(l => l.kind === 'ex').forEach(l => conds.set(l.lab, l.T)));
+  conds.forEach((v, k) => {
+    const nm = /AER/i.test(k) ? `${k.replace(/^AER\s*/i, 'AER ')} mm` : /^\d/.test(k) && !/[RPA]/i.test(k) ? `MEVCUT HAT` : `MEVCUT ${k.toUpperCase()} HAT`;
+    out.push(`${nm} ${fmt(v)} KG çeker.`);
+  });
+  if (P.kesit) {
+    const k = P.kesit; out.push('');
+    out.push(`Bağlantı gücü ${fmt(k.kW)} kW, ${k.tri ? 'trifaze ' + (k.U3 || 380) + ' V' : 'monofaze ' + (k.U1 || 220) + ' V'}, cosφ ${fmt(k.cos)}, hat boyu ${Math.round(k.L)} m`);
+    out.push(`I = ${fmt(k.res.I)} A ≤ ${k.res.sel.amp} A  ;  %e = ${fmt(k.res.sel.e)} ≤ %${fmt(k.limit)}  →  ${P.routeCond} ${k.res.sel.okI && k.res.sel.okE ? 'uygundur.' : 'UYGUN DEĞİLDİR.'}`);
+  }
+  out.push('');
+  results.forEach(r => {
+    const lab = r.name.startsWith('MEVCUT') ? `${r.name}  DİREK` : `${r.name} DİREĞİ`;
+    out.push(r.ok ? `${lab} Toplam cer ${r.R}<${r.cap} olduğu için uygundur.` : `${lab} Toplam cer ${r.R}>${r.cap} olduğu için UYGUN DEĞİLDİR.`);
+  });
+  return out;
+}
+
+// ===== Kroki primitifleri (dünya koordinatı) =====
+function krokiPrims(poles, results, P, opt) {
+  const pr = [], u = opt.unit;  // u: 1 metreye karşılık gelen çizim birimi... burada yazı yüksekliği tabanı
+  const h = opt.textH;
+  const names = poleNames(poles);
+  for (let i = 0; i < poles.length - 1; i++) {
+    const a = poles[i], b = poles[i + 1];
+    pr.push({ t: 'line', x1: a.x, y1: a.y, x2: b.x, y2: b.y, layer: 'HAT' });
+    let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, nx = -Math.sin(ang * Math.PI / 180), ny = Math.cos(ang * Math.PI / 180);
+    const len = opt.mpu ? Math.hypot(b.x - a.x, b.y - a.y) * opt.mpu : null;
+    pr.push({ t: 'text', x: mx + nx * h * 0.6, y: my + ny * h * 0.6, s: `HAVAİ ${P.routeCond}mm²`, h: h * 0.7, rot: ang, center: true, layer: 'YAZI' });
+    if (len) pr.push({ t: 'text', x: mx - nx * h * 1.3, y: my - ny * h * 1.3, s: `${Math.round(len)} m`, h: h * 0.7, rot: ang, center: true, layer: 'YAZI' });
+  }
+  poles.forEach((p, i) => {
+    const r = results[i];
+    (p.ex || []).forEach(e => {
+      pr.push({ t: 'line', x1: p.x, y1: p.y, x2: e.x, y2: e.y, dash: true, layer: 'MEVCUT' });
+      pr.push({ t: 'text', x: (p.x + e.x) / 2 + h * 0.4, y: (p.y + e.y) / 2, s: `${String(e.c).toUpperCase()} MEVCUT`, h: h * 0.7, layer: 'YAZI' });
+    });
+    poleSymbol(pr, p, r, h);
+    pr.push({ t: 'text', x: p.x + h * 1.1, y: p.y + h * 0.2, s: r.name, h: h * 1.2, layer: 'YAZI' });
+    pr.push({ t: 'text', x: p.x + h * 1.1, y: p.y - h * 1.3, s: r.type, h: h * 1.2, layer: 'YAZI' });
+    if (r.kind === 'two') {
+      const a0 = r.lines[0].ang, a1 = r.lines[1].ang;
+      let d = ((a1 - a0) % 360 + 360) % 360; let s0 = a0, s1 = a1; if (d > 180) { s0 = a1; s1 = a0; }
+      pr.push({ t: 'arc', x: p.x, y: p.y, r: h * 2.2, a1: s0, a2: s1, layer: 'ACI' });
+      let mid = s0 + (((s1 - s0) % 360 + 360) % 360) / 2; const mr = mid * Math.PI / 180;
+      pr.push({ t: 'text', x: p.x + h * 3.0 * Math.cos(mr), y: p.y + h * 3.0 * Math.sin(mr), s: `${r.interior}°`, h: h * 0.8, center: true, layer: 'ACI' });
+    }
+  });
+  return pr;
+}
+
+// Direk sembolleri (örnek krokilerdeki gösterim): beton/mevcut = daire, I-U demir = dikdörtgen
+// (uzun kenar bileşke yönünde, düz hatta hatta dik), K kafes = kare, yeni demir direklere topraklama işareti
+function poleSymbol(pr, p, r, h) {
+  const rot = (cx, cy, pts, deg) => { const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return pts.map(([x, y]) => [cx + x * c - y * s, cy + x * s + y * c]); };
+  const poly = (pts, layer) => { for (let k = 0; k < pts.length; k++) { const a = pts[k], b = pts[(k + 1) % pts.length]; pr.push({ t: 'line', x1: a[0], y1: a[1], x2: b[0], y2: b[1], layer }); } };
+  const isConc = p.mev || !(r.isIU || r.isK);
+  let axis = r.wdir != null && r.R > 5 && r.cat !== 'duz' ? r.wdir : r.lineDir + 90;
+  if (isConc) { pr.push({ t: 'circle', x: p.x, y: p.y, r: h * 0.75, layer: 'DIREK' }); return; }
+  if (r.isK) { const a = h * 0.75; poly(rot(p.x, p.y, [[-a, -a], [a, -a], [a, a], [-a, a]], axis), 'DIREK'); }
+  else { const a = h * 1.1, b = h * 0.45; poly(rot(p.x, p.y, [[-a, -b], [a, -b], [a, b], [-a, b]], axis), 'DIREK'); }
+  // topraklama: bileşkenin tersi yönünde kısa hat + 3 çizgi
+  const g = ((r.wdir != null ? r.wdir : r.lineDir) + 180 - 35) * Math.PI / 180;
+  const ex = p.x + h * 2.6 * Math.cos(g), ey = p.y + h * 2.6 * Math.sin(g), nx = -Math.sin(g), ny = Math.cos(g);
+  pr.push({ t: 'line', x1: p.x + h * 0.8 * Math.cos(g), y1: p.y + h * 0.8 * Math.sin(g), x2: ex, y2: ey, layer: 'TOPRAK' });
+  [1, 0.65, 0.3].forEach((w, k) => { const ox = ex + Math.cos(g) * k * h * 0.3, oy = ey + Math.sin(g) * k * h * 0.3; pr.push({ t: 'line', x1: ox - nx * w * h * 0.8, y1: oy - ny * w * h * 0.8, x2: ox + nx * w * h * 0.8, y2: oy + ny * w * h * 0.8, layer: 'TOPRAK' }); });
+}
+
+// ===== DXF (R12 ASCII) =====
+const CP1254 = { 'İ': 0xDD, 'ı': 0xFD, 'Ş': 0xDE, 'ş': 0xFE, 'Ğ': 0xD0, 'ğ': 0xF0, 'Ç': 0xC7, 'ç': 0xE7, 'Ö': 0xD6, 'ö': 0xF6, 'Ü': 0xDC, 'ü': 0xFC, '°': 0xB0, '²': 0xB2, '·': 0xB7, 'Â': 0xC2, 'â': 0xE2 };
+const DXF_ASCII = { '√': 'kök', 'Σ': 'Top.', 'α': 'a', 'β': 'b', 'φ': 'fi', 'κ': 'k', '≤': '<=', '→': '->', '–': '-' };
+function dxfEsc(s, uni) { if (!uni) s = String(s).replace(/[√Σαβφκ≤→–]/g, ch => DXF_ASCII[ch]); return String(s).replace(/[^\x20-\x7E]/g, ch => (!uni && CP1254[ch]) ? ch : '\\U+' + ch.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')); }
+// DXF metnini Windows-1254 baytlarına çevir
+function dxfBytes(str) { const out = new Uint8Array(str.length); for (let i = 0; i < str.length; i++) { const ch = str[i], c = str.charCodeAt(i); out[i] = c < 128 ? c : (CP1254[ch] || 63); } return out; }
+function toDXF(prims, opt) {
+  opt = opt || {}; const ox = opt.ox || 0, oy = opt.oy || 0, K = opt.scale || 1;
+  const o = [];
+  const g = (c, v) => o.push(String(c), String(v));
+  const N = v => (Math.round(v * K * 10000) / 10000).toString();
+  g(0, 'SECTION'); g(2, 'HEADER'); g(9, '$ACADVER'); g(1, 'AC1009'); g(9, '$DWGCODEPAGE'); g(3, 'ANSI_1254'); g(9, '$INSUNITS'); g(70, 6); g(0, 'ENDSEC');
+  g(0, 'SECTION'); g(2, 'TABLES');
+  g(0, 'TABLE'); g(2, 'LTYPE'); g(70, 2);
+  g(0, 'LTYPE'); g(2, 'CONTINUOUS'); g(70, 0); g(3, 'Solid line'); g(72, 65); g(73, 0); g(40, 0);
+  g(0, 'LTYPE'); g(2, 'DASHED'); g(70, 0); g(3, '__ __ __'); g(72, 65); g(73, 2); g(40, opt.dash * 1.5 || 0.75); g(49, opt.dash || 0.5); g(49, -(opt.dash || 0.5) / 2);
+  g(0, 'ENDTAB');
+  const layers = [...new Set(prims.map(p => p.layer || opt.layer || 'CER'))];
+  g(0, 'TABLE'); g(2, 'LAYER'); g(70, layers.length);
+  const LC = Object.assign({ HAT: 1, MEVCUT: 8, DIREK: 7, YAZI: 7, ACI: 7, TOPRAK: 7, PARSEL: 8, PARSEL_NO: 8, ALTLIK: 8, CERCEVE: 7, TABLO: 7, SEMA: 7, BILESKE: 1, LEJANT: 7, YOL: 8 }, opt.layerColors || {});
+  layers.forEach(l => { g(0, 'LAYER'); g(2, l); g(70, 0); g(62, LC[l] || 7); g(6, 'CONTINUOUS'); });
+  g(0, 'ENDTAB');
+  g(0, 'TABLE'); g(2, 'STYLE'); g(70, 1); g(0, 'STYLE'); g(2, 'STANDARD'); g(70, 0); g(40, 0); g(41, 1); g(50, 0); g(71, 0); g(42, 0.3); g(3, 'arial.ttf'); g(4, ''); g(0, 'ENDTAB');
+  g(0, 'ENDSEC');
+  g(0, 'SECTION'); g(2, 'ENTITIES');
+  const head = (type, p) => { g(0, type); g(8, p.layer || opt.layer || 'CER'); if (p.color) g(62, p.color); if (p.dash) g(6, 'DASHED'); };
+  prims.forEach(p => {
+    if (p.t === 'line') { head('LINE', p); g(10, N(p.x1 + ox)); g(20, N(p.y1 + oy)); g(30, 0); g(11, N(p.x2 + ox)); g(21, N(p.y2 + oy)); g(31, 0); }
+    else if (p.t === 'rect') { const q = [[p.x, p.y], [p.x + p.w, p.y], [p.x + p.w, p.y + p.h], [p.x, p.y + p.h]]; for (let k = 0; k < 4; k++) { const a = q[k], b = q[(k + 1) % 4]; head('LINE', p); g(10, N(a[0] + ox)); g(20, N(a[1] + oy)); g(30, 0); g(11, N(b[0] + ox)); g(21, N(b[1] + oy)); g(31, 0); } }
+    else if (p.t === 'circle') { head('CIRCLE', p); g(10, N(p.x + ox)); g(20, N(p.y + oy)); g(30, 0); g(40, N(p.r)); }
+    else if (p.t === 'arc') { head('ARC', p); g(10, N(p.x + ox)); g(20, N(p.y + oy)); g(30, 0); g(40, N(p.r)); g(50, (Math.round(p.a1 * 1000) / 1000).toString()); g(51, (Math.round(p.a2 * 1000) / 1000).toString()); }
+    else if (p.t === 'text') {
+      const ha = p.center ? 1 : (p.ha || 0), va = p.center ? 2 : (p.va || 0);
+      head('TEXT', p); g(10, N(p.x + ox)); g(20, N(p.y + oy)); g(30, 0); g(40, N(p.h)); g(1, dxfEsc(p.s, opt.uni)); if (p.rot) g(50, (Math.round(p.rot * 1000) / 1000).toString());
+      if (ha || va) { g(72, ha); g(73, va); g(11, N(p.x + ox)); g(21, N(p.y + oy)); g(31, 0); }
+    }
+    else if (p.t === 'wline') { head('POLYLINE', p); g(66, 1); g(10, 0); g(20, 0); g(30, 0); g(40, N(p.w)); g(41, N(p.w));
+      [[p.x1, p.y1], [p.x2, p.y2]].forEach(([x, y]) => { g(0, 'VERTEX'); g(8, p.layer || opt.layer || 'CER'); g(10, N(x + ox)); g(20, N(y + oy)); g(30, 0); });
+      g(0, 'SEQEND'); g(8, p.layer || opt.layer || 'CER'); }
+    else if (p.t === 'solid') { head('SOLID', p); const q = p.pts, v = [q[0], q[1], q[2], q[3] || q[2]];
+      const order = [0, 1, 3, 2]; [10, 11, 12, 13].forEach((c, k) => { const pt = v[order[k]]; g(c, N(pt[0] + ox)); g(c + 10, N(pt[1] + oy)); g(c + 20, 0); }); }
+    else if (p.t === 'pline') { for (let k = 0; k + 1 < p.pts.length; k++) { head('LINE', p); g(10, N(p.pts[k][0] + ox)); g(20, N(p.pts[k][1] + oy)); g(30, 0); g(11, N(p.pts[k + 1][0] + ox)); g(21, N(p.pts[k + 1][1] + oy)); g(31, 0); } }
+  });
+  g(0, 'ENDSEC'); g(0, 'EOF');
+  return o.join('\r\n') + '\r\n';
+}
+
+// ===== SVG =====
+function toSVG(prims, box, scale, opts) {
+  opts = opts || {};
+  const sc = scale || 30, W = box.w * sc, H = (box.top - box.bottom) * sc;
+  const X = x => ((x - (box.left || 0)) * sc).toFixed(2), Y = y => ((box.top - y) * sc).toFixed(2);
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const ink = opts.ink || '#111', red = '#c0261c', ACI = { 1: '#c0261c', 3: '#1d7a3e', 5: '#1f5fbf', 8: '#777', 7: ink };
+  const o = [`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W.toFixed(0)} ${H.toFixed(0)}" width="${W.toFixed(0)}" height="${H.toFixed(0)}" font-family="Times New Roman, serif">`, `<rect width="100%" height="100%" fill="#fff"/>`];
+  prims.forEach(p => {
+    const col = ACI[p.color] || (p.layer === 'HAT' ? '#c0261c' : p.layer === 'BILESKE' ? '#c0261c' : (p.layer === 'PARSEL' || p.layer === 'PARSEL_NO' || p.layer === 'ALTLIK') ? '#555' : ink);
+    if (p.t === 'line') o.push(`<line x1="${X(p.x1)}" y1="${Y(p.y1)}" x2="${X(p.x2)}" y2="${Y(p.y2)}" stroke="${col}" stroke-width="${p.lw || 1.1}"${p.dash ? ' stroke-dasharray="6 4"' : ''}/>`);
+    else if (p.t === 'rect') o.push(`<rect x="${X(p.x)}" y="${Y(p.y + p.h)}" width="${(p.w * sc).toFixed(2)}" height="${(p.h * sc).toFixed(2)}" fill="none" stroke="${col}" stroke-width="1.4"/>`);
+    else if (p.t === 'circle') o.push(`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="${(p.r * sc).toFixed(2)}" fill="${p.layer === 'DIREK' || !p.layer ? '#fff' : 'none'}" stroke="${col}" stroke-width="${p.lw || 1.4}"/>`);
+    else if (p.t === 'arc') {
+      const a1 = p.a1 * Math.PI / 180, a2 = p.a2 * Math.PI / 180;
+      let span = ((p.a2 - p.a1) % 360 + 360) % 360;
+      o.push(`<path d="M ${X(p.x + p.r * Math.cos(a1))} ${Y(p.y + p.r * Math.sin(a1))} A ${(p.r * sc).toFixed(2)} ${(p.r * sc).toFixed(2)} 0 ${span > 180 ? 1 : 0} 0 ${X(p.x + p.r * Math.cos(a2))} ${Y(p.y + p.r * Math.sin(a2))}" fill="none" stroke="${col}" stroke-width="1.1"/>`);
+    } else if (p.t === 'text') { const ha = p.center ? 1 : (p.ha || 0), va = p.center ? 2 : (p.va || 0);
+      o.push(`<text x="${X(p.x)}" y="${Y(p.y)}" font-size="${(p.h * sc * 1.25).toFixed(2)}" fill="${col}"${p.bold ? ' font-weight="bold"' : ''}${ha ? ` text-anchor="${ha === 1 ? 'middle' : 'end'}"` : ''}${va === 2 ? ' dominant-baseline="middle"' : ''}${p.rot ? ` transform="rotate(${-p.rot} ${X(p.x)} ${Y(p.y)})"` : ''}>${esc(p.s)}</text>`); }
+    else if (p.t === 'wline') o.push(`<line x1="${X(p.x1)}" y1="${Y(p.y1)}" x2="${X(p.x2)}" y2="${Y(p.y2)}" stroke="${col}" stroke-width="${Math.max(1.2, p.w * sc).toFixed(2)}" stroke-linecap="round"/>`);
+    else if (p.t === 'solid') o.push(`<polygon points="${p.pts.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="${col}"/>`);
+    else if (p.t === 'pline') o.push(`<polyline points="${p.pts.map(q => X(q[0]) + ',' + Y(q[1])).join(' ')}" fill="none" stroke="${col}" stroke-width="${p.lw || 1}"${p.dash ? ' stroke-dasharray="6 4"' : ''}/>`);
+  });
+  o.push('</svg>');
+  return o.join('');
+}
+
+// ===== DXF okuma (LWPOLYLINE, POLYLINE/VERTEX, LINE) =====
+function parseDXF(text) {
+  const lines = text.split(/\r?\n/);
+  const pairs = [];
+  for (let i = 0; i + 1 < lines.length; i += 2) pairs.push([parseInt(lines[i].trim()), lines[i + 1].trim()]);
+  let inEnt = false; const ents = []; let cur = null;
+  for (let i = 0; i < pairs.length; i++) {
+    const [c, v] = pairs[i];
+    if (c === 2 && pairs[i - 1] && pairs[i - 1][1] === 'SECTION') inEnt = (v === 'ENTITIES');
+    if (!inEnt) continue;
+    if (c === 0) { cur = { type: v, g: [] }; ents.push(cur); continue; }
+    if (cur) cur.g.push([c, v]);
+  }
+  const polys = [], segs = [], texts = [];
+  let pl = null;
+  ents.forEach(e => {
+    const layer = (e.g.find(x => x[0] === 8) || [0, '0'])[1];
+    if (e.type === 'LWPOLYLINE') {
+      const pts = []; let x = null; const fl = +((e.g.find(q => q[0] === 70) || [0, 0])[1]);
+      e.g.forEach(([c, v]) => { if (c === 10) x = +v; else if (c === 20 && x !== null) { pts.push({ x, y: +v }); x = null; } });
+      if (fl & 1 && pts.length > 2) pts.closed = true;
+      polys.push({ layer, pts, closed: !!(fl & 1) });
+    } else if (e.type === 'POLYLINE') { pl = { layer, pts: [], closed: !!(+((e.g.find(q => q[0] === 70) || [0, 0])[1]) & 1) }; }
+    else if (e.type === 'VERTEX' && pl) { const x = +(e.g.find(q => q[0] === 10) || [0, 0])[1], y = +(e.g.find(q => q[0] === 20) || [0, 0])[1]; pl.pts.push({ x, y }); }
+    else if (e.type === 'SEQEND' && pl) { polys.push(pl); pl = null; }
+    else if (e.type === 'TEXT' || e.type === 'MTEXT') {
+      const f = k => (e.g.find(q => q[0] === k) || [0, null])[1];
+      let str = e.type === 'TEXT' ? f(1) : e.g.filter(q => q[0] === 3 || q[0] === 1).map(q => q[1]).join('');
+      if (str) { str = str.replace(/\\[A-Za-z][^;]*;/g, '').replace(/[{}]/g, '').replace(/\\P/g, ' ').replace(/%%[dD]/g, '°');
+        texts.push({ layer, x: +f(10), y: +f(20), h: +f(40) || 1, rot: +(f(50) || 0), s: str }); }
+    }
+    else if (e.type === 'LINE') {
+      const f = k => +(e.g.find(q => q[0] === k) || [0, 0])[1];
+      segs.push({ layer, x1: f(10), y1: f(20), x2: f(11), y2: f(21) });
+    }
+  });
+  polys.forEach(p => { p.len = 0; for (let i = 1; i < p.pts.length; i++) p.len += Math.hypot(p.pts[i].x - p.pts[i - 1].x, p.pts[i].y - p.pts[i - 1].y); });
+  return { polys, segs, texts };
+}
+
+// ===== ZIP (store) =====
+function crc32(buf) { let c, crc = 0xFFFFFFFF; const T = crc32.t || (crc32.t = Array.from({ length: 256 }, (_, n) => { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; })); for (let i = 0; i < buf.length; i++) crc = T[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8); return (crc ^ 0xFFFFFFFF) >>> 0; }
+function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(12, 0x21, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    central.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  });
+  const csize = central.reduce((s, a) => s + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+  const all = [...parts, ...central, new Uint8Array(e.buffer)], total = all.reduce((s, a) => s + a.length, 0), out = new Uint8Array(total);
+  let p = 0; all.forEach(a => { out.set(a, p); p += a.length; });
+  return out;
+}
+
+// ===== KESİT KONTROLÜ (akım + gerilim düşümü) =====
+const AER_AMP = { 16: 70, 25: 90, 35: 115, 50: 140, 70: 180 };   // ALPEK faz akım taşıma (A)
+function kesitCheck(o) {
+  // o: {kW, cos, tri, L, kappa, limit, cond}
+  const U = o.tri ? (o.U3 || 380) : (o.U1 || 220), P = o.kW * 1000;
+  const I = o.tri ? P / (Math.sqrt(3) * U * o.cos) : P / (U * o.cos);
+  const rows = AER_LIST.map(n => {
+    const S = +n.match(/3x(\d+)/)[1];
+    const e = o.tri ? 100 * P * o.L / (o.kappa * S * U * U) : 200 * P * o.L / (o.kappa * S * U * U);
+    const amp = AER_AMP[S];
+    return { n, S, amp, e: Math.round(e * 100) / 100, okI: I <= amp, okE: e <= o.limit };
+  });
+  const sel = rows.find(r => r.n === o.cond) || rows[1];
+  const best = rows.find(r => r.okI && r.okE);
+  return { I: Math.round(I * 10) / 10, U, rows, sel, best };
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = { POLES, DEFAULTS, BARE, TERTIP, SBA_BOY, SBA_TIP, parseCer, computeAll, sheetPrims, summaryLines, krokiPrims, toDXF, dxfBytes, kesitCheck, poleSymbol, toSVG, parseDXF, makeZip };
+
+// ===== CORE 2: coğrafi içe aktarma, proje krokisi, mühendislik cer raporu =====
+
+// --- TM3 projeksiyonu (GRS80, k0 = 1, FE = 500000) — Türkiye ITRF96 TM3 dilimleri
+function tmProject(lon, lat, lon0) {
+  const a = 6378137, f = 1 / 298.257222101, e2 = f * (2 - f), ep2 = e2 / (1 - e2), k0 = 1;
+  const d2r = Math.PI / 180, ph = lat * d2r, lam = (lon - lon0) * d2r;
+  const N = a / Math.sqrt(1 - e2 * Math.sin(ph) ** 2), T = Math.tan(ph) ** 2, C = ep2 * Math.cos(ph) ** 2, A = Math.cos(ph) * lam;
+  const e4 = e2 * e2, e6 = e4 * e2;
+  const M = a * ((1 - e2 / 4 - 3 * e4 / 64 - 5 * e6 / 256) * ph - (3 * e2 / 8 + 3 * e4 / 32 + 45 * e6 / 1024) * Math.sin(2 * ph) + (15 * e4 / 256 + 45 * e6 / 1024) * Math.sin(4 * ph) - (35 * e6 / 3072) * Math.sin(6 * ph));
+  const x = k0 * N * (A + (1 - T + C) * A ** 3 / 6 + (5 - 18 * T + T * T + 72 * C - 58 * ep2) * A ** 5 / 120) + 500000;
+  const y = k0 * (M + N * Math.tan(ph) * (A * A / 2 + (5 - T + 9 * C + 4 * C * C) * A ** 4 / 24 + (61 - 58 * T + T * T + 600 * C - 330 * ep2) * A ** 6 / 720));
+  return { x, y };
+}
+function parcelLabel(props) {
+  if (!props) return '';
+  const keys = Object.keys(props);
+  const ada = keys.find(k => /^ada(no|_no)?$/i.test(k) || /adano/i.test(k));
+  const par = keys.find(k => /^parsel(no|_no)?$/i.test(k) || /parselno/i.test(k));
+  if (ada || par) return `${ada ? props[ada] : ''}${ada && par ? '/' : ''}${par ? props[par] : ''}`;
+  const nm = keys.find(k => /^(name|ad|label|etiket)$/i.test(k));
+  return nm ? String(props[nm]) : '';
+}
+// GeoJSON / KML -> [{ll:[[lon,lat]...], label}]
+function parseGeo(text) {
+  const out = [];
+  const t = text.trim();
+  if (t[0] === '{' || t[0] === '[') {
+    const j = JSON.parse(t);
+    const feats = j.type === 'FeatureCollection' ? j.features : j.type === 'Feature' ? [j] : Array.isArray(j) ? j : [{ geometry: j, properties: {} }];
+    feats.forEach(f => {
+      const g = f.geometry; if (!g) return; const lab = parcelLabel(f.properties);
+      const rings = g.type === 'Polygon' ? [g.coordinates[0]] : g.type === 'MultiPolygon' ? g.coordinates.map(p => p[0]) : g.type === 'LineString' ? [g.coordinates] : [];
+      rings.forEach(r => out.push({ ll: r.map(c => [c[0], c[1]]), label: lab, line: g.type === 'LineString' }));
+    });
+  } else {
+    const pms = t.split(/<Placemark[\s>]/i).slice(1);
+    pms.forEach(pm => {
+      const nm = (pm.match(/<name>([\s\S]*?)<\/name>/i) || [])[1] || '';
+      const props = {}; (pm.match(/<SimpleData[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/SimpleData>/gi) || []).forEach(sd => { const m = sd.match(/name="([^"]+)"[^>]*>([\s\S]*?)</i); if (m) props[m[1]] = m[2].trim(); });
+      (pm.match(/<Data[^>]*name="([^"]+)"[^>]*>\s*<value>([\s\S]*?)<\/value>/gi) || []).forEach(sd => { const m = sd.match(/name="([^"]+)"[^>]*>\s*<value>([\s\S]*?)</i); if (m) props[m[1]] = m[2].trim(); });
+      const lab = parcelLabel(props) || nm.replace(/<!\[CDATA\[|\]\]>/g, '').trim();
+      (pm.match(/<coordinates>([\s\S]*?)<\/coordinates>/gi) || []).slice(0, 1).forEach(c => {
+        const pts = c.replace(/<\/?coordinates>/gi, '').trim().split(/\s+/).map(s => s.split(',').map(Number)).filter(q => q.length >= 2 && !isNaN(q[0]));
+        if (pts.length >= 2) out.push({ ll: pts.map(q => [q[0], q[1]]), label: lab, line: !/Polygon/i.test(pm) });
+      });
+    });
+  }
+  return out;
+}
+function projectGeo(items) {
+  const all = items.flatMap(i => i.ll); if (!all.length) return { parcels: [], lon0: 27 };
+  const mlon = all.reduce((s, c) => s + c[0], 0) / all.length, lon0 = Math.round(mlon / 3) * 3;
+  const parcels = items.map(i => { const pts = i.ll.map(c => tmProject(c[0], c[1], lon0)); if (pts.length > 2 && Math.hypot(pts[0].x - pts[pts.length - 1].x, pts[0].y - pts[pts.length - 1].y) < 0.01) pts.pop(); return { pts, label: i.label, open: i.line }; });
+  return { parcels, lon0 };
+}
+function polyCentroid(pts) {
+  let A = 0, cx = 0, cy = 0;
+  for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length], c = p.x * q.y - q.x * p.y; A += c; cx += (p.x + q.x) * c; cy += (p.y + q.y) * c; }
+  if (Math.abs(A) < 1e-9) return { x: pts.reduce((s, p) => s + p.x, 0) / pts.length, y: pts.reduce((s, p) => s + p.y, 0) / pts.length };
+  return { x: cx / (3 * A), y: cy / (3 * A) };
+}
+
+// --- ortak çizim yardımcıları
+function arrowPr(pr, x1, y1, x2, y2, o) {
+  o = o || {}; const L = Math.hypot(x2 - x1, y2 - y1); if (L < 1e-9) return;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L, hl = o.head || L * 0.18, hw = hl * 0.38;
+  const bx = x2 - ux * hl, by = y2 - uy * hl;
+  if (o.w) pr.push({ t: 'wline', x1, y1, x2: bx, y2: by, w: o.w, layer: o.layer, color: o.color });
+  else pr.push({ t: 'line', x1, y1, x2: bx, y2: by, layer: o.layer, color: o.color, lw: o.lw });
+  pr.push({ t: 'solid', pts: [[x2, y2], [bx - uy * hw, by + ux * hw], [bx + uy * hw, by - ux * hw]], layer: o.layer, color: o.color });
+}
+// --- topraklama sembolleri: İT = toprak işareti (3 kademeli çizgi), KT = daire içinde toprak işareti (koruma topraklaması)
+function groundPr(pr, x, y, dirDeg, h, label, layer, kind, start) {
+  const r = dirDeg * Math.PI / 180, ux = Math.cos(r), uy = Math.sin(r);
+  const s0 = start == null ? h * 0.9 : start, L = s0 + h * 2.4;
+  const ex = x + ux * L, ey = y + uy * L, w = h * 0.15;
+  pr.push({ t: 'wline', x1: x + ux * s0, y1: y + uy * s0, x2: ex, y2: ey, w, layer });
+  // çizgiler hat yönüne dik: iletken doğrultusuna (u) dik n
+  const nx = -uy, ny = ux;
+  [1, 0.64, 0.28].forEach((k, i) => { const ox = ex + ux * i * h * 0.4, oy = ey + uy * i * h * 0.4; pr.push({ t: 'wline', x1: ox - nx * k * h * 0.95, y1: oy - ny * k * h * 0.95, x2: ox + nx * k * h * 0.95, y2: oy + ny * k * h * 0.95, w, layer }); });
+  const cx = ex + ux * h * 0.4, cy = ey + uy * h * 0.4;
+  if (kind === 'KT') { pr.push({ t: 'circle', x: cx, y: cy, r: h * 1.2, layer, lw: 1.6 }); pr.push({ t: 'circle', x: cx, y: cy, r: h * 1.2 - w * 0.6, layer }); }
+  if (label) { const d = kind === 'KT' ? h * 2.3 : h * 1.9, lx = cx + ux * d, ly = cy + uy * d; pr.push({ t: 'text', x: lx, y: ly, s: label, h: h * 0.9, center: true, bold: true, layer }); }
+  return { x: cx, y: cy, R: h * (kind === 'KT' ? 1.3 : 1.1), tx: cx + ux * (kind === 'KT' ? h * 2.3 : h * 1.9), ty: cy + uy * (kind === 'KT' ? h * 2.3 : h * 1.9) };
+}
+
+// --- direk sembolü; dış kenara olan mesafeyi bulmak için şekil bilgisi döner
+function poleSymbol2(pr, p, r, h) {
+  const rot = (cx, cy, pts, deg) => { const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a); return pts.map(([x, y]) => [cx + x * c - y * s, cy + x * s + y * c]); };
+  const poly = (pts, layer, w) => { for (let k = 0; k < pts.length; k++) { const a = pts[k], b = pts[(k + 1) % pts.length]; pr.push({ t: 'wline', x1: a[0], y1: a[1], x2: b[0], y2: b[1], w, layer }); } };
+  const isConc = p.mev && !(r.isIU || r.isK);
+  const axis = r.wdir != null && r.R > 5 && r.cat !== 'duz' ? r.wdir : r.lineDir + 90;
+  const w = h * 0.12;
+  if (isConc) { pr.push({ t: 'circle', x: p.x, y: p.y, r: h * 0.95, layer: 'DIREK' }); pr.push({ t: 'circle', x: p.x, y: p.y, r: h * 0.95 - w, layer: 'DIREK' }); return { kind: 'c', r: h * 0.95, axis }; }
+  if (r.isK) { const a = h * 0.85; poly(rot(p.x, p.y, [[-a, -a], [a, -a], [a, a], [-a, a]], axis), 'DIREK', w); const d = rot(p.x, p.y, [[-a, -a], [a, a], [a, -a], [-a, a]], axis); pr.push({ t: 'line', x1: d[0][0], y1: d[0][1], x2: d[1][0], y2: d[1][1], layer: 'DIREK' }); pr.push({ t: 'line', x1: d[2][0], y1: d[2][1], x2: d[3][0], y2: d[3][1], layer: 'DIREK' }); return { kind: 'r', A: a, B: a, axis }; }
+  const a = h * 1.25, b = h * 0.5; poly(rot(p.x, p.y, [[-a, -b], [a, -b], [a, b], [-a, b]], axis), 'DIREK', w); return { kind: 'r', A: a, B: b, axis };
+}
+function shapeExit(sh, dirDeg) {
+  if (sh.kind === 'c') return sh.r;
+  const t = (dirDeg - sh.axis) * Math.PI / 180, c = Math.abs(Math.cos(t)), s = Math.abs(Math.sin(t));
+  return Math.min(c > 1e-6 ? sh.A / c : 1e9, s > 1e-6 ? sh.B / s : 1e9);
+}
+
+// --- yazı yerleşimi için yaklaşık kutular
+function textBox(x, y, s, h, rot, ha, va) {
+  const w = String(s).length * h * 0.64, x0 = ha === 1 ? -w / 2 : ha === 2 ? -w : 0, y0 = va === 2 ? -h / 2 : -h * 0.18, y1 = y0 + h * (va === 2 ? 1 : 1.0);
+  const a = (rot || 0) * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+  const pts = [[x0, y0], [x0 + w, y0], [x0 + w, y1], [x0, y1]].map(([u, v]) => [x + u * c - v * sn, y + u * sn + v * c]);
+  return { x0: Math.min(...pts.map(q => q[0])), x1: Math.max(...pts.map(q => q[0])), y0: Math.min(...pts.map(q => q[1])), y1: Math.max(...pts.map(q => q[1])) };
+}
+function boxOverlap(a, b) { const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0), h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0); return w > 0 && h > 0 ? w * h : 0; }
+function segHitsBox(s, b) {
+  // Liang–Barsky kırpma
+  let t0 = 0, t1 = 1; const dx = s.x2 - s.x1, dy = s.y2 - s.y1;
+  const chk = (p, q) => { if (Math.abs(p) < 1e-12) return q >= 0; const r = q / p; if (p < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; } return true; };
+  return chk(-dx, s.x1 - b.x0) && chk(dx, b.x1 - s.x1) && chk(-dy, s.y1 - b.y0) && chk(dy, b.y1 - s.y1);
+}
+function pointInPoly(x, y, pts) { let c = false; for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const a = pts[i], b = pts[j]; if (((a.y > y) !== (b.y > y)) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) c = !c; } return c; }
+function offsetPolyline(pts, d) {
+  const out = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], a = pts[i - 1] || null, b = pts[i + 1] || null;
+    const n1 = a ? norm(-(p.y - a.y), p.x - a.x) : null, n2 = b ? norm(-(b.y - p.y), b.x - p.x) : null;
+    let nx, ny, k = 1;
+    if (n1 && n2) { nx = n1[0] + n2[0]; ny = n1[1] + n2[1]; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l; k = 1 / Math.max(0.35, nx * n1[0] + ny * n1[1]); }
+    else [nx, ny] = n1 || n2;
+    out.push({ x: p.x + nx * d * k, y: p.y + ny * d * k });
+  }
+  return out;
+  function norm(x, y) { const l = Math.hypot(x, y) || 1; return [x / l, y / l]; }
+}
+
+// --- PROJE KROKİSİ (dünya koordinatı), çakışmayı azaltan yerleşimle
+function krokiPrims2(m, results, P, opt) {
+  const pr = [], h = opt.h, mpu = opt.mpu, poles = m.poles;
+  const boxes = [], segs = [], weak = [];
+  const addBox = b => boxes.push(b);
+  const scoreBox = (b, own) => { let s = 0; boxes.forEach(o => s += boxOverlap(b, o)); s = s / (h * h) * 10; segs.forEach(g => { if (g !== own && segHitsBox(g, b)) s += 6; }); weak.forEach(g => { if (segHitsBox(g, b)) s += 0.6; }); return s; };
+  const pushText = (t) => { pr.push(t); addBox(textBox(t.x, t.y, t.s, t.h, t.rot, t.center ? 1 : (t.ha || 0), t.center ? 2 : (t.va || 0))); };
+  // altlık
+  (m.bgSegs || []).forEach(s => { pr.push({ t: 'line', x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2, layer: 'ALTLIK' }); weak.push(s); });
+  (m.bgTexts || []).forEach(s => { pr.push({ t: 'text', x: s.x, y: s.y, s: s.s, h: s.h, rot: s.rot, layer: 'PARSEL_NO' }); addBox(textBox(s.x, s.y, s.s, s.h, s.rot, 0, 0)); });
+  (m.parcels || []).forEach(pc => { const pts = pc.pts; for (let i = 0; i < pts.length - (pc.open ? 1 : 0); i++) { const a = pts[i], b = pts[(i + 1) % pts.length], g = { x1: a.x, y1: a.y, x2: b.x, y2: b.y }; pr.push(Object.assign({ t: 'line', layer: 'PARSEL' }, g)); weak.push(g); } });
+  // yollar
+  (m.roads || []).forEach(rd => {
+    if (rd.pts.length < 2) return; const half = rd.w / 2;
+    [offsetPolyline(rd.pts, half), offsetPolyline(rd.pts, -half)].forEach(side => { for (let i = 1; i < side.length; i++) { const g = { x1: side[i - 1].x, y1: side[i - 1].y, x2: side[i].x, y2: side[i].y }; pr.push(Object.assign({ t: 'line', layer: 'YOL', lw: 1.3 }, g)); weak.push(g); } });
+  });
+  // hat
+  const routeSegs = [];
+  for (let i = 0; i < poles.length - 1; i++) { const a = poles[i], b = poles[i + 1], g = { x1: a.x, y1: a.y, x2: b.x, y2: b.y }; pr.push(Object.assign({ t: 'wline', w: h * 0.22, layer: 'HAT' }, g)); segs.push(g); routeSegs.push(g); }
+  poles.forEach(p => (p.ex || []).forEach(e => { const g = { x1: p.x, y1: p.y, x2: e.x, y2: e.y }; pr.push(Object.assign({ t: 'line', dash: true, layer: 'MEVCUT', lw: 1.6 }, g)); segs.push(g); }));
+  // direk sembolleri (kutu olarak engel)
+  const shapes = poles.map((p, i) => { const sh = poleSymbol2(pr, p, results[i], h); addBox({ x0: p.x - h * 1.4, x1: p.x + h * 1.4, y0: p.y - h * 1.4, y1: p.y + h * 1.4 }); return sh; });
+  // açı yayları
+  poles.forEach((p, i) => {
+    const r = results[i]; if (r.kind !== 'two') return;
+    const a0 = r.lines[0].ang, a1 = r.lines[1].ang;
+    let d = ((a1 - a0) % 360 + 360) % 360, s0 = a0, s1 = a1; if (d > 180) { s0 = a1; s1 = a0; d = 360 - d; }
+    let mid = s0 + d / 2;
+    if (d > 179) { // düz: iki taraftan boş olanı seç
+      const tryMid = m0 => { const mr = m0 * Math.PI / 180; return scoreBox(textBox(p.x + h * 3.3 * Math.cos(mr), p.y + h * 3.3 * Math.sin(mr), `${r.interior}°`, h * 0.85, 0, 1, 2)); };
+      if (tryMid(s1 + 90) < tryMid(s0 + 90)) { const t = s0; s0 = s1; s1 = t; } mid = s0 + 90;
+    }
+    pr.push({ t: 'arc', x: p.x, y: p.y, r: h * 2.4, a1: s0, a2: s1, layer: 'ACI' });
+    const mr = mid * Math.PI / 180; pushText({ t: 'text', x: p.x + h * 3.3 * Math.cos(mr), y: p.y + h * 3.3 * Math.sin(mr), s: `${r.interior}°`, h: h * 0.85, center: true, layer: 'ACI' });
+    r._arcMid = mid;
+  });
+  // açıklık yazıları
+  for (let i = 0; i < poles.length - 1; i++) {
+    const a = poles[i], b = poles[i + 1], g = routeSegs[i];
+    let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, nx = -Math.sin(ang * Math.PI / 180), ny = Math.cos(ang * Math.PI / 180);
+    const segL = Math.hypot(b.x - a.x, b.y - a.y), len = mpu ? segL * mpu : null, cond = `${P.routeCond.replace(/^AER/, 'ALPEK')} mm²`;
+    const th = h * 0.8, wCond = cond.length * th * 0.58;
+    if (segL > wCond + h * 6) {
+      const sides = [1, -1].map(sd => { const t1 = { x: mx + sd * nx * h * 1.05, y: my + sd * ny * h * 1.05 }, t2 = { x: mx - sd * nx * h * 1.05, y: my - sd * ny * h * 1.05 }, t3 = { x: mx - sd * nx * h * 2.3, y: my - sd * ny * h * 2.3 };
+        return { sd, t1, t2, t3, sc: scoreBox(textBox(t1.x, t1.y, 'HAVAİ', th, ang, 1, 2), g) + scoreBox(textBox(t2.x, t2.y, cond, th, ang, 1, 2), g) + (len ? scoreBox(textBox(t3.x, t3.y, `${Math.round(len)} m`, th, ang, 1, 2), g) : 0) }; });
+      const s = sides[0].sc <= sides[1].sc ? sides[0] : sides[1];
+      pushText({ t: 'text', x: s.t1.x, y: s.t1.y, s: 'HAVAİ', h: th, rot: ang, center: true, layer: 'YAZI' });
+      pushText({ t: 'text', x: s.t2.x, y: s.t2.y, s: cond, h: th, rot: ang, center: true, layer: 'YAZI' });
+      if (len) pushText({ t: 'text', x: s.t3.x, y: s.t3.y, s: `${Math.round(len)} m`, h: th, rot: ang, center: true, layer: 'YAZI' });
+    } else {
+      // kısa açıklık: tek satır, dışa kaydır
+      const txt = len ? `${Math.round(len)} m` : 'HAVAİ'; const cands = [1, -1].flatMap(sd => [1.1, 2.2].map(k => ({ x: mx + sd * nx * h * k, y: my + sd * ny * h * k })));
+      let best = cands[0], bs = 1e9; cands.forEach(c => { const sc = scoreBox(textBox(c.x, c.y, txt, th, ang, 1, 2), g); if (sc < bs) { bs = sc; best = c; } });
+      pushText({ t: 'text', x: best.x, y: best.y, s: txt, h: th, rot: ang, center: true, layer: 'YAZI' });
+    }
+  }
+  // mevcut hat yazısı
+  poles.forEach(p => (p.ex || []).forEach(e => {
+    let ta = Math.atan2(e.y - p.y, e.x - p.x) * 180 / Math.PI; if (ta > 90) ta -= 180; if (ta < -90) ta += 180;
+    const nx = -Math.sin(ta * Math.PI / 180), ny = Math.cos(ta * Math.PI / 180), s = `${String(e.c).toUpperCase()} MEVCUT`;
+    let best = null, bs = 1e9;
+    [0.6, 0.75, 0.45, 0.9].forEach(t => [1, -1].forEach(sd => { const x = p.x + (e.x - p.x) * t + sd * nx * h * 0.9, y = p.y + (e.y - p.y) * t + sd * ny * h * 0.9; const sc = scoreBox(textBox(x, y, s, h * 0.8, ta, 1, 2)) + Math.abs(t - 0.6); if (sc < bs) { bs = sc; best = { x, y }; } }));
+    pushText({ t: 'text', x: best.x, y: best.y, s, h: h * 0.8, rot: ta, center: true, layer: 'YAZI' });
+  }));
+  // topraklamalar: hatlardan ve açı yayından uzak yön
+  const angDist = (a, b) => { const d = Math.abs(((a - b) % 360 + 540) % 360 - 180); return d; };
+  poles.forEach((p, i) => {
+    const r = results[i]; if (p.mev || opt.showGround === false) return;
+    const kinds = r.cat === 'nihayet' ? ['KT', 'İT'] : ['KT']; const used = [];
+    kinds.forEach(kd => {
+      let best = 0, bs = 1e9;
+      for (let a = 0; a < 360; a += 15) {
+        let sc = 0; r.lines.forEach(l => { const d = angDist(a, l.ang); if (d < 40) sc += (40 - d) * 2; });
+        if (r._arcMid != null && angDist(a, r._arcMid) < 60) sc += 40;
+        used.forEach(u => { const d = angDist(a, u); if (d < 55) sc += (55 - d) * 3; });
+        const st = shapeExit(shapes[i], a) * 1.0, rr = a * Math.PI / 180, L = st + h * 3.2;
+        const bx = { x0: p.x + Math.cos(rr) * L - h * 1.8, x1: p.x + Math.cos(rr) * L + h * 1.8, y0: p.y + Math.sin(rr) * L - h * 1.8, y1: p.y + Math.sin(rr) * L + h * 1.8 };
+        sc += scoreBox(bx) * 2;
+        if (sc < bs) { bs = sc; best = a; }
+      }
+      used.push(best);
+      const g = groundPr(pr, p.x, p.y, best, h, kd, 'TOPRAK', kd, shapeExit(shapes[i], best));
+      addBox({ x0: g.x - g.R, x1: g.x + g.R, y0: g.y - g.R, y1: g.y + g.R }); addBox(textBox(g.tx, g.ty, kd, h * 0.9, 0, 1, 2));
+      const rr = best * Math.PI / 180; segs.push({ x1: p.x, y1: p.y, x2: g.x - Math.cos(rr) * g.R, y2: g.y - Math.sin(rr) * g.R });
+    });
+  });
+  // direk etiketleri: en boş yön
+  poles.forEach((p, i) => {
+    const r = results[i];
+    const nm = p.mev ? (P.mevAd ? r.name : 'MEVCUT DİREK') : r.name, tp = p.mev ? r.type : r.type.replace(/^(\d+(?:\.\d+)?)([IU])$/, '$1 $2');
+    const hs = h * (p.mev ? 1.3 : 1.8), W = Math.max(nm.length, tp.length) * hs * 0.58, H = hs * 2.3;
+    const pref = (r.cat !== 'duz' && r.wdir != null && r.R > 5) ? r.wdir + 180 : r.lineDir + 90;
+    let best = null, bs = 1e9;
+    for (let a = 0; a < 360; a += 20) {
+      const rr = a * Math.PI / 180, c = Math.cos(rr), s = Math.sin(rr);
+      for (const extra of [0, h * 1.5]) {
+        const D = h * 1.9 + Math.abs(c) * W / 2 + Math.abs(s) * H / 2 + extra, cx = p.x + c * D, cy = p.y + s * D;
+        const b = { x0: cx - W / 2, x1: cx + W / 2, y0: cy - H / 2, y1: cy + H / 2 };
+        const sc = scoreBox(b) + angDist(a, pref) / 180 * 0.8 + extra / h * 0.3;
+        if (sc < bs) { bs = sc; best = { cx, cy, b }; }
+      }
+    }
+    pr.push({ t: 'text', x: best.cx, y: best.cy + hs * 0.58, s: nm, h: hs, ha: 1, va: 2, layer: 'YAZI' });
+    pr.push({ t: 'text', x: best.cx, y: best.cy - hs * 0.58, s: tp, h: hs, ha: 1, va: 2, layer: 'YAZI' });
+    addBox(best.b);
+  });
+  // yol isimleri
+  (m.roads || []).forEach(rd => {
+    if (!rd.name || rd.pts.length < 2) return; let bi = 0, bl = 0;
+    for (let i = 1; i < rd.pts.length; i++) { const l = Math.hypot(rd.pts[i].x - rd.pts[i - 1].x, rd.pts[i].y - rd.pts[i - 1].y); if (l > bl) { bl = l; bi = i; } }
+    const a = rd.pts[bi - 1], b = rd.pts[bi]; let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+    let best = null, bs = 1e9; [0.5, 0.3, 0.7, 0.2, 0.8].forEach(t => { const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, sc = scoreBox(textBox(x, y, rd.name, Math.min(rd.w * 0.45, h * 1.2), ang, 1, 2)); if (sc < bs) { bs = sc; best = { x, y }; } });
+    pushText({ t: 'text', x: best.x, y: best.y, s: rd.name, h: Math.min(rd.w * 0.45, h * 1.2), rot: ang, center: true, layer: 'YOL' });
+  });
+  // parsel numaraları: poligon içinde en boş nokta
+  (m.parcels || []).forEach(pc => {
+    if (!pc.label || pc.open) return; const pts = pc.pts, th = h * 1.25;
+    const xs = pts.map(q => q.x), ys = pts.map(q => q.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const c = polyCentroid(pts), cands = [c];
+    for (let gx = 1; gx < 6; gx++) for (let gy = 1; gy < 6; gy++) cands.push({ x: x0 + (x1 - x0) * gx / 6, y: y0 + (y1 - y0) * gy / 6 });
+    let best = c, bs = 1e9;
+    cands.forEach(q => { if (!pointInPoly(q.x, q.y, pts)) return; const b = textBox(q.x, q.y, pc.label, th, 0, 1, 2); const out = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].filter(([x, y]) => !pointInPoly(x, y, pts)).length; const sc = scoreBox(b) + out * 3 + Math.hypot(q.x - c.x, q.y - c.y) / (h * 40); if (sc < bs) { bs = sc; best = q; } });
+    pushText({ t: 'text', x: best.x, y: best.y, s: pc.label, h: th, center: true, layer: 'PARSEL_NO' });
+  });
+  // kuzey oku ve lejant
+  const ext = primExtents(pr);
+  if (ext && opt.legend !== false) {
+    const nx = ext.x1 + h * 4, ny = ext.y1 - h * 2;
+    arrowPr(pr, nx, ny - h * 5, nx, ny, { head: h * 1.6, layer: 'LEJANT' });
+    pr.push({ t: 'text', x: nx, y: ny + h * 1.2, s: 'K', h: h * 1.6, center: true, bold: true, layer: 'LEJANT' });
+    legendPr(pr, ext.x1 + h * 2, ext.y0 + h * 21, h, P, (m.roads || []).length > 0);
+  }
+  return pr;
+}
+function legendPr(pr, x, y, h, P, hasRoad) {
+  const W = h * 27, rows = [
+    ['conc', 'Mevcut beton direk'], ['I', 'Yeni I / U demir direk'], ['K', 'Yeni K (kafes) demir direk'],
+    ['hat', `Yeni havai hat (${P.routeCond.replace(/^AER/, 'ALPEK')})`], ['mev', 'Mevcut hat'], ['KT', 'Koruma topraklaması (KT)'], ['IT', 'İşletme topraklaması (İT)'],
+  ];
+  if (hasRoad) rows.push(['yol', 'Yol']);
+  const rh = h * 3.0, H = rh * rows.length + h * 3;
+  pr.push({ t: 'rect', x, y: y - H, w: W, h: H, layer: 'LEJANT' });
+  pr.push({ t: 'text', x: x + W / 2, y: y - h * 1.5, s: 'LEJANT', h: h * 1.1, center: true, bold: true, layer: 'LEJANT' });
+  pr.push({ t: 'line', x1: x, y1: y - h * 3, x2: x + W, y2: y - h * 3, layer: 'LEJANT' });
+  rows.forEach(([k, s], i) => {
+    const cy = y - h * 3 - rh * (i + 0.5), cx = x + h * 3.2;
+    const fake = { x: cx, y: cy, mev: k === 'conc' }, rr = { isIU: k === 'I', isK: k === 'K', wdir: null, R: 0, cat: 'duz', lineDir: 90 };
+    if (k === 'conc' || k === 'I' || k === 'K') poleSymbol2(pr, fake, rr, h * 0.8);
+    if (k === 'hat') pr.push({ t: 'wline', x1: cx - h * 1.8, y1: cy, x2: cx + h * 1.8, y2: cy, w: h * 0.22, layer: 'HAT' });
+    if (k === 'mev') pr.push({ t: 'line', x1: cx - h * 1.8, y1: cy, x2: cx + h * 1.8, y2: cy, dash: true, lw: 1.6, layer: 'MEVCUT' });
+    if (k === 'yol') { pr.push({ t: 'line', x1: cx - h * 1.8, y1: cy + h * 0.5, x2: cx + h * 1.8, y2: cy + h * 0.5, layer: 'YOL', lw: 1.3 }); pr.push({ t: 'line', x1: cx - h * 1.8, y1: cy - h * 0.5, x2: cx + h * 1.8, y2: cy - h * 0.5, layer: 'YOL', lw: 1.3 }); }
+    if (k === 'KT' || k === 'IT') groundPr(pr, cx, cy + h * 1.15, -90, h * 0.55, '', 'TOPRAK', k === 'KT' ? 'KT' : 'IT', 0);
+    pr.push({ t: 'text', x: x + h * 6.5, y: cy, s, h: h * 0.85, va: 2, layer: 'LEJANT' });
+  });
+}
+
+function primExtents(pr) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const add = (x, y) => { if (isFinite(x) && isFinite(y)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } };
+  pr.forEach(p => { if (p.t === 'line' || p.t === 'wline') { add(p.x1, p.y1); add(p.x2, p.y2); } else if (p.t === 'circle' || p.t === 'arc') { add(p.x - p.r, p.y - p.r); add(p.x + p.r, p.y + p.r); } else if (p.t === 'text') add(p.x, p.y); else if (p.t === 'rect') { add(p.x, p.y); add(p.x + p.w, p.y + p.h); } else if (p.pts) p.pts.forEach(q => add(q[0], q[1])); });
+  return isFinite(x0) ? { x0, y0, x1, y1 } : null;
+}
+
+// --- MÜHENDİSLİK CER RAPORU (mm, A3 yatay; içerik büyürse boy uzar)
+function reportPrims(results, P, info) {
+  info = info || {};
+  const pr = [], W = 420;
+  const T = (x, y, s, h, o) => pr.push(Object.assign({ t: 'text', x, y, s: String(s), h: h || 2.5, layer: 'TABLO' }, o || {}));
+  const Ln = (x1, y1, x2, y2, o) => pr.push(Object.assign({ t: 'line', x1, y1, x2, y2, layer: 'TABLO' }, o || {}));
+  const rT = parseCer(P.routeCond, P);
+  const n = results.length;
+  // yükseklik hesabı
+  const cols = 4, cellW = (380 - 9) / 4, cellH = 64, gridRows = Math.ceil(n / cols);
+  const tblH = 14 + n * 7;
+  const nRes = n + (P.kesit ? 4 : 0) + 3;
+  const H = Math.max(297, 10 + 18 + 52 + 10 + tblH + 12 + gridRows * (cellH + 4) + 12 + nRes * 5.6 + 22);
+  // çerçeve
+  pr.push({ t: 'rect', x: 0, y: 0, w: W, h: H, layer: 'CERCEVE' });
+  pr.push({ t: 'rect', x: 20, y: 10, w: W - 30, h: H - 20, layer: 'CERCEVE' });
+  let y = H - 10;
+  // başlık bandı
+  Ln(20, y - 16, W - 10, y - 16, { layer: 'CERCEVE' });
+  T((20 + W - 10) / 2, y - 7, 'AG HAVAİ HAT DİREK MUKAVEMET (CER) HESABI', 6, { center: true, bold: true });
+  T((20 + W - 10) / 2, y - 13, info.proje || ' ', 3, { center: true });
+  y -= 16;
+  // 1. HESAP ESASLARI
+  const sec = (title) => { y -= 8; T(25, y, title, 3.5, { bold: true }); y -= 2; Ln(25, y, W - 15, y); };
+  sec('1. HESAP ESASLARI VE KABULLER');
+  const exConds = new Map(); results.forEach(r => r.lines.filter(l => l.kind === 'ex').forEach(l => exConds.set(l.lab, l.T)));
+  const bR = ['I', 'II', 'III', 'IV'][(P.bolge || 1) - 1];
+  const sm = (P.routeCond.match(/\+\s*(\d+)/) || [])[1];
+  const L1 = [
+    `a) Yeni hat iletkeni: HAVAİ ${P.routeCond.replace(/^AER/, 'ALPEK')} mm²  -  en büyük çekme T = ${sm || '?'} mm² (askı teli) x ${fmt(P.sigma)} kg/mm² = ${fmt(rT)} kg`,
+    ...[...exConds].map(([k, v]) => `b) Mevcut hat: ${String(k).toUpperCase()}  -  T = ${fmt(v)} kg  (${bR}. buz yükü bölgesi müşterek hat çekme kuvveti)`),
+    `c) Buz yükü bölgesi: ${bR}. bölge (EKAT Çizelge-9)   -   Hesap ${P.wind ? 'rüzgarlı' : 'rüzgarsız'} tepe kuvvetleriyle yapılmıştır.${P.margin ? `  Emniyet payı %${P.margin}.` : ''}`,
+    `d) Direk tepe kuvvetleri (P): 8I 300, 10I 500, 12I 900, 10U 700, 12U 1200, K1 1000, K2 2000 kg (AG demir direk); SBA beton direkte P = tip x 100 kg.`,
+    `e) Bileşke kuvvet: R = √[(ΣTx)² + (ΣTy)²].  İki hatlı direkte  R = √[(T1 - T2·cosα)² + (T2·sinα)²],  α = 180° - β (β: hat açısı).`,
+    `f) Şart: R ≤ P.  ${[P.kKose && 'köşe', P.kBrans && 'branşman', P.kNih && 'nihayet'].filter(Boolean).join(', ') || '—'} direklerinde K (kafes) direk kullanılmıştır; I/U direkler güçlü eksenleri bileşke yönünde dikilecektir.`,
+  ];
+  L1.forEach(s => { y -= 6; T(28, y, s.replace(/Σ/g, 'Σ'), 2.6); });
+  // 2. TABLO
+  sec('2. DİREK KUVVET TABLOSU');
+  y -= 3;
+  const C = [['DİREK', 20], ['GÖREVİ', 30], ['DİREK TİPİ', 26], ['AÇIKLIK (m)', 22], ['HAT AÇISI β', 24], ['SAPMA α', 20], ['HAT ÇEKMELERİ T (kg)', 70], ['BİLEŞKE R (kg)', 28], ['TEPE KUV. P (kg)', 28], ['KULLANIM', 22], ['KONTROL', 0]];
+  const x0 = 25, xe = W - 15; let used = C.reduce((s, c) => s + c[1], 0); C[C.length - 1][1] = xe - x0 - used;
+  const xs = [x0]; C.forEach(c => xs.push(xs[xs.length - 1] + c[1]));
+  const top = y, hh = 9, rh = 7;
+  pr.push({ t: 'rect', x: x0, y: top - hh - n * rh, w: xe - x0, h: hh + n * rh, layer: 'TABLO' });
+  Ln(x0, top - hh, xe, top - hh);
+  C.forEach((c, i) => { T(xs[i] + c[1] / 2, top - hh / 2, c[0], 2.2, { center: true, bold: true }); if (i) Ln(xs[i], top, xs[i], top - hh - n * rh); });
+  results.forEach((r, k) => {
+    const yy = top - hh - k * rh - rh / 2; if (k) Ln(x0, top - hh - k * rh, xe, top - hh - k * rh, { lw: 0.6 });
+    const ts = r.lines.map(l => `${fmt(l.T)}`).join(' + ') || '-';
+    const vals = [r.name, r.catName, r.type, r.span ? fmt(Math.round(r.span * 10) / 10) : '-', r.kind === 'two' ? `${r.interior}°` : '-', r.kind === 'two' ? `${r.phi}°` : '-', ts, r.R, r.cap, r.cap ? `%${Math.round(r.R / r.cap * 100)}` : '-', r.ok ? 'R ≤ P  UYGUN' : 'R > P  UYGUN DEĞİL'];
+    vals.forEach((v, i) => T(xs[i] + C[i][1] / 2, yy, v, 2.4, { center: true, bold: i === 10, color: i === 10 && !r.ok ? 1 : undefined }));
+  });
+  y = top - hh - n * rh;
+  // 3. KUVVET ŞEMALARI
+  sec('3. DİREK KUVVET ŞEMALARI');
+  y -= 3;
+  results.forEach((r, k) => {
+    const cx0 = 25 + (k % cols) * (cellW + 3), cy1 = y - Math.floor(k / cols) * (cellH + 4);
+    forceCell(pr, cx0, cy1 - cellH, cellW, cellH, r);
+  });
+  y -= gridRows * (cellH + 4);
+  // 4. kesit + sonuç
+  let yy = y - 4;
+  const lsec = (t) => { yy -= 7; T(25, yy, t, 3.5, { bold: true }); yy -= 2; Ln(25, yy, W - 15, yy); };
+  if (P.kesit) {
+    const k = P.kesit;
+    lsec('4. KESİT KONTROLÜ');
+    [`Talep (bağlantı) gücü N = ${fmt(k.kW)} kW, ${k.tri ? 'trifaze U = ' + (k.U3 || 380) + ' V' : 'monofaze U = ' + (k.U1 || 220) + ' V'}, cosφ = ${fmt(k.cos)}, hat boyu L = ${Math.round(k.L)} m, κ = ${fmt(k.kappa)}`,
+      `Akım: I = ${k.tri ? 'N / (√3·U·cosφ)' : 'N / (U·cosφ)'} = ${fmt(k.res.I)} A  ≤  ${k.res.sel.amp} A (${P.routeCond.replace(/^AER/, 'ALPEK')}) → ${k.res.sel.okI ? 'uygun' : 'UYGUN DEĞİL'}`,
+      `Gerilim düşümü: %e = ${k.tri ? '100' : '200'}·N·L / (κ·S·U²) = %${fmt(k.res.sel.e)}  <  %1,5 → ${k.res.sel.e < 1.5 ? 'uygun' : 'UYGUN DEĞİL'}`]   // kullanıcının kuralı: kesit %1'e göre seçilir, %1,5 sınırı yazılır.forEach(s => { yy -= 5.5; T(28, yy, s, 2.5); });
+  }
+  lsec(`${P.kesit ? 5 : 4}. SONUÇ`);
+  results.forEach(r => { yy -= 5.5; T(28, yy, r.ok ? `${r.name}: Toplam cer R = ${r.R} kg < P = ${r.cap} kg (${r.type}) olduğundan uygundur.` : `${r.name}: Toplam cer R = ${r.R} kg > P = ${r.cap} kg (${r.type}) olduğundan UYGUN DEĞİLDİR.`, 2.5, { color: r.ok ? undefined : 1 }); });
+  return { prims: pr, w: W, h: H };
+}
+function forceCell(pr, x, y, w, h, r) {
+  pr.push({ t: 'rect', x, y, w, h, layer: 'SEMA' });
+  pr.push({ t: 'line', x1: x, y1: y + h - 7, x2: x + w, y2: y + h - 7, layer: 'SEMA' });
+  pr.push({ t: 'text', x: x + 3, y: y + h - 3.5, s: `${r.name}  -  ${r.catName.toUpperCase()}  -  ${r.type}`, h: 2.6, va: 2, bold: true, layer: 'SEMA' });
+  // şema (gerçek doğrultular)
+  const cx = x + 23, cy = y + (h - 7) / 2, Lmax = 17;
+  const mx = Math.max(1, ...r.lines.map(l => l.T), r.R || 0);
+  pr.push({ t: 'circle', x: cx, y: cy, r: 1.3, layer: 'SEMA' });
+  r.lines.forEach((l, j) => {
+    const a = l.ang * Math.PI / 180, L = 6 + (Lmax - 6) * l.T / mx;
+    arrowPr(pr, cx + 1.3 * Math.cos(a), cy + 1.3 * Math.sin(a), cx + L * Math.cos(a), cy + L * Math.sin(a), { head: 2.4, layer: 'SEMA' });
+    pr.push({ t: 'text', x: cx + (L + 3.5) * Math.cos(a), y: cy + (L + 3.5) * Math.sin(a), s: `T${j + 1}`, h: 2.2, center: true, layer: 'SEMA' });
+  });
+  if (r.R > 0 && r.wdir != null) {
+    const a = r.wdir * Math.PI / 180, L = 6 + (Lmax - 6) * r.R / mx;
+    arrowPr(pr, cx, cy, cx + L * Math.cos(a), cy + L * Math.sin(a), { head: 2.8, w: 0.5, layer: 'BILESKE', color: 1 });
+    pr.push({ t: 'text', x: cx + (L * 0.55) * Math.cos(a) - 3 * Math.sin(a), y: cy + (L * 0.55) * Math.sin(a) + 3 * Math.cos(a), s: 'R', h: 2.4, center: true, bold: true, layer: 'BILESKE', color: 1 });
+  }
+  // hesap satırları
+  const tx = x + 48; let ty = y + h - 12;
+  const line = (s, o) => { pr.push(Object.assign({ t: 'text', x: tx, y: ty, s, h: 2.3, layer: 'SEMA' }, o || {})); ty -= 4.6; };
+  r.lines.forEach((l, j) => line(`T${j + 1} = ${fmt(l.T)} kg${l.kind === 'ex' ? ' (mevcut)' : ''}`));
+  if (r.kind === 'two') {
+    line(`β = ${r.interior}°   α = ${r.phi}°`);
+    line(`T2·sinα = ${r.s} kg`);
+    line(`T1 - T2·cosα = ${fmt(r.rx)} kg`);
+    line(`R = √(${fmt(Math.abs(r.rx))}² + ${r.s}²) = ${r.R} kg`, { bold: true });
+  } else if (r.kind === 'end') line(`Nihayet: R = T1 = ${r.R} kg`, { bold: true });
+  else if (r.kind === 'multi') { line(`ΣX = ${r.X} kg   ΣY = ${r.Y} kg`); line(`R = ${r.R} kg`, { bold: true }); }
+  line(`P = ${r.cap} kg (${r.type})`);
+  pr.push({ t: 'text', x: x + w - 3, y: y + 4, s: r.ok ? 'R ≤ P  UYGUNDUR' : 'R > P  UYGUN DEĞİL', h: 2.6, ha: 2, bold: true, color: r.ok ? 3 : 1, layer: 'SEMA' });
+}
+
+// --- canvas üzerinde primitif çizimi (proje görünümü)
+function drawPrims(ctx, pr, W2S, k, opt) {
+  opt = opt || {};
+  const col = p => p.color === 1 ? '#c0261c' : p.color === 3 ? '#1d7a3e' : p.layer === 'HAT' ? '#c0261c' : (p.layer === 'PARSEL' || p.layer === 'ALTLIK') ? '#3a3a3a' : p.layer === 'PARSEL_NO' ? '#3a3a3a' : '#111';
+  pr.forEach(p => {
+    ctx.strokeStyle = ctx.fillStyle = col(p);
+    if (p.t === 'line') { const a = W2S(p.x1, p.y1), b = W2S(p.x2, p.y2); ctx.lineWidth = p.lw || (p.layer === 'PARSEL' ? 1.1 : 1); ctx.setLineDash(p.dash ? [8, 5] : []); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.setLineDash([]); }
+    else if (p.t === 'wline') { const a = W2S(p.x1, p.y1), b = W2S(p.x2, p.y2); ctx.lineWidth = Math.max(1.5, p.w * k); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.lineCap = 'butt'; }
+    else if (p.t === 'circle') { const a = W2S(p.x, p.y); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(a[0], a[1], p.r * k, 0, 7); if (opt.fillPoles && p.layer === 'DIREK') { ctx.save(); ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore(); } ctx.stroke(); }
+    else if (p.t === 'arc') { const a = W2S(p.x, p.y); ctx.lineWidth = 1.1; ctx.beginPath(); ctx.arc(a[0], a[1], p.r * k, -p.a2 * Math.PI / 180, -p.a1 * Math.PI / 180); ctx.stroke(); }
+    else if (p.t === 'rect') { const a = W2S(p.x, p.y + p.h); ctx.lineWidth = 1; ctx.strokeRect(a[0], a[1], p.w * k, p.h * k); }
+    else if (p.t === 'solid') { ctx.beginPath(); p.pts.forEach((q, i) => { const a = W2S(q[0], q[1]); i ? ctx.lineTo(a[0], a[1]) : ctx.moveTo(a[0], a[1]); }); ctx.closePath(); ctx.fill(); }
+    else if (p.t === 'text') {
+      const px = p.h * k * 1.3; if (px < 4) return; const a = W2S(p.x, p.y);
+      ctx.save(); ctx.translate(a[0], a[1]); if (p.rot) ctx.rotate(-p.rot * Math.PI / 180);
+      ctx.font = `${p.bold ? 600 : 400} ${px}px "Times New Roman", serif`;
+      const ha = p.center ? 1 : (p.ha || 0), va = p.center ? 2 : (p.va || 0);
+      ctx.textAlign = ha === 1 ? 'center' : ha === 2 ? 'right' : 'left'; ctx.textBaseline = va === 2 ? 'middle' : 'alphabetic';
+      ctx.fillText(p.s, 0, 0); ctx.restore();
+    }
+  });
+}
+
+if (typeof module !== 'undefined' && module.exports) Object.assign(module.exports, { offsetPolyline, tmProject, parseGeo, projectGeo, krokiPrims2, reportPrims, primExtents, polyCentroid });
+
+// ===== OTOMATİK PARSEL BULMA (resimdeki parsel sınır çizgilerinden) =====
+const WAND = { data: null, w: 0, h: 0, sc: 1 };
+function wandPrep(img) {
+  const sc = Math.min(1, 1600 / Math.max(img.width, img.height)), w = Math.round(img.width * sc), h = Math.round(img.height * sc);
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(img, 0, 0, w, h);
+  Object.assign(WAND, { data: x.getImageData(0, 0, w, h).data, w, h, sc, comps: null, canvas: c });
+}
+function isLinePx(r, g, b) {
+  if (WAND.lineColor) { const [R, G, B] = WAND.lineColor; return (r - R) ** 2 + (g - G) ** 2 + (b - B) ** 2 < (WAND.lineTol || 45) ** 2; }
+  const lum = 0.3 * r + 0.59 * g + 0.11 * b; return r - g > 55 && g < 60 && lum < 105;
+}
+// sınır çizgisi maskesi + bağlı bileşenler (önbellekli)
+function wandComponents() {
+  if (WAND.comps) return WAND.comps;
+  const { data, w, h } = WAND; if (!data) return null;
+  const N = w * h, bar = new Uint8Array(N);
+  for (let k = 0, i = 0; k < N; k++, i += 4) if (isLinePx(data[i], data[i + 1], data[i + 2])) bar[k] = 1;
+  const b2 = bar.slice(); for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const k = y * w + x; if (bar[k]) { b2[k - 1] = b2[k + 1] = b2[k - w] = b2[k + w] = 1; } }
+  const lab = new Int32Array(N), list = [null]; let id = 0;
+  for (let s = 0; s < N; s++) {
+    if (b2[s] || lab[s]) continue; id++; const st = [s], px = []; lab[s] = id; let edge = false;
+    while (st.length) { const k = st.pop(); px.push(k); const x = k % w, y = (k / w) | 0; if (x === 0 || y === 0 || x === w - 1 || y === h - 1) edge = true;
+      if (x > 0 && !b2[k - 1] && !lab[k - 1]) { lab[k - 1] = id; st.push(k - 1); } if (x < w - 1 && !b2[k + 1] && !lab[k + 1]) { lab[k + 1] = id; st.push(k + 1); }
+      if (y > 0 && !b2[k - w] && !lab[k - w]) { lab[k - w] = id; st.push(k - w); } if (y < h - 1 && !b2[k + w] && !lab[k + w]) { lab[k + w] = id; st.push(k + w); } }
+    list.push({ id, px, edge });
+  }
+  WAND.comps = { lab, list }; return WAND.comps;
+}
+function compPoly(c) {
+  const { w, h } = WAND, N = w * h, m = new Uint8Array(N); c.px.forEach(k => m[k] = 1);
+  let cur = m; for (let it = 0; it < 3; it++) { const nx = cur.slice(); for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const k = y * w + x; if (!cur[k] && (cur[k - 1] || cur[k + 1] || cur[k - w] || cur[k + w])) nx[k] = 1; } cur = nx; }
+  const poly = traceContour(cur, w, h); if (!poly || poly.length < 3) return null;
+  const simp = simplifyClosed(poly, Math.max(2.5, Math.sqrt(c.px.length) * 0.04));
+  const xs = simp.map(q => q[0]), ys = simp.map(q => q[1]), bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
+  return { pts: simp.map(([x, y]) => ({ x: x / WAND.sc, y: -y / WAND.sc })), area: c.px.length, fill: c.px.length / Math.max(1, bw * bh) };
+}
+function wandAll() {
+  const C = wandComponents(); if (!C) return []; const N = WAND.w * WAND.h, out = [];
+  C.list.forEach(c => { if (!c || c.edge || c.px.length < N * 0.002 || c.px.length > N * 0.3) return; const p = compPoly(c); if (p && p.fill > 0.25 && p.pts.length >= 3) out.push(p); });
+  return out;
+}
+// tek tık: tıklanan noktanın bileşeni, olmazsa renk benzerliğiyle bölge büyütme
+function wandAt(ix, iy) {
+  const C = wandComponents(); if (!C) return { fail: 'resim yok' };
+  const x = Math.round(ix * WAND.sc), y = Math.round(iy * WAND.sc); if (x < 0 || y < 0 || x >= WAND.w || y >= WAND.h) return { fail: 'resim dışı' };
+  const id = C.lab[y * WAND.w + x], c = id ? C.list[id] : null, N = WAND.w * WAND.h;
+  if (c && !c.edge && c.px.length > 150 && c.px.length < N * 0.35) { const p = compPoly(c); if (p) return p; }
+  return wandRegion(ix * WAND.sc, iy * WAND.sc, WAND.tol || 40);
+}
+function wandSetLine(ix, iy) {
+  const { data, w } = WAND; if (!data) return; const x = Math.round(ix * WAND.sc), y = Math.round(iy * WAND.sc); let R = 0, G = 0, B = 0, n = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const i = ((y + dy) * w + x + dx) * 4; if (data[i] == null) continue; R += data[i]; G += data[i + 1]; B += data[i + 2]; n++; }
+  WAND.lineColor = [R / n, G / n, B / n]; WAND.comps = null; return WAND.lineColor;
+}
+function wandRegion(px, py, tol) {
+  const { data, w, h } = WAND; if (!data) return null;
+  px = Math.round(px); py = Math.round(py); if (px < 1 || py < 1 || px >= w - 1 || py >= h - 1) return null;
+  // tohum rengi: 5x5 ortanca
+  const rs = [], gs = [], bs = [];
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const i = ((py + dy) * w + px + dx) * 4; rs.push(data[i]); gs.push(data[i + 1]); bs.push(data[i + 2]); }
+  const med = a => a.sort((p, q) => p - q)[12], R0 = med(rs), G0 = med(gs), B0 = med(bs);
+  const t2 = tol * tol, N = w * h;
+  // engel: renk farkı büyük ya da koyu kırmızı/siyah sınır çizgisi
+  const bar = new Uint8Array(N);
+  for (let k = 0, i = 0; k < N; k++, i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], dr = r - R0, dg = g - G0, db = b - B0;
+    if (dr * dr + dg * dg + db * db > t2 || isLinePx(r, g, b)) bar[k] = 1;
+  }
+  // engeli 1 px kalınlaştır (küçük boşlukları kapat)
+  const bar2 = bar.slice();
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const k = y * w + x; if (bar[k]) { bar2[k - 1] = bar2[k + 1] = bar2[k - w] = bar2[k + w] = 1; } }
+  const seed = py * w + px; if (bar2[seed]) bar2[seed] = 0;
+  const reg = new Uint8Array(N), st = [seed]; reg[seed] = 1; let cnt = 0, edge = false;
+  while (st.length) { const k = st.pop(); cnt++; const x = k % w, y = (k / w) | 0; if (x === 0 || y === 0 || x === w - 1 || y === h - 1) edge = true;
+    if (cnt > N * 0.35) return { fail: 'büyük' };
+    for (const n of [k - 1, k + 1, k - w, k + w]) if (n >= 0 && n < N && !reg[n] && !bar2[n]) { reg[n] = 1; st.push(n); } }
+  if (cnt < 150) return { fail: 'küçük' };
+  // delikleri kapat ve sınır çizgisinin ortasına kadar genişlet (2 px)
+  let cur = reg;
+  for (let it = 0; it < 3; it++) { const nx = cur.slice(); for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) { const k = y * w + x; if (!cur[k] && (cur[k - 1] || cur[k + 1] || cur[k - w] || cur[k + w])) nx[k] = 1; } cur = nx; }
+  const poly = traceContour(cur, w, h); if (!poly || poly.length < 3) return { fail: 'kontur' };
+  const simp = simplifyClosed(poly, Math.max(2.5, Math.sqrt(cnt) * 0.04));
+  return { pts: simp.map(([x, y]) => ({ x: x / WAND.sc, y: -y / WAND.sc })), area: cnt, edge };
+}
+function traceContour(m, w, h) {
+  // Moore komşuluk takibi
+  let start = -1; for (let k = 0; k < w * h; k++) if (m[k]) { start = k; break; } if (start < 0) return null;
+  const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  const at = (x, y) => x >= 0 && y >= 0 && x < w && y < h && m[y * w + x];
+  let x = start % w, y = (start / w) | 0, sx = x, sy = y, d = 6; const out = [[x, y]];
+  for (let guard = 0; guard < w * h * 2; guard++) {
+    let found = false;
+    for (let i = 0; i < 8; i++) { const nd = (d + 6 + i) % 8, nx = x + dirs[nd][0], ny = y + dirs[nd][1]; if (at(nx, ny)) { x = nx; y = ny; d = nd; found = true; break; } }
+    if (!found) break; if (x === sx && y === sy) break; out.push([x, y]);
+  }
+  return out;
+}
+function simplifyClosed(pts, eps) {
+  // en uzak iki noktadan böl, iki yarıyı Douglas–Peucker ile sadeleştir
+  let far = 0, fd = -1; for (let i = 0; i < pts.length; i++) { const d = (pts[i][0] - pts[0][0]) ** 2 + (pts[i][1] - pts[0][1]) ** 2; if (d > fd) { fd = d; far = i; } }
+  const dp = arr => { if (arr.length < 3) return arr; const [a, b] = [arr[0], arr[arr.length - 1]]; let mi = 0, md = -1; const L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    for (let i = 1; i < arr.length - 1; i++) { const d = Math.abs((b[0] - a[0]) * (a[1] - arr[i][1]) - (a[0] - arr[i][0]) * (b[1] - a[1])) / L; if (d > md) { md = d; mi = i; } }
+    if (md > eps) { const l = dp(arr.slice(0, mi + 1)), r = dp(arr.slice(mi)); return l.slice(0, -1).concat(r); } return [a, b]; };
+  const A = dp(pts.slice(0, far + 1)), B = dp(pts.slice(far).concat([pts[0]]));
+  return A.slice(0, -1).concat(B.slice(0, -1));
+}
+
+// ======================= UYGULAMA =======================
+const $ = id => document.getElementById(id);
+const S = { P: Object.assign({}, DEFAULTS, { maxSpan: 50, autoKesit: true }), poles: [], parcels: [], roads: [], img: null, bg: null, polys: [], tool: 'add', sel: -1, view: { k: 1, tx: 0, ty: 0 }, mpu: null, metric: false, mode: 'sat', draft: [], scaleA: null, info: {} };
+try { const sv = JSON.parse(localStorage.getItem('cerP3') || 'null'); if (sv) Object.assign(S.P, sv); const iv = JSON.parse(localStorage.getItem('cerInfo') || 'null'); if (iv) S.info = iv; } catch (e) {}
+const cv = $('cv'), ctx = cv.getContext('2d');
+let results = [], DL = null;
+(async () => { try { if (window.claude) DL = await claude.use('downloads'); } catch (e) { DL = null; } })();
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 3200); }
+
+// ---------- ayarlar
+AER_LIST.forEach(n => $('routeCond').add(new Option(n, n)));
+$('projName').value = S.info.proje || '';
+function syncInputs() {
+  const P = S.P;
+  $('routeCond').value = P.routeCond; $('sigma').value = P.sigma; $('margin').value = P.margin; $('bolge').value = P.bolge; $('wind').checked = !!P.wind;
+  $('kKose').checked = !!P.kKose; $('kBrans').checked = !!P.kBrans; $('kNih').checked = !!P.kNih; $('straightAng').value = P.straightAng; $('firstMev').checked = P.firstMev !== false; $('maxSpan').value = P.maxSpan || 50;
+  [...$('routeCond').options].forEach(o => o.textContent = `${o.value.replace(/^AER/, 'ALPEK')}  —  ${fmt(parseCer(o.value, P))} kg`);
+  $('m2').textContent = `${P.routeCond.replace(/^AER /, '')} · ${['I', 'II', 'III', 'IV'][P.bolge - 1]}. bölge`;
+}
+function readInputs() {
+  const P = S.P;
+  P.routeCond = $('routeCond').value; P.sigma = +$('sigma').value || 12; P.margin = +$('margin').value || 0; P.bolge = +$('bolge').value || 1; P.wind = $('wind').checked;
+  P.kKose = $('kKose').checked; P.kBrans = $('kBrans').checked; P.kNih = $('kNih').checked; P.straightAng = +$('straightAng').value || 175; P.firstMev = $('firstMev').checked; P.maxSpan = +$('maxSpan').value || 50;
+  try { const c = Object.assign({}, P); delete c.kesit; localStorage.setItem('cerP3', JSON.stringify(c)); } catch (e) {}
+  syncInputs(); condOptions(); refresh();
+}
+['routeCond', 'sigma', 'margin', 'bolge', 'wind', 'kKose', 'kBrans', 'kNih', 'straightAng', 'firstMev', 'maxSpan'].forEach(id => $(id).addEventListener('change', readInputs));
+function readInfo() { S.info = { proje: $('projName').value.trim() }; renderSheets(); }
+$('projName').addEventListener('input', readInfo);
+['kW', 'tri', 'cos', 'Lm', 'lim', 'kappa'].forEach(id => $(id).addEventListener('input', refresh));
+$('autoK').checked = S.P.autoKesit !== false; $('autoK').onchange = e => { S.P.autoKesit = e.target.checked; readInputs(); };
+syncInputs();
+
+// ---------- mevcut hat iletken listeleri
+function condOptions() {
+  const sel = $('mCond'); const cur = sel.value; sel.innerHTML = '';
+  const g1 = document.createElement('optgroup'); g1.label = 'Çıplak Al tertipler'; TERTIP.forEach(t => g1.appendChild(new Option(`${t}  —  ${fmt(parseCer(t, S.P))} kg`, t))); sel.appendChild(g1);
+  const g2 = document.createElement('optgroup'); g2.label = 'ALPEK (AER)'; AER_LIST.forEach(t => g2.appendChild(new Option(`${t.replace(/^AER/, 'ALPEK')}  —  ${fmt(parseCer(t, S.P))} kg`, t))); sel.appendChild(g2);
+  sel.appendChild(new Option('Diğer (yaz)…', '__other')); if (cur) sel.value = cur;
+  const dl = $('condList'); dl.innerHTML = ''; [...TERTIP, ...AER_LIST].forEach(t => dl.appendChild(new Option(`${fmt(parseCer(t, S.P))} kg`, t)));
+}
+condOptions();
+
+// ---------- görünüm
+const W2S = (x, y) => [x * S.view.k + S.view.tx, -y * S.view.k + S.view.ty];
+const S2W = (sx, sy) => [(sx - S.view.tx) / S.view.k, -(sy - S.view.ty) / S.view.k];
+function resize() { const r = cv.getBoundingClientRect(), d = devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; ctx.setTransform(d, 0, 0, d, 0, 0); draw(); }
+new ResizeObserver(resize).observe($('stage'));
+function extents() {
+  const xs = [], ys = [];
+  if (S.img && S.mode === 'sat') { xs.push(0, S.img.width); ys.push(0, -S.img.height); }
+  if (S.bg) { xs.push(S.bg.minx, S.bg.maxx); ys.push(S.bg.miny, S.bg.maxy); }
+  S.parcels.forEach(pc => pc.pts.forEach(p => { xs.push(p.x); ys.push(p.y); }));
+  S.roads.forEach(rd => rd.pts.forEach(p => { xs.push(p.x); ys.push(p.y); }));
+  S.poles.forEach(p => { xs.push(p.x); ys.push(p.y); (p.ex || []).forEach(e => { xs.push(e.x); ys.push(e.y); }); });
+  if (!xs.length && S.img) { xs.push(0, S.img.width); ys.push(0, -S.img.height); }
+  if (!xs.length) return null; return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+}
+function fit() {
+  const e = extents(), r = cv.getBoundingClientRect(); if (!e) { S.view = { k: 1, tx: r.width / 2, ty: r.height / 2 }; draw(); return; }
+  const w = Math.max(e.x1 - e.x0, 1e-6), h = Math.max(e.y1 - e.y0, 1e-6), k = Math.min((r.width - 80) / w, (r.height - 110) / h);
+  S.view.k = k; S.view.tx = (r.width - w * k) / 2 - e.x0 * k; S.view.ty = (r.height - h * k) / 2 + 20 + e.y1 * k; draw();
+}
+$('zFit').onclick = fit;
+const zoomAt = (f, sx, sy) => { const [wx, wy] = S2W(sx, sy); S.view.k *= f; S.view.tx = sx - wx * S.view.k; S.view.ty = sy + wy * S.view.k; draw(); };
+cv.addEventListener('wheel', e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, e.clientX - r.left, e.clientY - r.top); }, { passive: false });
+$('viewSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.mode = b.dataset.m; [...$('viewSeg').children].forEach(x => x.classList.toggle('on', x === b)); draw(); };
+
+// ---------- ölçü yardımcıları
+function textH() {
+  // dünya biriminde yazı yüksekliği
+  let avg = null;
+  if (S.poles.length > 1) { let s = 0; for (let i = 1; i < S.poles.length; i++) s += Math.hypot(S.poles[i].x - S.poles[i - 1].x, S.poles[i].y - S.poles[i - 1].y); avg = s / (S.poles.length - 1); }
+  if (avg && S.mpu) { const m = Math.min(2.6, Math.max(0.7, avg * S.mpu / 14)); return m / S.mpu; }
+  if (avg) return avg / 14;
+  const e = extents(); return e ? Math.max(e.x1 - e.x0, e.y1 - e.y0) / 90 : 1;
+}
+function spanM(i) { if (i < 1 || !S.mpu) return null; const a = S.poles[i - 1], b = S.poles[i]; return Math.hypot(b.x - a.x, b.y - a.y) * S.mpu; }
+function setSpan(i, m) {
+  if (!S.mpu || i < 1 || !(m > 0)) return;
+  const a = S.poles[i - 1], b = S.poles[i], d = Math.hypot(b.x - a.x, b.y - a.y); if (d < 1e-9) return;
+  const k = (m / S.mpu) / d, nx = a.x + (b.x - a.x) * k, ny = a.y + (b.y - a.y) * k, dx = nx - b.x, dy = ny - b.y;
+  for (let j = i; j < S.poles.length; j++) { const p = S.poles[j]; p.x += dx; p.y += dy; (p.ex || []).forEach(e => { e.x += dx; e.y += dy; }); }
+  refresh();
+}
+function roadsWorld() { return S.roads.map(r => ({ pts: r.pts, w: S.mpu ? r.wm / S.mpu : r.wm, name: r.name })); }
+function krokiModel() { return { poles: S.poles, parcels: S.parcels, roads: roadsWorld(), bgSegs: S.bg ? S.bg.segs : [], bgTexts: S.bg ? S.bg.texts : [] }; }
+
+// ---------- çizim
+function draw() {
+  const r = cv.getBoundingClientRect(); ctx.clearRect(0, 0, r.width, r.height);
+  const proj = S.mode === 'proj' || !S.img;
+  ctx.fillStyle = proj ? '#fff' : '#dfe3e8'; ctx.fillRect(0, 0, r.width, r.height);
+  if (!proj && S.img) { const [x, y] = W2S(0, 0); ctx.drawImage(S.img, x, y, S.img.width * S.view.k, S.img.height * S.view.k); }
+  if (!proj) { ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(0, 0, r.width, r.height); }
+  const h = textH();
+  const pr = S.poles.length ? krokiPrims2(krokiModel(), results, S.P, { h, mpu: S.mpu, legend: proj }) : krokiPrims2({ poles: [], parcels: S.parcels, roads: roadsWorld(), bgSegs: S.bg ? S.bg.segs : [], bgTexts: S.bg ? S.bg.texts : [] }, [], S.P, { h, legend: false });
+  if (!proj) { // uydu üzerinde yazılar okunsun diye beyaz hale
+    ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.95)'; ctx.shadowBlur = 4; drawPrims(ctx, pr, W2S, S.view.k, { fillPoles: true }); ctx.restore();
+  } else drawPrims(ctx, pr, W2S, S.view.k, { fillPoles: true });
+  // seçim ve sorunlu direkler
+  S.poles.forEach((p, i) => {
+    const s = W2S(p.x, p.y), rr = results[i]; if (!rr) return;
+    if (i === S.sel) { ctx.strokeStyle = '#1b5fd1'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(s[0], s[1], Math.max(14, h * S.view.k * 1.9), 0, 7); ctx.stroke(); }
+    if (!rr.ok || rr.kViol) { ctx.strokeStyle = '#c42b1c'; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.arc(s[0], s[1], Math.max(18, h * S.view.k * 2.3), 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+  });
+  // parsel taslağı
+  if (S.draft.length) {
+    ctx.strokeStyle = '#1b5fd1'; ctx.lineWidth = 2; ctx.beginPath();
+    S.draft.forEach((q, i) => { const s = W2S(q.x, q.y); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+    if (hover.w) { const s = W2S(hover.w[0], hover.w[1]); ctx.lineTo(s[0], s[1]); } ctx.stroke();
+    S.draft.forEach((q, i) => { const s = W2S(q.x, q.y); ctx.fillStyle = i ? '#fff' : '#1b5fd1'; ctx.beginPath(); ctx.arc(s[0], s[1], 4.5, 0, 7); ctx.fill(); ctx.stroke(); });
+  }
+  if (S.pending) { ctx.save(); ctx.strokeStyle = '#1b5fd1'; ctx.fillStyle = 'rgba(27,95,209,.12)'; ctx.lineWidth = 3; ctx.beginPath();
+    S.pending.pts.forEach((q, i) => { const s = W2S(q.x, q.y); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); }); if (S.pending.closed) { ctx.closePath(); ctx.fill(); } ctx.stroke(); ctx.restore(); }
+  $('dbar').classList.toggle('on', S.draft.length > 0 && !ASKING); if (S.draft.length) $('dbarTxt').textContent = `${S.tool === 'road' ? 'Yol' : 'Parsel'}: ${S.draft.length} nokta`;
+  if (S.scaleA) { const a = W2S(S.scaleA.x, S.scaleA.y); ctx.strokeStyle = '#e07b00'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(a[0], a[1]); if (hover.w) { const b = W2S(hover.w[0], hover.w[1]); ctx.lineTo(b[0], b[1]); } ctx.stroke(); }
+  if (hover.snap) { const s = W2S(hover.snap.x, hover.snap.y); ctx.strokeStyle = '#e07b00'; ctx.lineWidth = 2; ctx.strokeRect(s[0] - 6, s[1] - 6, 12, 12); }
+}
+
+// ---------- etkileşim
+let drag = null, hover = {}, moved = false;
+function pick(sx, sy) { let best = -1, bd = 16; S.poles.forEach((p, i) => { const s = W2S(p.x, p.y), d = Math.hypot(s[0] - sx, s[1] - sy); if (d < bd) { bd = d; best = i; } }); return best; }
+function snapPt(sx, sy) {
+  const cand = []; if (S.bg) cand.push(...S.bg.verts); S.parcels.forEach(pc => cand.push(...pc.pts)); S.draft.forEach(q => cand.push(q));
+  let best = null, bd = 10; cand.forEach(v => { const s = W2S(v.x, v.y), d = Math.hypot(s[0] - sx, s[1] - sy); if (d < bd) { bd = d; best = v; } }); return best;
+}
+const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+cv.addEventListener('pointerdown', e => {
+  const [sx, sy] = pos(e); moved = false; cv.setPointerCapture(e.pointerId);
+  const hit = (S.tool === 'move' || S.tool === 'add') ? pick(sx, sy) : -1;
+  if (hit >= 0) { S.sel = hit; drag = { kind: 'pole', i: hit, sx, sy }; refresh(); return; }
+  drag = { kind: 'pan', sx, sy, tx: S.view.tx, ty: S.view.ty };
+});
+cv.addEventListener('pointermove', e => {
+  const [sx, sy] = pos(e); hover.w = S2W(sx, sy);
+  if (!drag) { hover.snap = (S.tool === 'add' || S.tool === 'parcel' || S.tool === 'road') ? snapPt(sx, sy) : null; if (S.draft.length || S.scaleA || hover.snap !== undefined) draw(); return; }
+  if (Math.hypot(sx - drag.sx, sy - drag.sy) > 3) moved = true;
+  if (drag.kind === 'pan' && moved) { S.view.tx = drag.tx + sx - drag.sx; S.view.ty = drag.ty + sy - drag.sy; draw(); }
+  if (drag.kind === 'pole' && moved) { const sn = snapPt(sx, sy); const [wx, wy] = sn ? [sn.x, sn.y] : S2W(sx, sy); const p = S.poles[drag.i], dx = wx - p.x, dy = wy - p.y; p.x = wx; p.y = wy; (p.ex || []).forEach(q => { q.x += dx; q.y += dy; }); refresh(); }
+});
+cv.addEventListener('pointerup', async e => { window._lastEv = e;
+  const [sx, sy] = pos(e); const d = drag; drag = null;
+  if (moved || !d || d.kind === 'pole' || ASKING) return;
+  const sn = snapPt(sx, sy); const [wx, wy] = sn ? [sn.x, sn.y] : S2W(sx, sy);
+  if (S.tool === 'add') {
+    S.poles.push({ x: wx, y: wy, mev: S.poles.length === 0 && S.P.firstMev !== false, mevName: '9.30/8', mevCap: 800, ov: 'auto', ex: [] });
+    S.sel = S.poles.length - 1; refresh();
+    if (S.poles.length === 1 && S.poles[0].mev) openMevcut(0);
+  } else if (S.tool === 'ex') {
+    if (S.sel < 0) { toast('Önce mevcut hattın bağlandığı direği seç.'); return; }
+    const pe = pendingEx && pendingEx.i === S.sel ? pendingEx : null, p0 = S.poles[S.sel];
+    p0.ex.push({ x: wx, y: wy, c: pe ? pe.cond : '4R' });
+    if (pe && pe.through) p0.ex.push({ x: 2 * p0.x - wx, y: 2 * p0.y - wy, c: pe.cond });
+    if (pe) { pendingEx = null; setTool('add'); }
+    refresh();
+  } else if (S.tool === 'pickline') {
+    const c = wandSetLine(wx, -wy); if (c) { $('lineInfo').innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;background:rgb(${c.map(Math.round).join(',')})"></span> seçildi`; toast('Sınır rengi seçildi'); } setTool('parcel');
+  } else if (S.tool === 'parcel' && !S.draft.length && S.parcels.some(pc => !pc.open && pointInPoly(wx, wy, pc.pts))) {
+    const pc = S.parcels.find(pc => !pc.open && pointInPoly(wx, wy, pc.pts)); S.pending = { pts: pc.pts, closed: true }; draw();
+    const v = await ask('Parsel numarası', 'Ada / parsel (ör. 184/6). Silmek için "sil" yaz.', pc.label); S.pending = null;
+    if (v != null) { if (v.trim().toLowerCase() === 'sil') S.parcels.splice(S.parcels.indexOf(pc), 1); else pc.label = v.trim(); } refresh();
+  } else if (S.tool === 'parcel' && S.img && $('autoClick').checked && !e.shiftKey && !S.draft.length) {
+    const r = wandAt(wx, -wy);
+    if (!r || r.fail || !r.pts) { toast(r && r.fail === 'büyük' ? 'Sınır kapanmıyor; Shift+tık ile köşeleri elle işaretle ya da sınır rengini seç' : 'Parsel bulunamadı; Shift+tık ile elle çiz'); return; }
+    S.pending = { pts: r.pts, closed: true }; draw();
+    const lab = await ask('Parsel', 'Ada / parsel numarası (ör. 184/6)', ''); S.pending = null;
+    if (lab === null) { draw(); return; } S.parcels.push({ pts: r.pts, label: lab.trim(), auto: true }); refresh();
+  } else if (S.tool === 'parcel') {
+    if (S.draft.length >= 3) { const f = W2S(S.draft[0].x, S.draft[0].y); if (Math.hypot(f[0] - sx, f[1] - sy) < 10) { closeDraft(); return; } }
+    S.draft.push({ x: wx, y: wy }); draw();
+  } else if (S.tool === 'road') {
+    if (S.draft.length >= 2) { const l = W2S(S.draft[S.draft.length - 1].x, S.draft[S.draft.length - 1].y); if (Math.hypot(l[0] - sx, l[1] - sy) < 8) { closeRoad(); return; } }
+    S.draft.push({ x: wx, y: wy }); draw();
+  } else if (S.tool === 'scale') {
+    if (!S.scaleA) { S.scaleA = { x: wx, y: wy }; setHint('İkinci noktaya tıkla'); draw(); return; }
+    const dw = Math.hypot(wx - S.scaleA.x, wy - S.scaleA.y); S.scaleA = null; draw();
+    const v = await ask('Ölçek', 'İki nokta arasındaki gerçek mesafe (m)', '');
+    if (+v > 0 && dw > 0) { S.mpu = +v / dw; toast(`Ölçek ayarlandı: 1 m = ${(1 / S.mpu).toFixed(2)} piksel`); setTool('add'); refresh(); }
+  } else if (S.tool === 'move') { S.sel = -1; refresh(); }
+});
+cv.addEventListener('contextmenu', e => { e.preventDefault(); if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); else if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); });
+function finishDraft() { if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); else if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); else toast(S.tool === 'road' ? 'Yol için en az 2 nokta gerekli' : 'Parsel için en az 3 nokta gerekli'); }
+cv.addEventListener('dblclick', () => { if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); });
+async function closeRoad() {
+  const pts = S.draft.slice(); S.draft = []; draw();
+  while (pts.length > 2 && Math.hypot(pts[pts.length - 1].x - pts[pts.length - 2].x, pts[pts.length - 1].y - pts[pts.length - 2].y) < 1e-6) pts.pop();
+  if (!S.mpu) toast('Ölçek verilmedi; yol genişliği yaklaşık çizilecek.');
+  S.pending = { pts, closed: false }; draw();
+  const v = await askForm('Yol', 'Yol genişliği ve adı', [{ id: 'w', label: 'Genişlik (m)', value: '7', type: 'number' }, { id: 'n', label: 'Yol adı (isteğe bağlı)', value: '' }]);
+  S.pending = null; if (!v) { draw(); return; } S.roads.push({ pts, wm: +v.w || 7, name: (v.n || '').trim().toLocaleUpperCase('tr') }); refresh();
+}
+async function closeDraft() {
+  const pts = S.draft.slice(); S.draft = []; draw();
+  if (pts.length > 3 && Math.hypot(pts[pts.length - 1].x - pts[pts.length - 2].x, pts[pts.length - 1].y - pts[pts.length - 2].y) < 1e-6) pts.pop();
+  S.pending = { pts, closed: true }; draw();
+  const lab = await ask('Parsel', 'Ada / parsel numarası (ör. 184/6)', '');
+  S.pending = null; if (lab === null) { draw(); return; }
+  S.parcels.push({ pts, label: (lab || '').trim() }); refresh();
+}
+window.addEventListener('keydown', e => {
+  if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || ASKING || $('mevModal').classList.contains('on')) return;
+  const k = e.key.toLowerCase();
+  if ((k === 'delete' || k === 'backspace') && S.sel >= 0) { S.poles.splice(S.sel, 1); S.sel = -1; refresh(); e.preventDefault(); }
+  else if (k === 'z' && (e.ctrlKey || e.metaKey)) { if (S.draft.length) S.draft.pop(); else S.poles.pop(); S.sel = -1; refresh(); }
+  else if (k === 'escape') { S.draft = []; S.scaleA = null; pendingEx = null; setTool('add'); draw(); }
+  else if (k === 'enter' && S.tool === 'parcel' && S.draft.length >= 3) closeDraft();
+  else if (k === 'enter' && S.tool === 'road' && S.draft.length >= 2) closeRoad();
+  else if (!e.ctrlKey && !e.metaKey) { const m = { v: 'move', d: 'add', m: 'ex', p: 'parcel', y: 'road', s: 'scale' }[k]; if (m) setTool(m); }
+});
+const HINTS = { add: 'Direk: boş yere tıkla, sıradaki direk eklenir · direğe tıkla: seç · sürükle: taşı', move: 'Seç: direği sürükleyerek taşı · boş yeri sürükle: kaydır · Del: sil', ex: 'Mevcut hat: seçili direkten çıkan mevcut hattın yönüne tıkla', parcel: 'Parsel: parselin içine tıkla, sınır otomatik bulunur · var olan parsele tıkla: numarasını değiştir · Shift+tık: köşeleri elle işaretle', pickline: 'Parsel sınır çizgisinin üzerine tıkla', road: 'Yol: yolun orta çizgisi boyunca tıkla · çift tıkla, sağ tıkla, Enter ya da Bitir ile bitir · sonra genişliği gir', scale: 'Ölçek: bilinen bir mesafenin iki ucuna tıkla' };
+function setHint(t) { $('hint').textContent = t; }
+function setTool(t) {
+  S.tool = t; [...$('tb').querySelectorAll('button')].forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  setHint(HINTS[t]); cv.style.cursor = t === 'move' ? 'grab' : 'crosshair'; if (t !== 'parcel') S.draft = []; if (t !== 'scale') S.scaleA = null;
+}
+$('tb').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) setTool(b.dataset.t); };
+$('scaleBtn').onclick = () => setTool('scale'); $('parcelBtn').onclick = () => setTool('parcel');
+$('parcelClr').onclick = () => { S.parcels = []; refresh(); };
+$('roadBtn').onclick = () => setTool('road');
+$('pickLine').onclick = () => setTool('pickline');
+$('readNums').onclick = () => numberParcels();
+$('findAll').onclick = () => {
+  if (!S.img) return; const t0 = performance.now(); const found = wandAll();
+  const fresh = found.filter(f => { const c = polyCentroid(f.pts); return !S.parcels.some(pc => !pc.open && pointInPoly(c.x, c.y, pc.pts)); });
+  fresh.forEach(f => S.parcels.push({ pts: f.pts, label: '', auto: true })); refresh();
+  if (fresh.length) { toast(`${fresh.length} parsel bulundu. Şimdi numaralarını sırayla gir (kutuyu kenara çekip altlıktaki yazıyı okuyabilirsin).`); numberParcels(); } else toast('Yeni parsel bulunamadı. Sınır rengini seçmeyi dene.');
+};
+// numaraları sırayla gir: her numarasız parsele sırayla odaklan
+async function numberParcels() {
+  const todo = S.parcels.filter(pc => !pc.open && !pc.label); if (!todo.length) { toast('Numarasız parsel yok'); return; }
+  setTool('parcel');
+  for (let i = 0; i < todo.length; i++) {
+    const pc = todo[i], c = polyCentroid(pc.pts), r = cv.getBoundingClientRect(), s = W2S(c.x, c.y);
+    if (s[0] < 380 || s[0] > r.width - 60 || s[1] < 80 || s[1] > r.height - 60) { S.view.tx += r.width * 0.6 - s[0]; S.view.ty += r.height / 2 - s[1]; }
+    S.pending = { pts: pc.pts, closed: true }; draw();
+    const v = await ask(`Parsel ${i + 1} / ${todo.length}`, 'Mavi parselin ada/parsel numarası · boş bırakıp Enter: atla · Vazgeç: bitir', '');
+    S.pending = null; if (v === null) break; if (v.trim()) pc.label = v.trim(); refresh();
+  }
+  draw(); refresh();
+};
+$('roadClr').onclick = () => { S.roads = []; refresh(); };
+setTool('add');
+
+// ---------- küçük soru penceresi
+// taşınabilir, altlığı kapatmayan soru kutusu (açıkken haritayı kaydırıp yakınlaştırabilirsin)
+let ASKING = false;
+function askForm(title, note, fields) {
+  return new Promise(res => {
+    ASKING = true; $('askTitle').textContent = title; $('askNote').textContent = note;
+    $('askFields').innerHTML = fields.map((f, i) => `${fields.length > 1 ? `<label class="l">${f.label}</label>` : ''}<input class="f" data-id="${f.id}" ${f.type ? `type="${f.type}"` : ''} value="${(f.value || '').replace(/"/g, '&quot;')}" placeholder="${f.label}">`).join('');
+    $('askBox').classList.add('on'); const ins = [...$('askFields').querySelectorAll('input')]; setTimeout(() => { ins[0].focus(); ins[0].select(); }, 30);
+    const val = () => { const o = {}; ins.forEach(i => o[i.dataset.id] = i.value); return o; };
+    const done = v => { ASKING = false; if (document.activeElement) document.activeElement.blur(); $('askBox').classList.remove('on'); $('askOk').onclick = $('askCancel').onclick = null; res(v); };
+    $('askOk').onclick = () => done(val()); $('askCancel').onclick = () => done(null);
+    ins.forEach((i, k) => i.onkeydown = e => { if (e.key === 'Enter') { if (k < ins.length - 1) ins[k + 1].focus(); else done(val()); } if (e.key === 'Escape') done(null); });
+  });
+}
+async function ask(title, note, def) { const v = await askForm(title, note, [{ id: 'v', label: note, value: def || '' }]); return v ? v.v : null; }
+(() => { let d = null; const box = $('askBox');
+  $('askHandle').onpointerdown = e => { const r = box.getBoundingClientRect(); d = { dx: e.clientX - r.left, dy: e.clientY - r.top }; $('askHandle').setPointerCapture(e.pointerId); };
+  $('askHandle').onpointermove = e => { if (!d) return; box.style.left = Math.max(0, Math.min(innerWidth - 60, e.clientX - d.dx)) + 'px'; box.style.top = Math.max(0, Math.min(innerHeight - 40, e.clientY - d.dy)) + 'px'; box.style.right = 'auto'; };
+  $('askHandle').onpointerup = () => { d = null; };
+})();
+
+// ---------- mevcut direk penceresi
+SBA_BOY.forEach(b => $('mBoy').add(new Option(b, b))); SBA_TIP.forEach(t => $('mTip').add(new Option(`${t}  (${t * 100} kg)`, t)));
+POLES.forEach(p => $('mDemir').add(new Option(`${p.n}  (${p.s} kg)`, p.n)));
+let mCins = 'beton', mHat = 'end', modalIdx = -1, pendingEx = null;
+function segSet(id, attr, val) { [...$(id).children].forEach(b => b.classList.toggle('on', b.dataset[attr] === val)); }
+$('mCinsSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; mCins = b.dataset.c; segSet('mCinsSeg', 'c', mCins); mCinsUI(); };
+$('mHatSeg').onclick = e => { const b = e.target.closest('button'); if (!b) return; mHat = b.dataset.h; segSet('mHatSeg', 'h', mHat); };
+function mCinsUI() { $('mBetonRow').style.display = mCins === 'beton' ? '' : 'none'; $('mDemirRow').style.display = mCins === 'demir' ? '' : 'none'; $('mAgacRow').style.display = mCins === 'agac' ? '' : 'none'; }
+$('mCond').onchange = () => { $('mCondOther').style.display = $('mCond').value === '__other' ? '' : 'none'; };
+function openMevcut(i) {
+  modalIdx = i; const p = S.poles[i]; condOptions();
+  const nm = p.mevName || '9.30/8', mb = nm.match(/^([\d.,]+)\s*\/\s*(\d+)$/);
+  if (POLES.find(x => x.n === nm)) { mCins = 'demir'; $('mDemir').value = nm; }
+  else if (mb) { mCins = 'beton'; $('mBoy').value = SBA_BOY.includes(mb[1]) ? mb[1] : '9.30'; $('mTip').value = mb[2]; }
+  else { mCins = 'agac'; $('mAgacAd').value = nm; $('mAgacKg').value = p.mevCap || ''; }
+  segSet('mCinsSeg', 'c', mCins); mCinsUI();
+  const c0 = p.ex[0] ? p.ex[0].c : '4R';
+  if ([...TERTIP, ...AER_LIST].includes(c0)) { $('mCond').value = c0; $('mCondOther').style.display = 'none'; } else { $('mCond').value = '__other'; $('mCondOther').value = c0; $('mCondOther').style.display = ''; }
+  mHat = p.ex.length === 2 ? 'through' : 'end'; segSet('mHatSeg', 'h', mHat);
+  $('mevModal').classList.add('on');
+}
+$('mCancel').onclick = () => { $('mevModal').classList.remove('on'); refresh(); };
+$('mOk').onclick = () => {
+  const p = S.poles[modalIdx]; if (!p) return; p.mev = true;
+  if (mCins === 'beton') { p.mevName = `${$('mBoy').value}/${$('mTip').value}`; p.mevCap = +$('mTip').value * 100; }
+  else if (mCins === 'demir') { p.mevName = $('mDemir').value; p.mevCap = POLES.find(x => x.n === p.mevName).s; }
+  else { p.mevName = $('mAgacAd').value || 'MEVCUT'; p.mevCap = +$('mAgacKg').value || 0; }
+  const cond = $('mCond').value === '__other' ? ($('mCondOther').value || '4R') : $('mCond').value;
+  $('mevModal').classList.remove('on'); S.sel = modalIdx;
+  p.noEx = mHat === 'none';
+  if (mHat === 'none') { p.ex = []; refresh(); return; }
+  if (p.ex.length && ((mHat === 'through' && p.ex.length === 2) || (mHat === 'end' && p.ex.length === 1))) { p.ex.forEach(e => e.c = cond); refresh(); return; }
+  p.ex = []; pendingEx = { i: modalIdx, cond, through: mHat === 'through' };
+  setTool('ex'); setHint('Mevcut hattın geldiği yöne tıkla' + (mHat === 'through' ? ' (karşı yön otomatik eklenir)' : '')); refresh();
+};
+
+// ---------- seçili direk kartı
+function selCard() {
+  const i = S.sel, p = S.poles[i], r = results[i], el = $('selCard');
+  if (!p || !r) { el.classList.remove('on'); return; }
+  el.classList.add('on');
+  el.innerHTML = `<h4>${r.name} <span class="pill ${r.ok && !r.kViol ? 'ok' : 'bad'}">${r.ok ? (r.kViol ? 'K kuralı' : 'Uygun') : 'Yetersiz'}</span><button class="x" style="margin-left:auto" id="scClose">×</button></h4>
+    <div class="kv"><span>Görevi</span><span>${r.catName}</span><span>Tip</span><span>${r.type}${p.mev ? ' (mevcut)' : ''}</span><span>Bileşke</span><span>${r.R} kg / ${r.cap} kg</span>${r.kind === 'two' ? `<span>Hat açısı</span><span>${r.interior}°${p.angOv ? ' (elle)' : ''}</span>` : ''}</div>
+    ${p.mev ? `<button class="btn sm" id="scMev">Mevcut direk ve hattı düzenle</button>` : ''}
+    ${p.ex.length ? `<div class="note" style="margin-top:8px">Bağlı mevcut hatlar</div>` + p.ex.map((e, k) => `<div class="exrow"><input list="condList" value="${e.c}" data-k="${k}"><span class="note" style="margin:0">${fmt(parseCer(e.c, S.P))} kg</span><button class="x" data-del="${k}">×</button></div>`).join('') : ''}
+    <div class="row" style="margin-top:8px"><label class="chk" style="margin:0"><input type="checkbox" id="scMevChk" ${p.mev ? 'checked' : ''}>Mevcut direk</label><button class="btn sm" id="scDel" style="flex:none">Sil</button></div>`;
+  $('scClose').onclick = () => { S.sel = -1; refresh(); };
+  if ($('scMev')) $('scMev').onclick = () => openMevcut(i);
+  $('scMevChk').onchange = e => { p.mev = e.target.checked; refresh(); if (p.mev) openMevcut(i); };
+  $('scDel').onclick = () => { S.poles.splice(i, 1); S.sel = -1; refresh(); };
+  el.querySelectorAll('input[data-k]').forEach(inp => inp.onchange = ev => { p.ex[+inp.dataset.k].c = ev.target.value; refresh(); });
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { p.ex.splice(+b.dataset.del, 1); refresh(); });
+}
+
+// ---------- kesit
+function routeLen() { let L = 0; for (let i = 1; i < S.poles.length; i++) L += Math.hypot(S.poles[i].x - S.poles[i - 1].x, S.poles[i].y - S.poles[i - 1].y); return S.mpu ? L * S.mpu : null; }
+function doKesit() {
+  const kW = +$('kW').value, auto = routeLen(), Lin = +$('Lm').value || auto, noL = !(Lin > 0), L = noL ? 0 : Lin;
+  $('Lm').placeholder = auto ? `krokiden ${Math.round(auto)}` : 'gir';
+  S._kesitView = null;
+  if (!(kW > 0)) { S.P.kesit = null; $('kesitOut').innerHTML = 'Bağlantı gücünü ve toplam mesafeyi girersen kablo kesiti akım ve gerilim düşümü yönünden kontrol edilir.'; $('m3').textContent = 'güç girilmedi'; return; }
+  if (noL) { S.P.kesit = null; $('kesitOut').innerHTML = '<b>Toplam mesafeyi gir.</b> Kesit, akım ve gerilim düşümü birlikte kontrol edilerek mesafe girildikten sonra belirlenir. Direkleri çizersen hat boyu krokiden de alınır.'; $('m3').textContent = 'mesafe bekleniyor'; return; }
+  const mk = cond => ({ kW, cos: +$('cos').value || 0.8, tri: $('tri').value === '1', U3: 380, U1: 220, L, kappa: +$('kappa').value || 35, limit: +$('lim').value || 1, cond });
+  let o = mk(S.P.routeCond), r = kesitCheck(o);
+  if (S.P.autoKesit !== false && r.best && r.best.n !== S.P.routeCond) { S.P.routeCond = r.best.n; syncInputs(); o = mk(S.P.routeCond); r = kesitCheck(o); }
+  S.P.kesit = noL ? null : Object.assign(o, { res: r });
+  const ok = r.sel.okI && (noL || r.sel.okE);
+  $('m3').innerHTML = `<span style="color:${ok ? 'var(--ok)' : 'var(--bad)'}">${r.sel.n.replace(/^AER /, '')} ${ok ? 'uygun' : 'yetersiz'}</span>${noL ? '' : ' · %' + fmt(r.sel.e)}`;
+  $('kesitOut').innerHTML = `<b>I = ${fmt(r.I)} A</b> · ${o.tri ? 'trifaze 380 V' : 'monofaze 220 V'} · ${noL ? 'hat boyu henüz yok (gerilim düşümü direkler çizilince hesaplanır)' : 'L = ' + Math.round(L) + ' m'}
+    <table style="margin-top:6px"><tr><th>Kablo</th><th>Akım</th><th>%e</th></tr>${r.rows.map(x => `<tr style="${x.n === o.cond ? 'background:#f2f6fe' : ''}"><td>${x.n.replace('AER ', '')}</td><td style="color:${x.okI ? 'var(--ok)' : 'var(--bad)'}">${x.amp} A</td><td style="color:${noL ? 'inherit' : x.okE ? 'var(--ok)' : 'var(--bad)'}">${noL ? '—' : '%' + fmt(x.e)}</td></tr>`).join('')}</table>
+    <div style="margin-top:6px;font-weight:600;color:${ok ? 'var(--ok)' : 'var(--bad)'}">${o.cond.replace(/^AER/, 'ALPEK')}: ${ok ? 'uygun' : 'yetersiz'}${!ok && r.best ? ` → en küçük uygun kesit ${r.best.n.replace(/^AER/, 'ALPEK')}` : ''}${!r.best ? ' → hiçbir ALPEK kesiti yetmiyor' : ''}</div>`;
+  S._kesitView = { r, noL, ok };
+}
+
+// ---------- ana yenileme
+function refresh() {
+  if (S.metric) S.mpu = 1;
+  doKesit();
+  results = computeAll(S.poles, S.P);
+  results.forEach((r, i) => { r.span = spanM(i); });
+  // tablo
+  const tb = $('tbl').querySelector('tbody'); tb.innerHTML = '';
+  results.forEach((r, i) => {
+    const p = S.poles[i], use = r.cap ? r.R / r.cap : 1, col = use > 1 ? 'var(--bad)' : use > 0.85 ? 'var(--warn)' : 'var(--ok)';
+    const tr = document.createElement('tr'); if (i === S.sel) tr.className = 'sel';
+    tr.innerHTML = `<td><b>${r.name}</b></td><td><span class="tag">${r.catName}</span></td><td></td><td></td><td class="num">${r.R} kg</td><td></td><td class="num">${r.cap} kg</td>
+      <td><span class="bar"><i style="width:${Math.min(100, use * 100)}%;background:${col}"></i></span><span class="note">%${Math.round(use * 100)}</span></td>
+      <td><span class="pill ${r.ok && !r.kViol ? 'ok' : 'bad'}">${r.ok ? (r.kViol ? 'K kuralı' : 'UYGUN') : 'UYGUN DEĞİL'}</span></td>`;
+    // açıklık
+    if (i > 0) {
+      if (S.mpu) { const inp = Object.assign(document.createElement('input'), { className: 'in', type: 'number', step: '0.5', value: Math.round(r.span * 10) / 10 }); inp.title = 'Değiştirirsen bu direk ve sonrakiler hat doğrultusunda kayar'; inp.onchange = e => setSpan(i, +e.target.value); tr.children[2].appendChild(inp); if (r.span > (S.P.maxSpan || 50)) tr.children[2].insertAdjacentHTML('beforeend', ' <span class="pill bad">uzun</span>'); }
+      else tr.children[2].innerHTML = '<span class="note">ölçek yok</span>';
+    } else tr.children[2].textContent = '—';
+    // açı
+    if (r.kind === 'two') {
+      const inp = Object.assign(document.createElement('input'), { className: 'in', type: 'number', min: 1, max: 180, value: p.angOv || '', placeholder: r.measured });
+      inp.title = `Ölçülen ${r.measured}°. Krokide yazan açıyı girebilirsin.`; inp.onchange = e => { p.angOv = +e.target.value || null; refresh(); };
+      tr.children[3].append(inp, Object.assign(document.createElement('span'), { className: 'note', textContent: p.angOv ? ' elle' : '°' }));
+    } else tr.children[3].textContent = '—';
+    // tip
+    if (p.mev) tr.children[5].innerHTML = `${r.type} <span class="note">mevcut</span>`;
+    else {
+      const sel = document.createElement('select'); sel.add(new Option(`Otomatik → ${r.auto ? r.type : '…'}`, 'auto'));
+      POLES.forEach(d => sel.add(new Option(`${d.n} (${S.P.wind ? d.r : d.s} kg)`, d.n))); sel.value = p.ov || 'auto';
+      sel.onchange = e => { p.ov = e.target.value; refresh(); }; tr.children[5].appendChild(sel);
+    }
+    tr.onclick = ev => { if (!/SELECT|INPUT|OPTION/.test(ev.target.tagName)) { S.sel = i; refresh(); } };
+    tb.appendChild(tr);
+  });
+  // uyarılar
+  const w = [], axis = [];
+  results.forEach(r => {
+    if (!r.ok) w.push(['bad', `<b>${r.name}</b>: bileşke ${r.R} kg, ${r.type} direğin ${r.cap} kg tepe kuvvetini aşıyor. Daha büyük tip seç.`]);
+    else if (r.kViol) w.push(['warn', `<b>${r.name}</b>: ${r.catName.toLowerCase()} direğinde ${r.type} seçili; K (kafes) direk kuralı açık.`]);
+    else if (r.isIU) { const d = POLES.find(x => x.n === r.type); if (d && r.R > d.w) axis.push(`${r.name} (${r.type})`); }
+    if (r.span && r.span > (S.P.maxSpan || 50)) w.push(['warn', `<b>${r.name}</b>: açıklık ${Math.round(r.span)} m, ${S.P.maxSpan || 50} m uyarı sınırını aşıyor.`]);
+  });
+  if (axis.length) w.push(['info', `Güçlü eksen: ${axis.join(', ')} ${axis.length > 1 ? 'direkleri' : 'direği'} güçlü ekseni bileşke kuvvet yönünde olacak şekilde dikilmeli.`]);
+  if (S.poles.length && S.poles[0].mev && !S.poles[0].ex.length && !S.poles[0].noEx) w.push(['warn', 'Mevcut direğe gelen mevcut hat girilmedi; mevcut direk nihayet gibi hesaplanıyor. Direği seçip "Mevcut direk ve hattı düzenle".']);
+  if (S.poles.length > 1 && !S.mpu) w.push(['info', 'Ölçek verilmedi: açıklıklar yazılmıyor ve düzenlenemiyor. Altlık bölümünden "Ölçek ver" ile bilinen bir mesafeyi işaretle.']);
+  $('warns').innerHTML = w.map(([c, t]) => `<div class="w ${c}">${t}</div>`).join('');
+  // durum çipi
+  const bad = results.filter(r => !r.ok || r.kViol).length;
+  $('stChip').className = 'chip' + (S.poles.length ? (bad ? ' bad' : ' ok') : ''); $('stChip').textContent = S.poles.length ? (bad ? `${bad} direk sorunlu` : `${S.poles.length} direk · hepsi uygun`) : 'Direk yok';
+  // altlık özet
+  $('m1').textContent = [S.img ? 'resim' : S.metric ? 'koordinatlı' : '', S.parcels.length ? `${S.parcels.length} parsel` : ''].filter(Boolean).join(' · ') || 'yüklenmedi';
+  $('scaleTxt').innerHTML = S.metric ? '<span style="color:var(--ok)">Koordinatlı (metre)</span>' : S.mpu ? `<span style="color:var(--ok)">1 m = ${(1 / S.mpu).toFixed(2)} px</span>` : '<span style="color:var(--warn)">Ölçek verilmedi</span>';
+  $('pcount').textContent = S.parcels.length ? `(${S.parcels.length})` : '';
+  $('autoBox').style.display = S.img ? '' : 'none';
+  $('rcount').textContent = S.roads.length ? `(${S.roads.length})` : '';
+  $('rlist').innerHTML = S.roads.map((r, k) => `<div><span>${r.name || 'Yol'} · ${fmt(r.wm)} m</span><button class="x" data-re="${k}" title="Düzenle">✎</button><button class="x" data-rd="${k}">×</button></div>`).join('');
+  $('rlist').querySelectorAll('[data-rd]').forEach(b => b.onclick = () => { S.roads.splice(+b.dataset.rd, 1); refresh(); });
+  $('rlist').querySelectorAll('[data-re]').forEach(b => b.onclick = async () => { const r = S.roads[+b.dataset.re]; const v = await askForm('Yol', 'Genişlik ve ad', [{ id: 'w', label: 'Genişlik (m)', value: String(r.wm), type: 'number' }, { id: 'n', label: 'Yol adı', value: r.name }]); if (v) { r.wm = +v.w || r.wm; r.name = (v.n || '').trim().toLocaleUpperCase('tr'); refresh(); } });
+  $('plist').innerHTML = S.parcels.map((pc, k) => `<div><span>${pc.label || '(numarasız)'}</span><button class="x" data-pe="${k}" title="Numara">✎</button><button class="x" data-pd="${k}">×</button></div>`).join('');
+  $('plist').querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { S.parcels.splice(+b.dataset.pd, 1); refresh(); });
+  $('plist').querySelectorAll('[data-pe]').forEach(b => b.onclick = async () => { const pc = S.parcels[+b.dataset.pe]; const v = await ask('Parsel', 'Ada / parsel numarası', pc.label); if (v != null) { pc.label = v.trim(); refresh(); } });
+  selCard(); draw(); renderSheets();
+}
+// ---------- sayfalar
+let sheetsDirty = true;
+function renderSheets() {
+  const vis = $('vR').classList.contains('on'); if (!vis) { sheetsDirty = true; return; } sheetsDirty = false;
+  if (!S.poles.length) { $('repSheet').innerHTML = '<div style="padding:40px;text-align:center;color:#667080">Önce direkleri işaretle.</div>'; return; }
+  const rp = reportPrims(results, S.P, S.info); $('repSheet').innerHTML = toSVG(rp.prims, { w: rp.w, top: rp.h, bottom: 0 }, 3.4);
+}
+document.querySelector('.tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === b.dataset.v)); if (sheetsDirty || b.dataset.v !== 'vK') renderSheets(); if (b.dataset.v === 'vK') resize(); };
+
+// ---------- dosya yükleme
+$('drop').onclick = () => $('file').click();
+$('file').onchange = async e => { const fs = [...e.target.files]; e.target.value = ''; for (const f of fs) await loadFile(f); };
+document.addEventListener('dragover', e => { e.preventDefault(); $('drop').classList.add('hov'); });
+document.addEventListener('dragleave', () => $('drop').classList.remove('hov'));
+document.addEventListener('drop', async e => { e.preventDefault(); $('drop').classList.remove('hov'); for (const f of [...e.dataTransfer.files]) await loadFile(f); });
+document.addEventListener('paste', e => { const it = [...((e.clipboardData || {}).items || [])].find(x => x.type.startsWith('image/')); if (it) loadFile(it.getAsFile()); });
+function resetGeo() { S.img = null; S.bg = null; S.metric = false; S.mpu = null; S.polys = []; $('dxfPick').style.display = 'none'; }
+async function loadFile(f) {
+  try {
+    if (/\.dxf$/i.test(f.name)) {
+      const buf = await f.arrayBuffer(); let txt = new TextDecoder('utf-8').decode(buf);
+      if (/\$DWGCODEPAGE[\s\S]{0,40}ANSI_1254/.test(txt) || txt.includes(String.fromCharCode(65533))) txt = new TextDecoder('windows-1254').decode(buf);
+      const d = parseDXF(txt); const segs = [...d.segs.map(s => ({ x1: s.x1, y1: s.y1, x2: s.x2, y2: s.y2 }))], verts = [];
+      d.polys.forEach(p => { for (let i = 1; i < p.pts.length; i++) segs.push({ x1: p.pts[i - 1].x, y1: p.pts[i - 1].y, x2: p.pts[i].x, y2: p.pts[i].y }); if (p.closed && p.pts.length > 2) { const a = p.pts[p.pts.length - 1], b = p.pts[0]; segs.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y }); } p.pts.forEach(v => verts.push(v)); });
+      d.segs.forEach(s => verts.push({ x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 }));
+      if (!segs.length) { toast('DXF içinde çizgi ya da polyline bulunamadı.'); return; }
+      const xs = segs.flatMap(s => [s.x1, s.x2]), ys = segs.flatMap(s => [s.y1, s.y2]);
+      resetGeo(); S.bg = { segs, verts, texts: d.texts, minx: Math.min(...xs), maxx: Math.max(...xs), miny: Math.min(...ys), maxy: Math.max(...ys) };
+      S.metric = true; S.mpu = 1; S.mode = 'proj'; segSet('viewSeg', 'm', 'proj');
+      S.polys = d.polys.filter(p => !p.closed && p.pts.length >= 2).sort((a, b) => b.pts.length - a.pts.length || b.len - a.len);
+      $('polySel').innerHTML = ''; S.polys.forEach((p, i) => $('polySel').add(new Option(`${p.layer} · ${p.pts.length} köşe · ${Math.round(p.len)} m`, i)));
+      $('dxfPick').style.display = S.polys.length ? '' : 'none';
+      toast(`DXF yüklendi: ${segs.length} çizgi, ${d.texts.length} yazı`); refresh(); fit();
+    } else if (/\.(geojson|json|kml)$/i.test(f.name)) {
+      const items = parseGeo(await f.text()); if (!items.length) { toast('Dosyada poligon bulunamadı.'); return; }
+      const g = projectGeo(items);
+      const keepPoles = S.metric && S.poles.length, keepBg = S.bg; resetGeo(); S.bg = keepBg; S.metric = true; S.mpu = 1; S.mode = 'proj'; segSet('viewSeg', 'm', 'proj');
+      if (!keepPoles) S.poles = [];
+      S.parcels = S.parcels.filter(p => p.geo).concat(g.parcels.map(p => Object.assign(p, { geo: true })));
+      toast(`${g.parcels.map(p => p.label).filter(Boolean).join(', ') || g.parcels.length + ' parsel'} yüklendi (ITRF96 TM${g.lon0})`); refresh(); fit();
+    } else {
+      await new Promise(res => { const u = URL.createObjectURL(f), im = new Image();
+        im.onload = () => { const hadMetric = S.metric; resetGeo(); if (hadMetric) { S.poles = []; S.parcels = []; } S.img = im; wandPrep(im); S.mode = 'sat'; segSet('viewSeg', 'm', 'sat'); refresh(); fit(); toast('Resim yüklendi'); res(); };
+        im.onerror = () => { toast('Resim açılamadı'); res(); }; im.src = u; });
+    }
+  } catch (err) { toast('Dosya okunamadı: ' + err.message); }
+}
+$('usePoly').onclick = () => { const p = S.polys[+$('polySel').value]; if (!p) return; S.poles = p.pts.map((v, i) => ({ x: v.x, y: v.y, mev: i === 0 && S.P.firstMev !== false, mevName: '9.30/8', mevCap: 800, ov: 'auto', ex: [] })); S.sel = 0; refresh(); fit(); if (S.poles[0] && S.poles[0].mev) openMevcut(0); };
+$('revPoly').onclick = () => { const p = S.polys[+$('polySel').value]; if (p) { p.pts.reverse(); $('usePoly').onclick(); } };
+
+// ---------- çıktılar
+function transformPrims(pr, s, ox, oy) {
+  return pr.map(p => { const q = Object.assign({}, p);
+    ['x', 'x1', 'x2'].forEach(k => { if (q[k] != null) q[k] = ox + q[k] * s; }); ['y', 'y1', 'y2'].forEach(k => { if (q[k] != null) q[k] = oy + q[k] * s; });
+    ['r', 'h', 'w'].forEach(k => { if (q[k] != null) q[k] *= s; }); if (q.t === 'rect') { q.w = p.w * s; q.h = p.h * s; }
+    if (q.pts) q.pts = q.pts.map(([x, y]) => [ox + x * s, oy + y * s]); return q; });
+}
+function buildFiles() {
+  const rp = reportPrims(results, S.P, S.info);
+  const h = textH(), kp = krokiPrims2(krokiModel(), results, S.P, { h, mpu: S.mpu, legend: true });
+  const ext = primExtents(kp), kw = ext.x1 - ext.x0, kh = ext.y1 - ext.y0;
+  // cer raporunu krokinin sağına, krokiyle aynı yükseklikte yerleştir (DXF tek dosya)
+  const s = Math.max(kh, kw * 0.6) / rp.h, ox = ext.x1 + kw * 0.12, oy = ext.y0;
+  const all = kp.concat(transformPrims(rp.prims, s, ox, oy).map(p => Object.assign(p, { layer: 'CER_' + (p.layer || 'TABLO') })));
+  const sc = S.mpu || 1;
+  const pad = h * 4, krokiSvg = toSVG(kp, { left: ext.x0 - pad, w: kw + 2 * pad, top: ext.y1 + pad, bottom: ext.y0 - pad }, 1800 / (kw + 2 * pad));
+  return { dxf: dxfBytes(toDXF(all, { scale: sc, dash: h * sc, layerColors: { CER_BILESKE: 1, CER_TABLO: 7, CER_SEMA: 7, CER_CERCEVE: 7 } })), repSvg: toSVG(rp.prims, { w: rp.w, top: rp.h, bottom: 0 }, 4), kroSvg: krokiSvg };
+}
+// Claude artifact içinde: downloads yeteneği; normal tarayıcıda: klasik <a download>
+function plainDownload(name, data) {
+  const blob = data instanceof Blob ? data : new Blob([data]); const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: name }); document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); toast(`${name} indirildi`);
+}
+const IN_CLAUDE = !!window.claude;
+async function save(name, data) {
+  if (!IN_CLAUDE) { plainDownload(name, data); return; }
+  if (!DL) { try { DL = await window.claude?.use('downloads'); } catch (e) {} }
+  if (!DL) { plainDownload(name, data); return; }
+  try { await DL.save({ filename: name, data }); toast(`${name} hazır`); }
+  catch (e) { toast(e && e.code === 'declined' ? 'İndirme iptal edildi' : 'İndirilemedi: ' + (e && e.message || e)); }
+}
+const safeName = () => (S.info.proje || 'AG_PROJE').replace(/[^\wçğıöşüÇĞİÖŞÜ -]/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'AG_PROJE';
+const need = () => { if (!S.poles.length) { toast('Önce direkleri işaretle'); return false; } return true; };
+$('dlZip').onclick = () => { if (!need()) return; const n = safeName(), dxf = buildFiles().dxf;
+  // Claude artifact'ı .dxf uzantısına izin vermediği için orada zip; normal tarayıcıda doğrudan .dxf
+  if (IN_CLAUDE) save(`${n}.zip`, new Blob([makeZip([{ name: `${n}_KROKI_CER.dxf`, data: dxf }])])); else save(`${n}_KROKI_CER.dxf`, new Blob([dxf])); };
+$('dlRepDxf').onclick = () => $('dlZip').click();
+$('dlRepSvg').onclick = () => { if (need()) save(`${safeName()}_CER_RAPORU.svg`, buildFiles().repSvg); };
+
+// ---------- ADIM ADIM REHBER
+const STEPS = [
+  { k: 'load', t: 'Altlığı yükle', x: 'Kroki resmini, TKGM Parsel Sorgu\'dan indirdiğin KML/GeoJSON parsel dosyalarını ya da DXF altlığını yükle. Birden fazla KML seçebilirsin; resmi Ctrl+V ile de yapıştırabilirsin.',
+    extra: () => `<button class="btn pri" onclick="$('file').click()">Dosya seç</button> <span class="note">ya da sürükle bırak</span>`, done: () => !!(S.img || S.bg || S.parcels.length), stat: () => S.img ? 'Resim yüklendi' : S.parcels.length ? `${S.parcels.length} parsel yüklendi` : S.bg ? 'DXF yüklendi' : 'Henüz altlık yok', auto: true },
+  { k: 'scale', t: 'Ölçek ver', x: 'Uzunluğunu bildiğin bir mesafenin (ör. krokide yazan bir açıklık) iki ucuna tıkla, sonra gerçek uzunluğu metre olarak gir. Açıklıklar, yol genişlikleri ve hat boyu bu ölçekle hesaplanır.',
+    skipIf: () => S.metric, enter: () => setTool('scale'), done: () => !!S.mpu, stat: () => S.mpu ? `Ölçek: 1 m = ${(1 / S.mpu).toFixed(2)} px` : 'İki noktaya tıkla', auto: true, optional: true },
+  { k: 'base', t: 'Parsel ve yolları çiz (isteğe bağlı)', x: '', xf: () => S.metric ? 'Parseller dosyadan geldi. Yolları çizmek için Yol (Y) aracıyla yolun orta çizgisi boyunca tıkla, çift tıklayıp genişliğini ve adını gir. Gerek yoksa Atla.' : 'Hızlı yol: "Tüm parselleri bul" krokideki parsel sınırlarını bir seferde çıkarır, ardından her parsel sırayla mavi gösterilir; numarasını yazıp Enter\'a basman yeterli. Tek tek eklemek için Parsel (P) ile parselin içine bir kez tıkla. Yanlış numarayı düzeltmek için parselin içine tıkla. Yolları Yol (Y) ile orta çizgisinden çiz. Numara kutusu taşınabilir. Gerek yoksa Atla.',
+    extra: () => S.img ? `<div class="row"><button class="btn pri" onclick="$('findAll').click()">Tüm parselleri bul</button><button class="btn" onclick="numberParcels()">Numaraları gir</button></div><div class="row" style="margin-top:6px"><button class="btn" onclick="setTool('parcel')">Tek tek (P)</button><button class="btn" onclick="setTool('road')">Yol çiz (Y)</button></div>` : `<div class="row"><button class="btn" onclick="setTool('road')">Yol çiz (Y)</button></div>`,
+    enter: () => setTool(S.metric ? 'road' : 'parcel'), stat: () => `${S.parcels.length} parsel · ${S.roads.length} yol`, optional: true, manual: true },
+  { k: 'calc', t: 'Bağlantı gücü ve kesit', x: 'Önce kesiti belirleyelim. Bağlantı gücünü, bağlantı tipini ve gerilim düşümüne esas toplam mesafeyi gir; akım ve %1 gerilim düşümünü birlikte sağlayan en küçük ALPEK kesiti seçilir. Mesafeyi boş bırakırsan direkleri çizdikten sonra hat boyu krokiden alınır. Buz yükü bölgesini de buradan kontrol et.',
+    extra: () => `<div class="row"><div><label class="l">Bağlantı gücü (kW)</label><input class="f" id="gKW" type="number" step="0.5" value="${$('kW').value}"></div><div><label class="l">Bağlantı</label><select class="f" id="gTri"><option value="1" ${$('tri').value === '1' ? 'selected' : ''}>Trifaze 380 V</option><option value="0" ${$('tri').value === '0' ? 'selected' : ''}>Monofaze 220 V</option></select></div></div>
+      <div class="row"><div><label class="l">Toplam mesafe (m)</label><input class="f" id="gLm" type="number" step="1" value="${$('Lm').value}" placeholder="${routeLen() ? 'krokiden ' + Math.round(routeLen()) : 'ör. 120'}"></div><div style="align-self:end"><label class="chk"><input type="checkbox" id="gAuto" ${S.P.autoKesit !== false ? 'checked' : ''}>Kesiti otomatik seç</label></div></div>
+      <div class="row"><div><label class="l">Yeni hat iletkeni</label><select class="f" id="gCond">${AER_LIST.map(n => `<option value="${n}" ${n === S.P.routeCond ? 'selected' : ''}>${n.replace(/^AER/, 'ALPEK')}</option>`).join('')}</select></div><div><label class="l">Buz yükü bölgesi</label><select class="f" id="gBolge">${[1, 2, 3, 4].map(b => `<option value="${b}" ${b === S.P.bolge ? 'selected' : ''}>${['I', 'II', 'III', 'IV'][b - 1]}. bölge</option>`).join('')}</select></div></div>`,
+    bind: () => { $('gCond').onchange = e => { S.P.autoKesit = false; $('autoK').checked = false; $('gAuto').checked = false; $('routeCond').value = e.target.value; readInputs(); }; $('gBolge').onchange = e => { $('bolge').value = e.target.value; readInputs(); };
+      $('gAuto').onchange = e => { $('autoK').checked = e.target.checked; S.P.autoKesit = e.target.checked; readInputs(); $('gCond').value = S.P.routeCond; };
+      $('gKW').oninput = e => { $('kW').value = e.target.value; refresh(); $('gCond').value = S.P.routeCond; };
+      $('gLm').oninput = e => { $('Lm').value = e.target.value; refresh(); $('gCond').value = S.P.routeCond; }; $('gTri').onchange = e => { $('tri').value = e.target.value; refresh(); $('gCond').value = S.P.routeCond; }; },
+    done: () => !!S._kesitView, stat: () => { const v = S._kesitView; if (!(+$('kW').value > 0)) return 'Bağlantı gücünü gir'; if (!v) return 'Toplam mesafeyi gir'; return `${S.P.routeCond.replace(/^AER/, 'ALPEK')} · I = ${fmt(v.r.I)} A ≤ ${v.r.sel.amp} A${v.noL ? '' : ' · %e = ' + fmt(v.r.sel.e)}`; }, optional: true, manual: true },
+  { k: 'mev', t: 'Mevcut direği işaretle', x: 'Yeni hattın bağlanacağı mevcut direğin yerine tıkla. Açılan pencerede direğin tipini ve ona gelen mevcut hattı seç, sonra mevcut hattın geldiği yöne tıkla.',
+    enter: () => { if (!pendingEx) setTool('add'); }, done: () => S.poles.length >= 1 && !pendingEx && !$('mevModal').classList.contains('on') && (S.poles[0].ex.length > 0 || !!S.poles[0].noEx || !S.poles[0].mev),
+    stat: () => !S.poles.length ? 'Mevcut direğe tıkla' : pendingEx ? 'Mevcut hattın geldiği yöne tıkla' : `${results[0] ? results[0].type : ''} · ${S.poles[0].ex.length ? S.poles[0].ex.map(e => e.c).join(', ') + ' mevcut hat' : 'mevcut hat yok'}`, auto: true },
+  { k: 'line', t: 'Yeni direkleri sırayla işaretle', x: 'Mevcut direkten başlayarak her yeni direğin yerine sırayla tıkla. Son tıkladığın direk hattın bittiği yer, yani nihayet direği olur (abone bağlantısı buradan yapılır). Yanlış koyduğunu sürükleyebilir ya da seçip Del ile silebilirsin. Bitince Devam\'a bas.',
+    enter: () => setTool('add'), done: () => S.poles.length >= 2, stat: () => `${Math.max(0, S.poles.length - 1)} yeni direk${S.poles.length > 1 ? ' · hat boyu ' + (routeLen() ? Math.round(routeLen()) + ' m' : '?') : ''}`, manual: true },
+  { k: 'check', t: 'Açı, açıklık ve kesiti kontrol et', x: 'Alttaki tabloda her direğin görevi, bileşke kuvveti ve seçilen tipi var. Krokide yazan bir açı varsa "Hat açısı" kutusuna gir; açıklığı değiştirmek için "Açıklık" kutusuna metre yaz. Kırmızı satır varsa direk tipini büyüt.',
+    enter: () => { setTool('move'); document.querySelector('.bottom').scrollIntoView({ block: 'nearest' }); }, done: () => results.every(r => r.ok && !r.kViol) && (!S._kesitView || S._kesitView.ok),
+    stat: () => { const b = results.filter(r => !r.ok || r.kViol).length, v = S._kesitView; return `${b ? b + ' direk sorunlu' : 'Bütün direkler uygun'}${v && +$('kW').value > 0 ? ` · kesit ${S.P.routeCond.replace(/^AER /, '')} ${v.ok ? 'uygun' : 'YETERSİZ'}${v.noL ? '' : ' (%e ' + fmt(v.r.sel.e) + ')'}` : ''}`; }, manual: true },
+  { k: 'out', t: 'Raporu incele ve indir', x: 'Cer raporunu açıp kontrol et, sonra DXF\'i indir. Kroki ve cer raporu tek DXF içinde gelir; rapor krokinin sağında durur. KML/DXF altlıkla çalıştıysan kroki gerçek koordinatlardadır.',
+    extra: () => `<div class="row"><button class="btn" onclick="document.querySelector('.tab[data-v=vR]').click()">Cer raporunu aç</button><button class="btn pri" onclick="$('dlZip').click()">DXF indir</button></div>`, manual: true, last: true },
+];
+const G = { i: 0, hidden: false, fired: {} };
+try { G.hidden = localStorage.getItem('cerGuideHidden') === '1'; } catch (e) {}
+function stepActive(i) { const s = STEPS[i]; return !(s.skipIf && s.skipIf()); }
+function goStep(i, dir) {
+  dir = dir || 1; while (i >= 0 && i < STEPS.length && !stepActive(i)) i += dir;
+  G.i = Math.max(0, Math.min(STEPS.length - 1, i)); const s = STEPS[G.i]; if (s.enter) s.enter(); renderGuide();
+}
+function renderGuide() {
+  $('guide').style.display = G.hidden ? 'none' : ''; $('gShow').style.display = G.hidden ? 'block' : 'none'; if (G.hidden) return;
+  const s = STEPS[G.i], act = STEPS.map((_, i) => i).filter(stepActive), pos = act.indexOf(G.i) + 1;
+  $('gStep').textContent = `Adım ${pos} / ${act.length}`;
+  $('gDots').innerHTML = act.map(i => `<i class="${i === G.i ? 'c' : i < G.i ? 'd' : ''}"></i>`).join('');
+  $('gTitle').textContent = s.t; $('gText').textContent = s.xf ? s.xf() : s.x;
+  const ex = s.extra ? s.extra() : ''; if ($('gExtra').dataset.k !== s.k) { $('gExtra').innerHTML = ex; $('gExtra').dataset.k = s.k; if (s.bind) s.bind(); }
+  const ok = s.done ? s.done() : true;
+  $('gStatus').innerHTML = s.stat ? `<div class="st ${ok && s.done ? 'ok' : ''}">${ok && s.done ? '✓' : '•'} ${s.stat()}</div>` : '';
+  $('gBack').style.visibility = pos > 1 ? '' : 'hidden';
+  $('gSkip').style.display = s.optional ? '' : 'none';
+  $('gNext').textContent = s.last ? 'Bitir' : 'Devam'; $('gNext').disabled = !ok && !s.optional; $('gNext').style.opacity = $('gNext').disabled ? .5 : 1;
+}
+function guideTick() {
+  if (G.hidden) { renderGuide(); return; }
+  const s = STEPS[G.i];
+  if (s.auto && s.done && s.done() && !G.fired[s.k]) { G.fired[s.k] = true; setTimeout(() => { if (STEPS[G.i] === s) goStep(G.i + 1); }, 500); }
+  renderGuide();
+}
+$('gNext').onclick = () => { const s = STEPS[G.i]; if (s.last) { G.hidden = true; renderGuide(); toast('Rehber kapatıldı. Sol alttaki düğmeden yeniden açabilirsin.'); return; } G.fired[s.k] = true; goStep(G.i + 1, 1); };
+$('gSkip').onclick = () => { G.fired[STEPS[G.i].k] = true; goStep(G.i + 1, 1); };
+$('gBack').onclick = () => { const k = STEPS[G.i].k; goStep(G.i - 1, -1); G.fired[STEPS[G.i].k] = true; };
+$('gHide').onclick = () => { G.hidden = true; try { localStorage.setItem('cerGuideHidden', '1'); } catch (e) {} renderGuide(); };
+$('gShow').onclick = () => { G.hidden = false; try { localStorage.setItem('cerGuideHidden', '0'); } catch (e) {} goStep(G.i); };
+const _refresh = refresh; refresh = function () { _refresh(); guideTick(); };
+
+// ---------- AGY bağlantı hattı aracına gömülü kullanım (?gomulu=1) ----------
+// Ana sayfa (araclar/baglanti-hatti.html) bu sayfayı iframe içinde açar: talep gücü, faz ve GDZ direk adı ana sayfadan gelir;
+// her yenilemede kroki ve cer raporu çizim parçaları ana sayfaya gönderilir (DXF'i ana sayfa bağlantı hattı paftasına ekler).
+const GOMULU = /[?&]gomulu=1/.test(location.search);
+function gomuluGonder() {
+  try {
+    const h = textH();
+    const kp = S.poles.length ? krokiPrims2(krokiModel(), results, S.P, { h, mpu: S.mpu, legend: true }) : [];
+    const rp = reportPrims(results, S.P, S.info);
+    parent.postMessage({
+      tip: 'havai-sonuc', direkSayisi: S.poles.length, hatBoyu: routeLen(), olcek: S.mpu || 1, routeCond: S.P.routeCond, bolge: S.P.bolge,
+      sonuclar: results.map(r => ({ name: r.name, catName: r.catName, R: r.R, type: r.type, cap: r.cap, ok: r.ok, kViol: !!r.kViol,
+        span: r.span, interior: r.interior, mev: !!(S.poles[r.i] || {}).mev })),
+      kroki: kp, rapor: rp, h,
+    }, '*');
+  } catch (x) { console.error('havai sonuç gönderilemedi', x); }
+}
+if (GOMULU) {
+  document.documentElement.classList.add('gomulu');
+  if ($('dlZip')) $('dlZip').style.display = 'none';
+  window.addEventListener('message', e => {
+    const m = e.data || {};
+    if (e.source !== parent || m.tip !== 'havai-ayar') return;
+    if (m.talepKW > 0) $('kW').value = m.talepKW;
+    $('tri').value = m.faz === 1 ? '0' : '1';
+    $('lim').value = 1;                                   // kullanıcının kuralı: kesit %1'e göre seçilir (hesapta "%1,5'ten küçük" yazılır)
+    if (m.proje) $('projName').value = m.proje;
+    S.P.mevAd = m.mevcutAd || '';
+    readInfo(); readInputs();
+  });
+  const _refresh = refresh;
+  refresh = function () { _refresh(); gomuluGonder(); };
+  parent.postMessage({ tip: 'havai-hazir' }, '*');
+}
+
+readInfo(); refresh(); fit(); goStep(0);
+</script>
+</body>
+</html>

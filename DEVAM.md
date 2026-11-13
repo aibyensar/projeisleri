@@ -319,11 +319,18 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    tefriş blokları lavabo/klozet/ocak/eviye, "KOMBİ" yazısı. Okuma: libredwg-web (dwg-oku.mjs) → JSON; çizim önizleme
    matplotlib (blokları açarak). Başka mimarda etiket olmayabilir → tıklayıp oda türü seçme yedek yol.
 
-6. HAVAİ HAT (12 Kasım 2026): kullanıcı kendi yaptığı "AG Cer Hesabı ve Direk Seçimi" aracını (ag-cer-hesabi.zip: src/cer-core.js
-   hesap çekirdeği, kroki-rapor.js kroki + cer raporu, parsel-bul.js, app.html; testler geçiyor) BHP'nin boş "Havai" sayfasına entegre
-   etmek istiyor. Plan sohbette verildi; kullanıcı "başla" demeden uygulanmayacak. Çelişkiler: %e sınırı (cer aracı %1, BHP %1,5),
-   güç (bağlantı kW vs GDZ talep), DXF yazıcı (R12 ANSI_1254 vs BHP şablonu), doğrulanacak değerler (direk tepe kuvvetleri, ALPEK σ=12
-   ve akımlar, buz yükü bölgesi Manisa ilçeleri). Zip depoda yok (oturum geçici klasöründe).
+6. HAVAİ HAT (13 Kasım 2026) — kullanıcının "AG Cer Hesabı ve Direk Seçimi" aracı BHP'ye entegre edildi.
+   Kaynak: havai/src (cer-core.js hesap, kroki-rapor.js kroki + rapor, parsel-bul.js, app.html), havai/build.py →
+   araclar/havai-cer.html; testler: node havai/test/test-core.js. BHP sayfasında "Havai" seçilince iç tesisat/kontrol/vaziyet
+   ortak kalır, 4. bölüm "Havai hat: direkler ve cer hesabı" iframe (havai-cer.html?gomulu=1, postMessage: havai-ayar →
+   talep kW, faz, GDZ direk adı; havai-sonuc ← sonuçlar, kroki ve rapor prim'leri). ortak/bhp-havai.js: prim → Cizim,
+   detay bölgesinde direk listesi, kablo kanalı yerinde kroki özeti, paftanın sağında 2. sayfa (kroki + cer raporu),
+   havai malzeme/notlar; dxfeEkle havaide yeraltı bölgelerini siler (BHPHavai.SIL) ve eksik katmanları ekler.
+   Kullanıcı kuralları: kesit %e ≤ %1'e göre SEÇİLİR, hesapta "< %1,5" yazılır (yeraltı ve havai; bhp.js SECIM_SINIRI);
+   güç = talep gücü. ALPEK Iz: Konen ALPEK tablosu (70/90/115/140/180 A, Öznur ile aynı). Direk tepe kuvvetleri EMO teknik
+   bilgilerdeki AG tablosuyla aynı (Konen'in 008 tablosu MÜŞTEREK direkler içindir, farklı). Açık: Manisa ilçelerinin buz
+   yükü bölgesi (araç varsayılanı 1. bölge), sağ sütun (eski "uygulama usul ve esasları") havaide boş, onaylı havai proje
+   örneği yok (yerleşim kullanıcıyla düzeltilecek). Deneme: baglanti-hatti/test/havai-dene.js <havai-sonuc.json> <klasör>.
 
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
