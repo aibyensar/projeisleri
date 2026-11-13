@@ -71,4 +71,4 @@ Müşteri adı, adres ve parsel bilgisi buraya yazılmadı. Örnekler numarayla 
 - **Yeni direk varsa cer hesabı her zaman.**
 - **Muhafaza borusu / topraklama:** "kitap kural ne diyorsa". TEDAŞ pozu: 65x65x7 mm, L = 2 m galvaniz köşebent kazık
   (birim fiyat 85.790.1203); topraklama iletkeni en az 16 mm² Cu. Direk inişindeki koruma borusu boyu için yazılı kaynak bulunamadı
-  (araç 3 m, kullanıcının onaylı direk bağlantı detayından).
+  (araç 3 m, kullanıcının onaylı direk bağlantı detayından). Kullanıcı: direk inişinde 3 m kalsın (pano altında çelik spiral).
