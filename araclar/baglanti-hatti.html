@@ -180,6 +180,16 @@
   table.duz input { min-width: 0 !important; width: 100%; padding: 7px 6px; }
   table.duz td { padding: 2px 2px; } table.duz th { font-size: .78rem; }
   .yukleme { max-width: none; }
+  /* havai: direk işaretleme tam ekran */
+  .direk-panel { display: flex; gap: 16px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 14px 16px; border: 1px solid var(--cizgi); border-radius: 12px; background: var(--ana-acik); }
+  .direk-panel .ana-dugme { width: auto; padding: 12px 22px; }
+  .havai-sahne { display: none; }
+  .havai-sahne.acik { display: flex; flex-direction: column; position: fixed; inset: 0; z-index: 1000; background: #13171c; }
+  .sahne-ust { display: flex; align-items: center; gap: 14px; padding: 8px 14px; color: #fff; flex-wrap: wrap; }
+  .sahne-ozet { background: rgba(255,255,255,.12); border-radius: 999px; padding: 4px 12px; font-size: .9rem; }
+  .sahne-ipucu { font-size: .8rem; opacity: .75; flex: 1; min-width: 200px; }
+  .sahne-ust .ana-dugme { width: auto; padding: 9px 18px; margin: 0; }
+  .havai-sahne iframe { flex: 1; width: 100%; border: 0; background: #fff; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -324,7 +334,19 @@
       <label hidden>Mevcut direkten binaya açıklık (m)<input id="kisaL" type="number" min="0" step="any" placeholder="gir"></label>
     </div>
     <p class="durum" id="yapiNot" style="margin:0 0 8px">Yeni direk (A direk dahil) varsa "Direkli hat": direkleri aşağıda işaretleyin, cer hesabı yapılır. Yeni direk yoksa kısa mesafe seçeneklerinden birini seçin.</p>
-    <iframe id="havaiCer" title="Havai hat cer hesabı" src="havai-cer.html?gomulu=1" style="width:100%;height:860px;border:1px solid var(--cizgi);border-radius:10px;background:#fff"></iframe>
+    <div id="direkPanel" class="direk-panel">
+      <div><b>Direkler ve cer hesabı</b><div class="durum" id="direkOzet">Henüz direk işaretlenmedi.</div></div>
+      <button type="button" class="ana-dugme" id="direkAc">Direkleri işaretle (tam ekran)</button>
+    </div>
+    <div id="havaiSahne" class="havai-sahne" aria-hidden="true">
+      <div class="sahne-ust">
+        <b>Havai hat — direk işaretleme ve cer hesabı</b>
+        <span id="sahneOzet" class="sahne-ozet">Direk yok</span>
+        <span class="sahne-ipucu">Direk (D): boş yere tıkla · ilk direk mevcut direk · Seç (V): sürükle taşı · Del: sil · fare tekeri: yakınlaştır</span>
+        <button type="button" class="ana-dugme" id="direkBitti">Bitti, sayfaya dön</button>
+      </div>
+      <iframe id="havaiCer" title="Havai hat cer hesabı" src="havai-cer.html?gomulu=1"></iframe>
+    </div>
     <h3 style="margin:14px 0 6px;font-size:1rem">Havai hat iletkeni</h3>
     <div class="kablo-satir">
       <div class="secim" id="havaiIletken">
@@ -617,7 +639,7 @@ window.addEventListener('message', e => {
   const f = $('havaiCer'); if (!f || e.source !== f.contentWindow) return;
   const m = e.data || {};
   if (m.tip === 'havai-hazir') havaiAyarGonder();
-  else if (m.tip === 'havai-sonuc') { D.havai = m; if (D.hat === 'havai') guncelle(); }
+  else if (m.tip === 'havai-sonuc') { D.havai = m; direkOzetYaz(); if (D.hat === 'havai') guncelle(); }
 });
 
 // havai iletken: ALPEK ya da kısa mesafede NYY + askı teli (kullanıcının uygulaması)
@@ -631,11 +653,26 @@ $('havaiIletken').addEventListener('click', e => {
   D.malzemeElle = false; D.notlarElle = false; guncelle();
 });
 ['askiTel', 'askiS', 'kisaL'].forEach(id => $(id).addEventListener('input', () => { D.malzemeElle = false; guncelle(); }));
+// direk işaretleme tam ekran: iframe yerinden taşınmaz (yeniden yüklenmesin), kapsayıcısı tam ekrana açılır
+function sahne(ac) {
+  $('havaiSahne').classList.toggle('acik', ac); $('havaiSahne').setAttribute('aria-hidden', String(!ac));
+  document.body.style.overflow = ac ? 'hidden' : '';
+  if (ac) { havaiAyarGonder(); setTimeout(() => { try { $('havaiCer').contentWindow.focus(); } catch (e) {} }, 50); }
+}
+$('direkAc').addEventListener('click', () => sahne(true));
+$('direkBitti').addEventListener('click', () => sahne(false));
+function direkOzetYaz() {
+  const H = D.havai, t = !H || !H.direkSayisi ? 'Direk yok'
+    : `${H.direkSayisi} direk · hat ${H.hatBoyu ? Math.round(H.hatBoyu) + ' m' : 'boyu yok (ölçek verin)'} · ${H.sonuclar.some(r => !r.ok || r.kViol) ? 'uygun olmayan direk var' : 'direkler uygun'}`;
+  $('sahneOzet').textContent = t;
+  $('direkOzet').textContent = !H || !H.direkSayisi ? 'Henüz direk işaretlenmedi. Altlığı (kroki resmi ya da TKGM KML) yükleyip mevcut direği ve yeni direkleri işaretleyin.' : t;
+  $('direkAc').textContent = H && H.direkSayisi ? 'Direkleri düzenle (tam ekran)' : 'Direkleri işaretle (tam ekran)';
+}
 // havai yapı: direkli (cer aracı) ya da kısa mesafe (mevcut direkten doğrudan binaya: dam direği / cephe, yeni direk yok)
 D.havaiYapi = 'direkli';
 function havaiGorunum() {
   const kisa = D.havaiYapi !== 'direkli';
-  $('havaiCer').hidden = kisa; $('kisaL').parentNode.hidden = !kisa;
+  $('direkPanel').hidden = kisa; $('kisaL').parentNode.hidden = !kisa;
   $('inisTur').hidden = kisa;
   const inis = kisa || D.inisTur === 'yeralti';
   $('inisDirek').parentNode.hidden = $('inisYer').parentNode.hidden = !inis;

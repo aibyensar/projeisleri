@@ -128,6 +128,11 @@ td select{padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-si
 .exrow{display:flex;gap:6px;align-items:center;margin:4px 0}
 .exrow input{flex:1;padding:4px 7px;border:1px solid var(--line);border-radius:6px;font-size:12.5px}
 a{color:var(--acc)}
+/* BHP sayfasına gömülü: üst şerit, kesit kontrolü ve (NYY'de) ALPEK ayarları BHP'de; harita tam alanı kullanır */
+.gomulu header{display:none}
+.gomulu .app{height:100vh}
+.gomulu #s3,.gomulu #dlRepDxf,.gomulu #dlRepSvg{display:none}
+.gomulu.nyy #routeCond,.gomulu.nyy label[for=routeCond],.gomulu.nyy .alpekAyar{display:none}
 @media (max-width:980px){.app{grid-template-columns:1fr;height:auto}aside{max-height:none}#stage{min-height:60vh}header{flex-wrap:wrap;height:auto;padding:8px 12px}#projName{min-width:0}}
 </style>
 </head>
@@ -167,7 +172,7 @@ a{color:var(--acc)}
   </div></details>
 
   <details class="sec" open id="s2"><summary><span class="n">2</span>Hat ve hesap değerleri<span class="meta" id="m2"></span></summary><div class="body">
-    <label class="l">Yeni hat iletkeni</label><select class="f" id="routeCond"></select>
+    <div class="alpekAyar"><label class="l">Yeni hat iletkeni</label><select class="f" id="routeCond"></select></div>
     <label class="l">Buz yükü bölgesi</label>
     <select class="f" id="bolge"><option value="1">I. bölge (İzmir, Manisa ovaları)</option><option value="2">II. bölge</option><option value="3">III. bölge</option><option value="4">IV. bölge</option></select>
     <p class="note">EKAT'a göre I. bölgede rakımı 600 m'yi aşan yerlerde hesap II. bölgeye göre yapılır.</p>
@@ -178,7 +183,7 @@ a{color:var(--acc)}
       <div><label class="l">Açıklık uyarısı > (m)</label><input class="f" id="maxSpan" type="number" step="1"></div>
     </div>
     <div class="row">
-      <div><label class="l">ALPEK σ (kg/mm²)</label><input class="f" id="sigma" type="number" step="0.5"></div>
+      <div class="alpekAyar"><label class="l">ALPEK σ (kg/mm²)</label><input class="f" id="sigma" type="number" step="0.5"></div>
       <div><label class="l">Emniyet payı %</label><input class="f" id="margin" type="number" step="5"></div>
     </div>
     <label class="chk"><input type="checkbox" id="wind">Rüzgarlı tepe kuvvetleriyle kontrol</label>
@@ -1774,6 +1779,7 @@ const STEPS = [
 ];
 const G = { i: 0, hidden: false, fired: {} };
 try { G.hidden = localStorage.getItem('cerGuideHidden') === '1'; } catch (e) {}
+if (/[?&]gomulu=1/.test(location.search)) G.hidden = true;   // gömülüde rehber kapalı başlar (sol alttaki düğmeyle açılır)
 function stepActive(i) { const s = STEPS[i]; return !(s.skipIf && s.skipIf()); }
 function goStep(i, dir) {
   dir = dir || 1; while (i >= 0 && i < STEPS.length && !stepActive(i)) i += dir;
@@ -1833,7 +1839,8 @@ if (GOMULU) {
     $('lim').value = 1;                                   // kullanıcının kuralı: kesit %1'e göre seçilir (hesapta "%1,5'ten küçük" yazılır)
     if (m.proje) $('projName').value = m.proje;
     S.P.mevAd = m.mevcutAd || '';
-    S.P.hat = m.hat && m.hat.yazi ? m.hat : null;      // BHP: kısa mesafe NYY + askı teli (çekme T kullanıcıdan)
+    S.P.hat = m.hat && m.hat.yazi ? m.hat : null;      // BHP: NYY + askı teli (çekme T = askı teli kesiti × 12)
+    document.documentElement.classList.toggle('nyy', !!S.P.hat);
     // EKAT md. 4-c: yalıtılmış iletkenli (ALPEK) küçük aralıklı hatta açıklık en çok 60 m; aşarsa büyük aralıklı hat sayılır
     $('maxSpan').value = 60;
     readInfo(); readInputs();
