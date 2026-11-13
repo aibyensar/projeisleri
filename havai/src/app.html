@@ -857,6 +857,7 @@ if (GOMULU) {
     $('lim').value = 1;                                   // kullanıcının kuralı: kesit %1'e göre seçilir (hesapta "%1,5'ten küçük" yazılır)
     if (m.proje) $('projName').value = m.proje;
     S.P.mevAd = m.mevcutAd || '';
+    S.P.hat = m.hat && m.hat.yazi ? m.hat : null;      // BHP: kısa mesafe NYY + askı teli (çekme T kullanıcıdan)
     // EKAT md. 4-c: yalıtılmış iletkenli (ALPEK) küçük aralıklı hatta açıklık en çok 60 m; aşarsa büyük aralıklı hat sayılır
     $('maxSpan').value = 60;
     readInfo(); readInputs();

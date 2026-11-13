@@ -316,11 +316,21 @@
   <div class="kart" id="k-havai" hidden>
     <div class="kbas"><span class="no">4</span><div><h2>Havai hat: direkler ve cer hesabı</h2><p>Altlığı (kroki resmi ya da TKGM parsel KML'i) yükleyin, mevcut direği ve yeni direkleri sırayla işaretleyin. Talep gücü ve enerji alınan direk GDZ yazısından gelir; ALPEK kesiti %1 gerilim düşümüne göre seçilir.</p></div><span class="cip" id="c-havai">Bekliyor</span></div>
     <iframe id="havaiCer" title="Havai hat cer hesabı" src="havai-cer.html?gomulu=1" style="width:100%;height:860px;border:1px solid var(--cizgi);border-radius:10px;background:#fff"></iframe>
+    <h3 style="margin:14px 0 6px;font-size:1rem">Havai hat iletkeni</h3>
+    <div class="kablo-satir">
+      <div class="secim" id="havaiIletken">
+        <button type="button" data-v="alpek" aria-pressed="true">ALPEK</button>
+        <button type="button" data-v="nyy" aria-pressed="false">NYY + askı teli (kısa mesafe)</button>
+      </div>
+      <label hidden>Askı teli<input id="askiTel" type="text" value="galvanizli örgülü çelik tel halat" title="Tel cinsi ve çapı, ör. Ø6 mm galvanizli örgülü çelik tel halat"></label>
+      <label hidden>Askı teli çekme kuvveti T (kg)<input id="askiT" type="number" min="0" step="any" placeholder="gir" title="Direk cer hesabında yeni hattın çekme kuvveti olarak kullanılır"></label>
+    </div>
+    <p class="durum" id="askiNot" hidden style="margin:4px 0 0">NYY kablo askı teline kelepçelenir; Iz, Öznur Kablo kataloğunun "havada" sütunundan alınır. Askı teli kablonun yükünü taşır (EKAT md. 45-b). Direk cer hesabında yeni hattın çekmesi olarak buraya girilen T kullanılır.</p>
     <h3 style="margin:14px 0 6px;font-size:1rem">Nihayet direğinden sayaç panosuna</h3>
     <div class="kablo-satir">
       <div class="secim" id="inisTur">
         <button type="button" data-v="yeralti" aria-pressed="true">Yeraltı kablo (direk inişi)</button>
-        <button type="button" data-v="yok" aria-pressed="false">İniş yok (ALPEK panoya kadar)</button>
+        <button type="button" data-v="yok" aria-pressed="false">İniş yok (hat panoya kadar)</button>
       </div>
       <div class="secim" id="inisIletken">
         <button type="button" data-v="cu" aria-pressed="false">Bakır (NYY)</button>
@@ -582,10 +592,16 @@ yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('g
 let _havaiImza = '';
 function havaiAyarGonder(yalnizDegisince) {
   const f = $('havaiCer'); if (!f || !f.contentWindow) return;
-  const b = bilgiler(), imza = [b.talepW, b.faz, kaynakAdi(), b.malSahibi].join('|');
+  const b = bilgiler(), hat = havaiHatBilgisi(), imza = [b.talepW, b.faz, kaynakAdi(), b.malSahibi, JSON.stringify(hat)].join('|');
   if (yalnizDegisince && imza === _havaiImza) return;       // döngü olmasın: cer aracı her ayarda sonuç gönderir
   _havaiImza = imza;
-  f.contentWindow.postMessage({ tip: 'havai-ayar', talepKW: (b.talepW || 0) / 1000, faz: b.faz, mevcutAd: kaynakAdi(), proje: b.malSahibi || b.basvuruNo }, '*');
+  f.contentWindow.postMessage({ tip: 'havai-ayar', talepKW: (b.talepW || 0) / 1000, faz: b.faz, mevcutAd: kaynakAdi(), proje: b.malSahibi || b.basvuruNo, hat }, '*');
+}
+// NYY + askı teli: cer aracına hat yazısı ve askı telinin çekme kuvveti gider (ALPEK'te null: araç kendi hesaplar)
+function havaiHatBilgisi() {
+  if (D.havaiIletken !== 'nyy') return null;
+  const T = parseFloat($('askiT').value) || 0, tel = ($('askiTel').value || '').trim() || 'askı teli';
+  return { yazi: D.kablo && D.kablo.askiTelli ? D.kablo.yazi : 'NYY (askı telli)', T, aciklama: `${tel}, T = ${T || '?'} kg (projede verilen)` };
 }
 window.addEventListener('message', e => {
   const f = $('havaiCer'); if (!f || e.source !== f.contentWindow) return;
@@ -594,12 +610,24 @@ window.addEventListener('message', e => {
   else if (m.tip === 'havai-sonuc') { D.havai = m; if (D.hat === 'havai') guncelle(); }
 });
 
+// havai iletken: ALPEK ya da kısa mesafede NYY + askı teli (kullanıcının uygulaması)
+D.havaiIletken = 'alpek';
+$('havaiIletken').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  D.havaiIletken = b.dataset.v; for (const x of $('havaiIletken').children) x.setAttribute('aria-pressed', x === b);
+  const nyy = D.havaiIletken === 'nyy';
+  $('askiTel').parentNode.hidden = $('askiT').parentNode.hidden = $('askiNot').hidden = !nyy;
+  $('inisIletken').hidden = nyy || D.inisTur !== 'yeralti';
+  D.malzemeElle = false; D.notlarElle = false; guncelle();
+});
+['askiTel', 'askiT'].forEach(id => $(id).addEventListener('input', () => { D.malzemeElle = false; guncelle(); }));
 // nihayet direğinden iniş seçenekleri
 D.inisTur = 'yeralti'; D.inisIletken = 'al';
 for (const [id, alan] of [['inisTur', 'inisTur'], ['inisIletken', 'inisIletken']]) $(id).addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   D[alan] = b.dataset.v; for (const x of $(id).children) x.setAttribute('aria-pressed', x === b);
-  $('inisIletken').hidden = $('inisDirek').parentNode.hidden = $('inisYer').parentNode.hidden = D.inisTur !== 'yeralti';
+  $('inisDirek').parentNode.hidden = $('inisYer').parentNode.hidden = D.inisTur !== 'yeralti';
+  $('inisIletken').hidden = D.inisTur !== 'yeralti' || D.havaiIletken === 'nyy';
   D.malzemeElle = false; guncelle();
 });
 ['inisDirek', 'inisYer'].forEach(id => $(id).addEventListener('input', () => { D.malzemeElle = false; guncelle(); }));
@@ -924,11 +952,11 @@ function havaiSonucYaz(b, kablo, N, L, In) {
     <span class="${kotu.length ? 'degil' : 'uygun'}"> ${kotu.length ? kotu.length + ' direk uygun değil' : 'hepsi uygun'}</span></div>`;
   if (kablo) {
     const h = BHP.hesap(kablo, N, L, In);
-    o += `<div class="sonuc-satir"><b>ALPEK kesiti</b><span class="formul">${kablo.yazi} · L = ${L} m · %e = ${v(h.e, 2)} &lt; %1,5 · I = ${v(h.I, 1)} A ≤ ${kablo.iz} A</span>
-      <span class="${h.uygun ? 'uygun' : 'degil'}"> ${h.uygun ? 'uygun' : 'UYGUN DEĞİL'}</span><span class="durum">Kesit %1 gerilim düşümüne göre seçildi; Iz: Konen ALPEK tablosu.</span></div>`;
+    o += `<div class="sonuc-satir"><b>${kablo.askiTelli ? 'NYY kesiti (havada)' : 'ALPEK kesiti'}</b><span class="formul">${kablo.yazi} · L = ${L} m · %e = ${v(h.e, 2)} &lt; %1,5 · I = ${v(h.I, 1)} A ≤ ${kablo.iz} A</span>
+      <span class="${h.uygun ? 'uygun' : 'degil'}"> ${h.uygun ? 'uygun' : 'UYGUN DEĞİL'}</span><span class="durum">Kesit %1 gerilim düşümüne göre seçildi; Iz: ${kablo.askiTelli ? 'Öznur Kablo kataloğu, havada' : 'Konen ALPEK tablosu'}.</span></div>`;
     if (D.inis) { const h2 = D.inis.h, eT = h.e + h2.e;
       o += `<div class="sonuc-satir"><b>Direk inişi</b><span class="formul">${D.inis.kablo.yazi} · L₂ = ${v(D.inis.L, 1)} m · %e₂ = ${v(h2.e, 2)} · toplam %e = ${v(eT, 2)} &lt; %1,5 · Iz₂ = ${D.inis.kablo.iz} A</span>
-        <span class="${eT <= 1.5 && h2.iUygun ? 'uygun' : 'degil'}"> ${eT <= 1.5 && h2.iUygun ? 'uygun' : 'UYGUN DEĞİL'}</span><span class="durum">İniş kesiti toplam %1'e göre seçildi (${D.inisIletken === 'al' ? 'Al en az 10' : 'Cu en az 6'} mm²).</span></div>`; }
+        <span class="${eT <= 1.5 && h2.iUygun ? 'uygun' : 'degil'}"> ${eT <= 1.5 && h2.iUygun ? 'uygun' : 'UYGUN DEĞİL'}</span><span class="durum">${D.inis.ayniKablo ? 'Aynı NYY kablo ekleme yapılmadan iner; iniş kısmında Iz toprakta değeriyle kontrol edildi.' : `İniş kesiti toplam %1'e göre seçildi (${D.inisIletken === 'al' ? 'Al en az 10' : 'Cu en az 6'} mm²).`}</span></div>`; }
   } else o += `<div class="sonuc-satir"><span class="durum">${N > 0 ? 'Hat boyu için ölçek verin ya da KML altlık yükleyin.' : 'Talep gücü (3. bölüm) gerekli.'}</span></div>`;
   s.innerHTML = o;
   const cp = $('c-havai'); if (cp) { const t = kablo && !kotu.length && H.direkSayisi >= 2; cp.className = 'cip' + (t ? ' tamam' : ' dikkat'); cp.textContent = t ? 'Tamam' : 'Devam ediyor'; }
@@ -944,10 +972,21 @@ function guncelle() {
   if (havai) {
     // cer aracında seçilen iletken esas (kroki, cer raporu ve pafta aynı kesiti göstersin); araç %1'e göre seçer, hesapta "< %1,5" yazılır
     const secili = H && H.routeCond ? BHP.kablolar('alpek', b.faz).find(k => k.ad === H.routeCond.replace(/^AER\s*/, '')) : null;
-    if (N > 0 && L > 0) kablo = secili || BHP.kabloOner('alpek', N, L, 0, b.faz, In);
     D.inis = null;
     const L2 = (parseFloat($('inisDirek').value) || 0) + (parseFloat($('inisYer').value) || 0);
-    if (kablo && D.inisTur === 'yeralti' && L2 > 0) {
+    if (D.havaiIletken === 'nyy') {
+      // NYY + askı teli: aynı kablo direkten ekleme olmadan iner; havadaki kısım "havada" Iz, iniş/yeraltı kısmı "toprakta" Iz ile
+      // kontrol edilir; kesit, toplam %e ≤ %1 olacak en küçük kesit (Cu en az 6 mm²), olmazsa ≤ %1,5
+      const iniste = D.inisTur === 'yeralti' && L2 > 0, toprak = BHP.kablolar('cu', b.faz);
+      const uy = (k, sin) => { const h = BHP.hesap(k, N, L, In), t = toprak.find(x => x.ad === k.ad), h2 = iniste && t ? BHP.hesap(t, N, L2, In) : null;
+        return k.kesit >= 6 && h.iUygun && h.kUygun && (!iniste || (t && h2.iUygun && h2.kUygun)) && h.e + (h2 ? h2.e : 0) <= sin; };
+      const liste = BHP.kablolar('nyy-aski', b.faz);
+      if (N > 0 && L > 0) kablo = liste.find(k => uy(k, 1)) || liste.find(k => uy(k, 1.5)) || liste[liste.length - 1];
+      if (kablo) kablo = { ...kablo, askiTel: ($('askiTel').value || '').trim() || 'galvanizli örgülü çelik tel halat' };
+      const t = kablo && toprak.find(x => x.ad === kablo.ad);
+      if (kablo && iniste && t) D.inis = { kablo: t, L: L2, h: BHP.hesap(t, N, L2, In), ayniKablo: true };
+    } else if (N > 0 && L > 0) kablo = secili || BHP.kabloOner('alpek', N, L, 0, b.faz, In);
+    if (kablo && !kablo.askiTelli && D.inisTur === 'yeralti' && L2 > 0) {
       // iniş kablosu: kullanıcının kuralı (Cu en az 6, Al en az 10 mm²); toplam %e ≤ %1 olacak en küçük kesit, olmazsa ≤ %1,5
       const e1 = BHP.hesap(kablo, N, L, In).e, liste = BHP.kablolar(D.inisIletken, b.faz), enK = D.inisIletken === 'al' ? 10 : 6;
       const uy = (k, sin) => { const h = BHP.hesap(k, N, L2, In); return k.kesit >= enK && h.iUygun && h.kUygun && e1 + h.e <= sin; };
@@ -993,6 +1032,7 @@ function guncelle() {
     else if (!(H.hatBoyu > 0)) eksik.push('havai hat: ölçek verin ya da KML altlık yükleyin (hat boyu hesaplanamadı)');
     else if (H.sonuclar.some(r => !r.ok || r.kViol)) eksik.push('havai hat: uygun olmayan direk var (4. bölümdeki tabloyu kontrol edin)');
     if (!kablo && N > 0 && L > 0) eksik.push('havai hat: ALPEK kesiti bulunamadı');
+    if (D.havaiIletken === 'nyy' && !(parseFloat($('askiT').value) > 0)) eksik.push('havai hat: askı telinin çekme kuvvetini (kg) girin; direk cer hesabı buna göre yapılır (4. bölüm)');
     if (kablo && N > 0 && L > 0) { const h = BHP.hesap(kablo, N, L, In), eT = h.e + (D.inis ? D.inis.h.e : 0);
       if (eT > 1.5) eksik.push(`havai hat: toplam gerilim düşümü %${BHP.virgul(eT, 2)} (> %1,5); cer aracında ya da inişte daha büyük kesit gerekir`);
       if (D.inis && !D.inis.h.iUygun) eksik.push(`iniş kablosu ${D.inis.kablo.yazi} akımı taşımıyor`);

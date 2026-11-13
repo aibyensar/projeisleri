@@ -229,6 +229,9 @@
   function kablolar(iletken, faz = 3) {
     if (iletken === 'alpek') return ALPEK[faz].map(([ad, kesit, iz, aski]) =>
       ({ ad, kesit, iz, aski, tur: 'ALPEK', iletken: 'al', faz, havai: true, yazi: `${ad} mm² ALPEK` }));
+    // 'nyy-aski': kısa mesafede askı teline asılan NYY (kullanıcının uygulaması); Iz katalogdaki "Havada" sütunundan
+    const askida = iletken === 'nyy-aski';
+    if (askida) iletken = 'cu';
     const tur = iletken === 'al' ? 'NAYY' : 'NYY';
     const liste = [];
     for (const t of KATALOG.filter(t => t.kablo === tur)) {
@@ -237,13 +240,15 @@
         const m = ad.match(/^(\d)x(\d+(?:[.,]\d+)?)(?:\/(\d+(?:[.,]\d+)?))?$/);
         if (!m) continue;
         const damar = +m[1], kesit = parseFloat(m[2].replace(',', '.')), notr = m[3];   // 1.5 → 1,5 mm² (sayi() noktayı binlik sayar)
-        const iz = sayi(r[t.akimSutun]);
+        const iz = sayi(r[t.akimSutun + (askida ? 1 : 0)]);
         if (isNaN(iz)) continue;
         // kullanıcının kuralı: trifazede 16 mm²'ye kadar 4 damarlı, üstünde nötrü küçültülmüş 3x../..;
         // monofazede 3 damarlı (faz + nötr + koruma)
         const uygunTip = faz === 1 ? (damar === 3 && !notr) : ((damar === 4 && !notr && kesit <= 16) || (damar === 3 && notr && kesit > 16));
         const adV = ad.replace(/\./g, ',');
-        if (uygunTip) liste.push({ ad: adV, kesit, iz, tur, iletken, faz, yazi: `${adV} mm² ${tur}` });
+        if (uygunTip) liste.push(askida
+          ? { ad: adV, kesit, iz, tur, iletken, faz, havai: true, askiTelli: true, yazi: `${adV} mm² ${tur} (askı telli)` }
+          : { ad: adV, kesit, iz, tur, iletken, faz, yazi: `${adV} mm² ${tur}` });
       }
     }
     return liste.sort((a, b) => a.kesit - b.kesit);

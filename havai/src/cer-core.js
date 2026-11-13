@@ -46,6 +46,9 @@ function parseCer(txt, P) {
   }
   return Math.round(sum * 10) / 10;
 }
+// Yeni hattın çekmesi ve yazısı: BHP'den NYY + askı teli gelirse (P.hat) askı telinin verilen T'si, yoksa ALPEK askı teli × σ
+function hatCer(P) { return P.hat && P.hat.T > 0 ? P.hat.T : parseCer(P.routeCond, P); }
+function hatAd(P) { return P.hat ? P.hat.yazi : `${P.routeCond.replace(/^AER/, 'ALPEK')} mm²`; }
 function fmt(v) { return (Math.round(v * 10) / 10).toString().replace('.', ','); }
 function poleCap(pt, P) { const d = POLES.find(x => x.n === pt); return d ? (P.wind ? d.r : d.s) : 0; }
 
@@ -58,7 +61,7 @@ function poleNames(poles, P) {
 // Bir direğe bağlı hatlar: önce ek (mevcut) hatlar, sonra önceki ve sonraki açıklık
 function poleLines(poles, i, P) {
   const p = poles[i], L = [];
-  const rT = parseCer(P.routeCond, P);
+  const rT = hatCer(P);
   (p.ex || []).forEach(e => L.push({ x: e.x, y: e.y, T: parseCer(e.c, P), lab: e.c, kind: 'ex' }));
   if (i > 0) L.push({ x: poles[i - 1].x, y: poles[i - 1].y, T: rT, lab: P.routeCond, kind: 'route' });
   if (i < poles.length - 1) L.push({ x: poles[i + 1].x, y: poles[i + 1].y, T: rT, lab: P.routeCond, kind: 'route' });
@@ -129,8 +132,8 @@ function sheetPrims(results, P) {
     [1, -1].forEach(sg => { const b = a + Math.PI + sg * 25 * Math.PI / 180; L(ex, ey, ex + 0.35 * Math.cos(b), ey + 0.35 * Math.sin(b)); });
   };
   const dirArrow = (cx, cy, deg, len) => { const r = deg * Math.PI / 180; arrow(cx + 0.22 * Math.cos(r), cy + 0.22 * Math.sin(r), len * Math.cos(r), len * Math.sin(r)); };
-  const rT = parseCer(P.routeCond, P);
-  T(0.3, top - 0.6, `CER HESABI  -  HAVAİ ${P.routeCond} mm²  (T = ${fmt(rT)} KG)${P.wind ? '  -  RÜZGARLI TEPE KUVVETLERİ' : ''}`, 0.5, { bold: true });
+  const rT = hatCer(P);
+  T(0.3, top - 0.6, `CER HESABI  -  HAVAİ ${P.hat ? P.hat.yazi : P.routeCond + ' mm²'}  (T = ${fmt(rT)} KG)${P.wind ? '  -  RÜZGARLI TEPE KUVVETLERİ' : ''}`, 0.5, { bold: true });
   results.forEach((r, k) => {
     const y0 = top - 1.6 - (k + 1) * RH, yc = y0 + 2.6;
     pr.push({ t: 'rect', x: 0.3, y: y0, w: W, h: RH - 0.4 });
@@ -208,13 +211,13 @@ function summaryLines(results, P) {
   mevT.forEach(r => { const k = r.type + '|' + r.cap; if (!seen.has(k)) { seen.add(k); out.push(`${r.type} DİREK ${r.cap} KG TAŞIR`); } });
   out.push('');
   const conds = new Map();
-  conds.set(P.routeCond, parseCer(P.routeCond, P));
+  conds.set(P.hat ? P.hat.yazi : P.routeCond, hatCer(P));
   results.forEach(r => r.lines.filter(l => l.kind === 'ex').forEach(l => conds.set(l.lab, l.T)));
   conds.forEach((v, k) => {
-    const nm = /AER/i.test(k) ? `${k.replace(/^AER\s*/i, 'AER ')} mm` : /^\d/.test(k) && !/[RPA]/i.test(k) ? `MEVCUT HAT` : `MEVCUT ${k.toUpperCase()} HAT`;
+    const nm = P.hat && k === P.hat.yazi ? k : /AER/i.test(k) ? `${k.replace(/^AER\s*/i, 'AER ')} mm` : /^\d/.test(k) && !/[RPA]/i.test(k) ? `MEVCUT HAT` : `MEVCUT ${k.toUpperCase()} HAT`;
     out.push(`${nm} ${fmt(v)} KG çeker.`);
   });
-  if (P.kesit) {
+  if (P.kesit && !P.hat) {
     const k = P.kesit; out.push('');
     out.push(`Bağlantı gücü ${fmt(k.kW)} kW, ${k.tri ? 'trifaze ' + (k.U3 || 380) + ' V' : 'monofaze ' + (k.U1 || 220) + ' V'}, cosφ ${fmt(k.cos)}, hat boyu ${Math.round(k.L)} m`);
     out.push(`I = ${fmt(k.res.I)} A ≤ ${k.res.sel.amp} A  ;  %e = ${fmt(k.res.sel.e)} ≤ %${fmt(k.limit)}  →  ${P.routeCond} ${k.res.sel.okI && k.res.sel.okE ? 'uygundur.' : 'UYGUN DEĞİLDİR.'}`);
@@ -238,7 +241,7 @@ function krokiPrims(poles, results, P, opt) {
     let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, nx = -Math.sin(ang * Math.PI / 180), ny = Math.cos(ang * Math.PI / 180);
     const len = opt.mpu ? Math.hypot(b.x - a.x, b.y - a.y) * opt.mpu : null;
-    pr.push({ t: 'text', x: mx + nx * h * 0.6, y: my + ny * h * 0.6, s: `HAVAİ ${P.routeCond}mm²`, h: h * 0.7, rot: ang, center: true, layer: 'YAZI' });
+    pr.push({ t: 'text', x: mx + nx * h * 0.6, y: my + ny * h * 0.6, s: `HAVAİ ${P.hat ? P.hat.yazi : P.routeCond + 'mm²'}`, h: h * 0.7, rot: ang, center: true, layer: 'YAZI' });
     if (len) pr.push({ t: 'text', x: mx - nx * h * 1.3, y: my - ny * h * 1.3, s: `${Math.round(len)} m`, h: h * 0.7, rot: ang, center: true, layer: 'YAZI' });
   }
   poles.forEach((p, i) => {

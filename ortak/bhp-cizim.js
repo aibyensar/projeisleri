@@ -363,7 +363,7 @@
     });
     c.cizgi(xb - 14, ust - sh, xb - 14, ust - sh * (satir.length + 1), T);
     const yn = ust - sh * (satir.length + 1);
-    c.yazi(v.havai ? 'Iz: Konen ALPEK kabloları tablosu (havada)' + (I2 ? '; iniş kablosu Öznur Kablo kataloğu (toprak).' : '.') : 'Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
+    c.yazi(v.havai ? (v.kablo.askiTelli ? 'Iz: Öznur Kablo kataloğu, havada (askı telli kısım)' : 'Iz: Konen ALPEK kabloları tablosu (havada)') + (I2 ? '; iniş kablosu Öznur Kablo kataloğu (toprak).' : '.') : 'Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
     c.yazi('Bağlantı hattında izin verilen gerilim düşümü: %1,5.', xa + 2, yn - 9, 2.0);
     // sağ üst: hat şeması (kullanıcının hesap çizelgesindeki gibi)
     const X = xc + 6;
@@ -388,7 +388,7 @@
     };
     baslik('1. GERİLİM DÜŞÜMÜ');
     if (I2) {
-      satirY(`%e₁ = c₁ · N · L / S = ${vg(h.c, 7)} · ${v.N} · ${sayiYaz(v.L)} / ${sayiYaz(v.kablo.kesit)} = ${vg(h.e, 4)}  (ALPEK)`, 2.4);
+      satirY(`%e₁ = c₁ · N · L / S = ${vg(h.c, 7)} · ${v.N} · ${sayiYaz(v.L)} / ${sayiYaz(v.kablo.kesit)} = ${vg(h.e, 4)}  (${v.kablo.askiTelli ? 'havai' : 'ALPEK'})`, 2.4);
       satirY(`%e₂ = c₂ · N · L₂ / S₂ = ${vg(h2.c, 7)} · ${v.N} · ${sayiYaz(I2.L)} / ${sayiYaz(I2.kablo.kesit)} = ${vg(h2.e, 4)}  (iniş)`, 2.4);
       sonuc(eTuygun, 'GERİLİM DÜŞÜMÜ', y);
       satirY(`%e = %e₁ + %e₂ = ${vg(eT, 2)}  ${eTuygun ? '<' : '>'}  %1,5`, 2.9, { stil: KALIN });

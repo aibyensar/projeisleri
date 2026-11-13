@@ -115,19 +115,24 @@
     const gergi = (H.sonuclar || []).reduce((t, d) => t + (/Nihayet/.test(d.catName) ? 1 : /Köşe|Branşman/.test(d.catName) ? 2 : d.mev ? 1 : 0), 0);
     const aski = yeni.filter(d => /düz/i.test(d.catName)).length;
     const nih = yeni.filter(d => /Nihayet/.test(d.catName)).length;
+    const nyy = !!kablo.askiTelli, ayni = nyy && inis && inis.ayniKablo;
     const r = [
-      { ad: `${kablo.yazi} havai hat kablosu`, birim: 'm', miktar: L },
+      { ad: ayni ? `${inis.kablo.yazi} kablo (askı telinde havai + direk inişi${(inis.yer || 0) > 0 ? ' + yeraltı' : ''})` : `${kablo.yazi} havai hat kablosu`,
+        birim: 'm', miktar: ayni ? L + Math.ceil(inis.L) : L },
+      ...(nyy ? [{ ad: `Askı teli: ${kablo.askiTel || 'galvanizli örgülü çelik tel halat'}`, birim: 'm', miktar: L },
+        { ad: 'Kablo askı kelepçesi / bağı (kablonun askı teline tespiti)', birim: 'adet', miktar: Math.ceil((H.hatBoyu || b.uzunluk || 0) / 0.5) }] : []),
       ...Object.entries(tipler).map(([t, n]) => ({ ad: /\//.test(t) ? `SBA beton direk ${t}` : `AG demir direk ${t} (beton temeli ile)`, birim: 'adet', miktar: n })),
-      { ad: 'ALPEK gergi takımı (gergi klemensi + konsol)', birim: 'takım', miktar: gergi },
-      { ad: 'ALPEK askı takımı (askı klemensi + konsol)', birim: 'takım', miktar: aski },
+      { ad: nyy ? 'Askı teli gergi takımı (gergi konsolu + gergi klemensi / germe tertibatı)' : 'ALPEK gergi takımı (gergi klemensi + konsol)', birim: 'takım', miktar: gergi },
+      { ad: nyy ? 'Askı teli askı takımı (askı konsolu + askı klemensi)' : 'ALPEK askı takımı (askı klemensi + konsol)', birim: 'takım', miktar: aski },
       { ad: 'Koruma topraklaması (KT): galvaniz kazık 65x65x7 mm L=2 m + 1x16 mm² Cu iletken', birim: 'takım', miktar: yeni.length },
       { ad: 'İşletme topraklaması (İT), nihayet direği', birim: 'takım', miktar: nih },
     ];
     const eski = BHP.malzemeOner(b, kablo).filter(m => !/yeraltı|kazı|kum|tuğla|ikaz|kablo başlığı|koruma borusu|topraklama kazığı|topraklama iletkeni/i.test(m.ad));
     if (inis) {                                   // nihayet direğinden yeraltı iniş (kullanıcının onaylı direk bağlantı detayıyla aynı kalemler)
       const Ly = Math.ceil(inis.yer || 0);
-      r.push({ ad: `${inis.kablo.yazi} kablo (direk inişi ve yeraltı)`, birim: 'm', miktar: Math.ceil(inis.L) },
-        { ad: 'AG kablo başlığı (dış tip)', birim: 'adet', miktar: 1 },
+      if (!ayni) r.push({ ad: `${inis.kablo.yazi} kablo (direk inişi ve yeraltı)`, birim: 'm', miktar: Math.ceil(inis.L) },
+        { ad: 'AG kablo başlığı (dış tip)', birim: 'adet', miktar: 1 });
+      r.push(
         { ad: 'Galvanizli çelik koruma borusu (direk inişi, 3 m)', birim: 'adet', miktar: 1 });
       if (Ly > 0) r.push({ ad: 'Kablo kanalı kazısı ve dolgusu (40x100 cm)', birim: 'm', miktar: Ly }, { ad: 'Kablo altı ve üstü elenmiş kum', birim: 'm', miktar: Ly },
         { ad: 'Koruma tuğlası', birim: 'adet', miktar: 4 * Ly }, { ad: 'Plastik ikaz şeridi', birim: 'm', miktar: Ly });
@@ -140,9 +145,15 @@
       yer[0],
       `Bağlantı hattı ${kablo.yazi} ile havai olarak çekilecektir. Direk tipleri cer hesabına göre seçilmiştir (direk listesi bu paftada, kroki ve cer hesabı raporu 2. paftada).`,
       'Yeni demir direklerde koruma topraklaması (KT), nihayet direğinde ayrıca işletme topraklaması (İT) yapılacaktır.',
-      'ALPEK askı teli gergi ve askı takımlarıyla direklere tespit edilecektir. İletkenin en büyük salgı durumunda yere, yollara, yapılara ve diğer tesislere olan düşey uzaklıkları Elektrik Kuvvetli Akım Tesisleri Yönetmeliği md. 46 Çizelge-8\'e uygun olacaktır (direk detayındaki tablo).',
-      'Yalıtılmış iletkenli küçük aralıklı hat olarak iki direk arası açıklık 60 m\'yi geçmeyecektir (EKAT md. 4-c). Demir direklere zeminden en az 4 m yükseklikte tırmanma engeli takılacaktır (EKAT md. 44-o).',
-      ...(inis ? [`Nihayet direğinden sayaç panosuna ${inis.kablo.yazi} kablo ile inilecektir; direk inişinde galvanizli çelik koruma borusu kullanılacak, direk tarafında kablo başlığı yapılacaktır.`
+      ...(kablo.askiTelli ? [
+        `${kablo.yazi.replace(/ \(askı telli\)$/, '')} kablo, direkler arasına gergi ve askı takımlarıyla tespit edilen ${kablo.askiTel || 'galvanizli örgülü çelik tel halat'} askı teline kelepçelerle asılacak; kablonun mekanik yükünü askı teli taşıyacaktır (EKAT md. 45-b). İletkenin en büyük salgı durumunda düşey uzaklıkları EKAT md. 46 Çizelge-8\'e uygun olacaktır (direk detayındaki tablo).`,
+        'İki direk arası açıklık 60 m\'yi geçmeyecektir (EKAT md. 4-c). Demir direklere zeminden en az 4 m yükseklikte tırmanma engeli takılacaktır (EKAT md. 44-o).',
+      ] : [
+        'ALPEK askı teli gergi ve askı takımlarıyla direklere tespit edilecektir. İletkenin en büyük salgı durumunda yere, yollara, yapılara ve diğer tesislere olan düşey uzaklıkları Elektrik Kuvvetli Akım Tesisleri Yönetmeliği md. 46 Çizelge-8\'e uygun olacaktır (direk detayındaki tablo).',
+        'Yalıtılmış iletkenli küçük aralıklı hat olarak iki direk arası açıklık 60 m\'yi geçmeyecektir (EKAT md. 4-c). Demir direklere zeminden en az 4 m yükseklikte tırmanma engeli takılacaktır (EKAT md. 44-o).',
+      ]),
+      ...(inis ? [(inis.ayniKablo ? `Nihayet direğinden sayaç panosuna aynı ${inis.kablo.yazi} kablo ekleme yapılmadan inecektir; direk inişinde galvanizli çelik koruma borusu kullanılacaktır.`
+        : `Nihayet direğinden sayaç panosuna ${inis.kablo.yazi} kablo ile inilecektir; direk inişinde galvanizli çelik koruma borusu kullanılacak, direk tarafında kablo başlığı yapılacaktır.`)
         + ((inis.yer || 0) > 0 ? ' Yeraltı kısmında kablo kanalı, kablo kanalı detayına uygun açılacak; kablo altına ve üstüne 10\'ar cm kum, üzerine koruma tuğlası ve ikaz şeridi konacaktır.' : '')] : []),
       'GEREKLİ GEÇİŞ İZİNLERİ ALINMADAN HAT ÇEKİLMEYECEKTİR. Direk yerleri arazide aplikasyonla belirlenecektir.',
       ...yer.slice(5).filter(n => !/kazı/i.test(n)),
@@ -172,7 +183,9 @@
   ];
   function direkDetay(c, v, [x0, y0, x1, y1] = [394, 5404, 674, 6283]) {
     const T = { katman: 'BHP-TABLO' }, D = { katman: 'HAVAI-DETAY' }, K = { katman: 'HAVAI-HAT', renk: 1, kalin: true };
-    const W = x1 - x0;
+    const W = x1 - x0, nyy = !!(v.kablo && v.kablo.askiTelli), AK = nyy ? 'askı teli' : 'ALPEK';
+    // NYY + askı telinde Çizelge-8'in 0,5 m azaltması (yalnız yalıtılmış hava hattı kablosu için) uygulanmaz
+    const uzak = UZAKLIK.map(([a, d]) => [a, nyy && /\*/.test(d) ? (parseFloat(d.replace(',', '.')) + 0.5).toFixed(1).replace('.', ',') : d]);
     c.kutu(x0, y0, x1, y1, { ...T, kalin: true });
     c.cizgi(x0, y1 - 10, x1, y1 - 10, T);
     c.yazi('AG HAVAİ HAT DİREK TESİS DETAYLARI (ÖLÇEKSİZ)', (x0 + x1) / 2, y1 - 5, 3.4, { stil: KALIN, hiza: 'orta' });
@@ -200,23 +213,23 @@
 
     // 1) Nihayet direği
     const h1 = y1 - 18, yz1 = y1 - 250, xd1 = x0 + 150;
-    c.yazi('1. NİHAYET DİREĞİ (ALPEK gergi bağlantısı, KT + İT)', x0 + 6, h1, 2.8, { stil: KALIN });
+    c.yazi(`1. NİHAYET DİREĞİ (${AK} gergi bağlantısı, KT + İT)`, x0 + 6, h1, 2.8, { stil: KALIN });
     zemin(x0 + 8, x1 - 8, yz1);
     const hD = 215;
     direk(xd1, yz1, hD);
     const yk = yz1 + hD - 10;                                                                    // konsol yüksekliği
     c.cizgi(xd1 - 1.5, yk, xd1 - 22, yk, { ...D, kalin: true }); c.cizgi(xd1 - 1.5, yk - 8, xd1 - 22, yk, D);   // gergi konsolu
     c.cokgen([[xd1 - 22, yk], [xd1 - 30, yk + 1.6], [xd1 - 30, yk - 1.6]], { ...D, kapali: true });               // gergi klemensi
-    const ah = [];                                                                               // ALPEK sehimli
+    const ah = [];                                                                               // hat, sehimli
     for (let i = 0; i <= 20; i++) { const t = i / 20; ah.push([xd1 - 30 - t * 100, yk - 18 * Math.sin(Math.PI * t * 0.5)]); }
     c.cokgen(ah, K);
     c.yazi(v.kablo ? v.kablo.yazi : 'ALPEK', xd1 - 80, yk + 6, 2.6, { stil: KALIN, hiza: 'orta', katman: 'HAVAI-HAT' });
     // en küçük yükseklik ölçüsü (yol)
     const xo = xd1 - 112, ye = ah[20][1];
     c.cizgi(xo, yz1, xo, ye, D); [yz1, ye].forEach(y => c.cizgi(xo - 2, y, xo + 2, y, D));
-    c.yazi('en az 5,0 m', xo - 2, (yz1 + ye) / 2 + 2, 2.4, { stil: KALIN, hiza: 'sag' });
-    c.yazi('(yol, ALPEK)', xo - 2, (yz1 + ye) / 2 - 2, 2.2, { hiza: 'sag' });
-    etiket(xd1 - 12, yk - 2, xd1 + 18, yk + 14, ['Gergi konsolu ve', 'ALPEK gergi klemensi']);
+    c.yazi(nyy ? 'en az 5,5 m' : 'en az 5,0 m', xo - 2, (yz1 + ye) / 2 + 2, 2.4, { stil: KALIN, hiza: 'sag' });
+    c.yazi(nyy ? '(yol, NYY)' : '(yol, ALPEK)', xo - 2, (yz1 + ye) / 2 - 2, 2.2, { hiza: 'sag' });
+    etiket(xd1 - 12, yk - 2, xd1 + 18, yk + 14, ['Gergi konsolu ve', `${AK} gergi klemensi`]);
     etiket(xd1 + 2, yz1 + 29, xd1 + 18, yz1 + 52, ['Tırmanma engeli', 'zeminden en az 4 m (EKAT md. 44-o)']);
     etiket(xd1 + 2, yz1 + 120, xd1 + 18, yz1 + 140, ['AG demir direk', 'tipi direk listesine göre']);
     etiket(xd1 - 8, yz1 - 14, xd1 - 30, yz1 - 30, ['Beton temel', 'TEDAŞ direk montaj', 'şartnamesine göre'], 'sag');
@@ -231,7 +244,7 @@
     // 2) Taşıyıcı (ara) direk
     const ust2 = yz1 - 70, yz2 = ust2 - 200, xd2 = (x0 + x1) / 2;
     c.cizgi(x0 + 4, ust2 + 6, x1 - 4, ust2 + 6, T);
-    c.yazi('2. TAŞIYICI (ARA) DİREK (ALPEK askı bağlantısı, KT)', x0 + 6, ust2, 2.8, { stil: KALIN });
+    c.yazi(`2. TAŞIYICI (ARA) DİREK (${AK} askı bağlantısı, KT)`, x0 + 6, ust2, 2.8, { stil: KALIN });
     zemin(x0 + 8, x1 - 8, yz2);
     const hD2 = 170; direk(xd2, yz2, hD2);
     const yk2 = yz2 + hD2 - 8;
@@ -239,7 +252,7 @@
     const ah2 = [];
     for (let i = 0; i <= 30; i++) { const t = i / 30; ah2.push([xd2 - 14 + (t - 0.5) * 220, yk2 - 5 - 22 * (4 * (t - 0.5) * (t - 0.5))]); }
     c.cokgen(ah2, K);
-    etiket(xd2 - 14, yk2, xd2 + 20, yk2 + 14, ['Askı konsolu ve', 'ALPEK askı klemensi']);
+    etiket(xd2 - 14, yk2, xd2 + 20, yk2 + 14, ['Askı konsolu ve', `${AK} askı klemensi`]);
     etiket(xd2 + 2, yz2 + 29, xd2 + 18, yz2 + 48, ['Tırmanma engeli (en az 4 m)']);
     c.cizgi(xd2 + 2, yz2 + 3, xd2 + 6, yz2 - 4, D); c.cizgi(xd2 + 6, yz2 - 4, xd2 + 45, yz2 - 4, D); kazik(xd2 + 45, yz2, 'KT');
 
@@ -248,16 +261,17 @@
     c.cizgi(x0 + 4, ust3 + 6, x1 - 4, ust3 + 6, T);
     c.yazi('3. İLETKENİN EN KÜÇÜK DÜŞEY UZAKLIKLARI (0–1 kV)', x0 + 6, ust3, 2.8, { stil: KALIN });
     c.yazi('EKAT md. 46, Çizelge-8 · en büyük salgı durumunda', x0 + 6, ust3 - 4.5, 2.2, {});
-    const tu = ust3 - 9, tb = tu - sh * (UZAKLIK.length + 1);
+    const tu = ust3 - 9, tb = tu - sh * (uzak.length + 1);
     c.kutu(kx, tb, x1 - 6, tu, T); c.cizgi(kv, tb, kv, tu, T);
     c.yazi('İletkenin üzerinden geçtiği yer', kx + 2, tu - sh / 2, 2.4, { stil: KALIN });
     c.yazi('Uzaklık (m)', (kv + x1 - 6) / 2, tu - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
-    UZAKLIK.forEach(([ad, d], i) => {
+    uzak.forEach(([ad, d], i) => {
       const y = tu - sh * (i + 1);
       c.cizgi(kx, y, x1 - 6, y, T);
       c.yazi(ad, kx + 2, y - sh / 2, 2.3, {}); c.yazi(d, (kv + x1 - 6) / 2, y - sh / 2, 2.4, { stil: KALIN, hiza: 'orta' });
     });
-    c.yazi('* Yalıtılmış hava hattı kablosu (ALPEK) için Çizelge-8 değerinden 0,5 m azaltılmıştır.', kx, tb - 4.5, 2.2, {});
+    c.yazi(nyy ? 'NYY askı telli hat yalıtılmış hava hattı kablosu sayılmadığından Çizelge-8 değerleri azaltılmadan alınmıştır.'
+      : '* Yalıtılmış hava hattı kablosu (ALPEK) için Çizelge-8 değerinden 0,5 m azaltılmıştır.', kx, tb - 4.5, 2.2, {});
     c.yazi('Direk temeli, gömme derinliği ve tırmanma engeli TEDAŞ direk montaj teknik şartnamesine uygun yapılacaktır.', kx, tb - 9, 2.2, {});
   }
 

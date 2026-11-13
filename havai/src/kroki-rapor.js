@@ -171,7 +171,7 @@ function krokiPrims2(m, results, P, opt) {
     const a = poles[i], b = poles[i + 1], g = routeSegs[i];
     let ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
     const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, nx = -Math.sin(ang * Math.PI / 180), ny = Math.cos(ang * Math.PI / 180);
-    const segL = Math.hypot(b.x - a.x, b.y - a.y), len = mpu ? segL * mpu : null, cond = `${P.routeCond.replace(/^AER/, 'ALPEK')} mm²`;
+    const segL = Math.hypot(b.x - a.x, b.y - a.y), len = mpu ? segL * mpu : null, cond = hatAd(P);
     const th = h * 0.8, wCond = cond.length * th * 0.58;
     if (segL > wCond + h * 6) {
       const sides = [1, -1].map(sd => { const t1 = { x: mx + sd * nx * h * 1.05, y: my + sd * ny * h * 1.05 }, t2 = { x: mx - sd * nx * h * 1.05, y: my - sd * ny * h * 1.05 }, t3 = { x: mx - sd * nx * h * 2.3, y: my - sd * ny * h * 2.3 };
@@ -268,7 +268,7 @@ function krokiPrims2(m, results, P, opt) {
 function legendPr(pr, x, y, h, P, hasRoad) {
   const W = h * 27, rows = [
     ['conc', 'Mevcut beton direk'], ['I', 'Yeni I / U demir direk'], ['K', 'Yeni K (kafes) demir direk'],
-    ['hat', `Yeni havai hat (${P.routeCond.replace(/^AER/, 'ALPEK')})`], ['mev', 'Mevcut hat'], ['KT', 'Koruma topraklaması (KT)'], ['IT', 'İşletme topraklaması (İT)'],
+    ['hat', `Yeni havai hat (${P.hat ? P.hat.yazi : P.routeCond.replace(/^AER/, 'ALPEK')})`], ['mev', 'Mevcut hat'], ['KT', 'Koruma topraklaması (KT)'], ['IT', 'İşletme topraklaması (İT)'],
   ];
   if (hasRoad) rows.push(['yol', 'Yol']);
   const rh = h * 3.0, H = rh * rows.length + h * 3;
@@ -300,12 +300,13 @@ function reportPrims(results, P, info) {
   const pr = [], W = 420;
   const T = (x, y, s, h, o) => pr.push(Object.assign({ t: 'text', x, y, s: String(s), h: h || 2.5, layer: 'TABLO' }, o || {}));
   const Ln = (x1, y1, x2, y2, o) => pr.push(Object.assign({ t: 'line', x1, y1, x2, y2, layer: 'TABLO' }, o || {}));
-  const rT = parseCer(P.routeCond, P);
+  const rT = hatCer(P);
   const n = results.length;
   // yükseklik hesabı
   const cols = 4, cellW = (380 - 9) / 4, cellH = 64, gridRows = Math.ceil(n / cols);
   const tblH = 14 + n * 7;
-  const nRes = n + (P.kesit ? 4 : 0) + 3;
+  const ksv = P.kesit && !P.hat;                        // NYY + askı telinde kesit kontrolü BHP hesap tablosunda
+  const nRes = n + (ksv ? 4 : 0) + 3;
   const H = Math.max(297, 10 + 18 + 52 + 10 + tblH + 12 + gridRows * (cellH + 4) + 12 + nRes * 5.6 + 22);
   // çerçeve
   pr.push({ t: 'rect', x: 0, y: 0, w: W, h: H, layer: 'CERCEVE' });
@@ -323,7 +324,8 @@ function reportPrims(results, P, info) {
   const bR = ['I', 'II', 'III', 'IV'][(P.bolge || 1) - 1];
   const sm = (P.routeCond.match(/\+\s*(\d+)/) || [])[1];
   const L1 = [
-    `a) Yeni hat iletkeni: HAVAİ ${P.routeCond.replace(/^AER/, 'ALPEK')} mm²  -  en büyük çekme T = ${sm || '?'} mm² (askı teli) x ${fmt(P.sigma)} kg/mm² = ${fmt(rT)} kg`,
+    P.hat ? `a) Yeni hat iletkeni: HAVAİ ${P.hat.yazi}, askı teline asılı  -  en büyük çekme: ${P.hat.aciklama}`
+      : `a) Yeni hat iletkeni: HAVAİ ${P.routeCond.replace(/^AER/, 'ALPEK')} mm²  -  en büyük çekme T = ${sm || '?'} mm² (askı teli) x ${fmt(P.sigma)} kg/mm² = ${fmt(rT)} kg`,
     ...[...exConds].map(([k, v]) => `b) Mevcut hat: ${String(k).toUpperCase()}  -  T = ${fmt(v)} kg  (${bR}. buz yükü bölgesi müşterek hat çekme kuvveti)`),
     `c) Buz yükü bölgesi: ${bR}. bölge (EKAT Çizelge-9)   -   Hesap ${P.wind ? 'rüzgarlı' : 'rüzgarsız'} tepe kuvvetleriyle yapılmıştır.${P.margin ? `  Emniyet payı %${P.margin}.` : ''}`,
     `d) Direk tepe kuvvetleri (P): 8I 300, 10I 500, 12I 900, 10U 700, 12U 1200, K1 1000, K2 2000 kg (AG demir direk); SBA beton direkte P = tip x 100 kg.`,
@@ -359,14 +361,14 @@ function reportPrims(results, P, info) {
   // 4. kesit + sonuç
   let yy = y - 4;
   const lsec = (t) => { yy -= 7; T(25, yy, t, 3.5, { bold: true }); yy -= 2; Ln(25, yy, W - 15, yy); };
-  if (P.kesit) {
+  if (ksv) {
     const k = P.kesit;
     lsec('4. KESİT KONTROLÜ');
     [`Talep (bağlantı) gücü N = ${fmt(k.kW)} kW, ${k.tri ? 'trifaze U = ' + (k.U3 || 380) + ' V' : 'monofaze U = ' + (k.U1 || 220) + ' V'}, cosφ = ${fmt(k.cos)}, hat boyu L = ${Math.round(k.L)} m, κ = ${fmt(k.kappa)}`,
       `Akım: I = ${k.tri ? 'N / (√3·U·cosφ)' : 'N / (U·cosφ)'} = ${fmt(k.res.I)} A  ≤  ${k.res.sel.amp} A (${P.routeCond.replace(/^AER/, 'ALPEK')}) → ${k.res.sel.okI ? 'uygun' : 'UYGUN DEĞİL'}`,
       `Gerilim düşümü: %e = ${k.tri ? '100' : '200'}·N·L / (κ·S·U²) = %${fmt(k.res.sel.e)}  <  %1,5 → ${k.res.sel.e < 1.5 ? 'uygun' : 'UYGUN DEĞİL'}`]   // kullanıcının kuralı: kesit %1'e göre seçilir, %1,5 sınırı yazılır.forEach(s => { yy -= 5.5; T(28, yy, s, 2.5); });
   }
-  lsec(`${P.kesit ? 5 : 4}. SONUÇ`);
+  lsec(`${ksv ? 5 : 4}. SONUÇ`);
   results.forEach(r => { yy -= 5.5; T(28, yy, r.ok ? `${r.name}: Toplam cer R = ${r.R} kg < P = ${r.cap} kg (${r.type}) olduğundan uygundur.` : `${r.name}: Toplam cer R = ${r.R} kg > P = ${r.cap} kg (${r.type}) olduğundan UYGUN DEĞİLDİR.`, 2.5, { color: r.ok ? undefined : 1 }); });
   return { prims: pr, w: W, h: H };
 }

@@ -337,6 +337,11 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    Pafta, cer aracında seçilen iletkeni (routeCond) kullanır; havai-sonuc iletisinde talepKW de gelir. KML (TKGM) yolu
    uçtan uca denendi (gerçek koordinat, parsel etiketi). EMO ek dosyaları (buz bölgesi ilçe listesi) 404; GDZ'nin proje
    kapsamı (Elektrik Tesisleri Proje Yönetmeliği EK-2) metinde yok.
+   Direk inişi: nihayet direğinden panoya yeraltı NYY/NAYY (Cu ≥ 6, Al ≥ 10), toplam %e₁+%e₂ ≤ %1 ile seçilir; EPDK 10/B
+   parsel dışı uzunluk sınırı (60/120/200 m) uyarısı. Kısa mesafe (kullanıcının uygulaması): "NYY + askı teli" seçeneği —
+   kablolar('nyy-aski') Iz Öznur "Havada" sütunu, aynı kablo ekleme yapılmadan iner (iniş Iz toprakta), askı teli adı ve
+   çekme kuvveti T (kg) kullanıcıdan; T cer aracına P.hat ile gider (hatCer/hatAd), Çizelge-8 azaltması uygulanmaz.
+   AÇIK: askı teli tipi/T değeri ve kablo kelepçe aralığı (şimdilik 0,5 m varsayım) kullanıcıdan teyit bekliyor.
 
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →

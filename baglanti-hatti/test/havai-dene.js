@@ -14,9 +14,19 @@ const g = { basvuruNo: '000000000', sahibi: 'DENEME SAHİBİ', adres: 'ÖRNEK SO
 const b = BHP.birlestir(g, { kuruluW: 20000, talepW: (H.talepKW || 15) * 1000, satirlar: [] });
 b.uzunluk = Math.round(H.hatBoyu);
 b.korumalar = [{ tur: 'sigorta', deger: '4x40A 10kA' }];
-const kablo = BHP.kablolar('alpek', 3).find(k => k.ad === String(H.routeCond).replace(/^AER\s*/, '')) || BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
-const k2 = BHP.kablolar('al', 3).find(k => k.kesit >= 10 && BHP.hesap(kablo, b.talepW, b.uzunluk, 40).e + BHP.hesap(k, b.talepW, 15, 40).e <= 1 && BHP.hesap(k, b.talepW, 15, 40).kUygun);
-const inis = { kablo: k2, L: 15, yer: 5, h: BHP.hesap(k2, b.talepW, 15, 40) };
+// 3. argüman "nyy": kısa mesafe NYY + askı teli (aynı kablo direkten iner)
+const NYY = process.argv[4] === 'nyy';
+let kablo, inis;
+if (NYY) {
+  const L2 = 15, uy = k => { const t = BHP.kablolar('cu', 3).find(x => x.ad === k.ad); return k.kesit >= 6 && t && BHP.hesap(k, b.talepW, b.uzunluk, 40).e + BHP.hesap(t, b.talepW, L2, 40).e <= 1 && BHP.hesap(k, b.talepW, b.uzunluk, 40).kUygun; };
+  kablo = { ...BHP.kablolar('nyy-aski', 3).find(uy), askiTel: 'galvanizli örgülü çelik tel halat' };
+  const t = BHP.kablolar('cu', 3).find(x => x.ad === kablo.ad);
+  inis = { kablo: t, L: L2, yer: 5, h: BHP.hesap(t, b.talepW, L2, 40), ayniKablo: true };
+} else {
+  kablo = BHP.kablolar('alpek', 3).find(k => k.ad === String(H.routeCond).replace(/^AER\s*/, '')) || BHP.kabloOner('alpek', b.talepW, b.uzunluk, 0, 3, 40);
+  const k2 = BHP.kablolar('al', 3).find(k => k.kesit >= 10 && BHP.hesap(kablo, b.talepW, b.uzunluk, 40).e + BHP.hesap(k, b.talepW, 15, 40).e <= 1 && BHP.hesap(k, b.talepW, 15, 40).kUygun);
+  inis = { kablo: k2, L: 15, yer: 5, h: BHP.hesap(k2, b.talepW, 15, 40) };
+}
 const malz = BHPHavai.malzemeOner(BHP, b, kablo, H, inis), notlar = BHPHavai.notlarOner(BHP, b, kablo, H, inis);
 const v = BHP.cizimVerisi(b, kablo, malz, notlar);
 Object.assign(v, { havai: H, Ldis: v.L, Lic: 0, basvuruNo: b.basvuruNo, inis });
@@ -27,7 +37,7 @@ fs.mkdirSync(cikis, { recursive: true });
 fs.writeFileSync(path.join(cikis, `BHP-${b.basvuruNo}.dxf`), dxf);
 const h = BHP.hesap(kablo, b.talepW, b.uzunluk, 40);
 console.log(`kablo ${kablo.yazi} · %e ${h.e.toFixed(3)} (seçim ≤ 1, yazılan < 1,5) · I ${h.I.toFixed(1)} A ≤ ${kablo.iz} A`);
-console.log(`iniş ${k2.yazi} L=15 m · toplam %e ${(h.e + inis.h.e).toFixed(3)}`);
+console.log(`iniş ${inis.kablo.yazi} L=15 m · toplam %e ${(h.e + inis.h.e).toFixed(3)}`);
 console.log('malzeme:', malz.map(m => `${m.ad} ${m.miktar} ${m.birim}`).join(' | '));
 console.log('çizim öğesi', c.l.length, 'DXF', Math.round(dxf.length / 1024), 'KB');
 if (!/ALPEK/.test(dxf) || !/HAVAİ BAĞLANTI HATTI/.test(dxf) || !/DİREK LİSTESİ/.test(dxf)) { console.error('HATA: havai bölümleri DXF\'te yok'); process.exit(1); }
