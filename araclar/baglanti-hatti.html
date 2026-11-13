@@ -342,7 +342,7 @@
       <div class="sahne-ust">
         <b>Havai hat — direk işaretleme ve cer hesabı</b>
         <span id="sahneOzet" class="sahne-ozet">Direk yok</span>
-        <span class="sahne-ipucu">Direk (D): boş yere tıkla · ilk direk mevcut direk · Seç (V): sürükle taşı · Del: sil · fare tekeri: yakınlaştır</span>
+        <span class="sahne-ipucu">Boş yere tıkla: direk ekle (ilki mevcut direk) · hattın üstüne tıkla: araya direk · sürükle: taşı · sağ tık: sil · Ctrl+Z: geri al · tekerlek: yakınlaştır</span>
         <button type="button" class="ana-dugme" id="direkBitti">Bitti, sayfaya dön</button>
       </div>
       <iframe id="havaiCer" title="Havai hat cer hesabı" src="havai-cer.html?gomulu=1"></iframe>
@@ -514,6 +514,8 @@ function tamKirp(kaynak) {
 }
 async function uyduGoster(kaynak, yazi) {
   const bl = await tamKirp(kaynak);
+  D.uyduBlob = bl; D.uyduSurum = (D.uyduSurum || 0) + 1;            // cer aracına altlık olarak da gider
+  if (D.hat === 'havai') havaiAyarGonder(true);
   D.uyduGosterUrl && URL.revokeObjectURL(D.uyduGosterUrl); D.uyduGosterUrl = URL.createObjectURL(bl);
   $('r-uydu').src = D.uyduGosterUrl; $('uyduKutu').hidden = false; $('c-uydu').textContent = yazi; yakinSigdir('r-uydu');
 }
@@ -623,10 +625,10 @@ yakinKur('panoResim'); yakinKur('gucResim'); yakinKur('antetResim'); yakinKur('g
 let _havaiImza = '';
 function havaiAyarGonder(yalnizDegisince) {
   const f = $('havaiCer'); if (!f || !f.contentWindow) return;
-  const b = bilgiler(), hat = havaiHatBilgisi(), imza = [b.talepW, b.faz, kaynakAdi(), b.malSahibi, JSON.stringify(hat)].join('|');
+  const b = bilgiler(), hat = havaiHatBilgisi(), gdzL = (b.Ldis || 0) + (b.Lic || 0), imza = [b.talepW, b.faz, kaynakAdi(), b.malSahibi, JSON.stringify(hat), gdzL, D.uyduSurum || 0].join('|');
   if (yalnizDegisince && imza === _havaiImza) return;       // döngü olmasın: cer aracı her ayarda sonuç gönderir
   _havaiImza = imza;
-  f.contentWindow.postMessage({ tip: 'havai-ayar', talepKW: (b.talepW || 0) / 1000, faz: b.faz, mevcutAd: kaynakAdi(), proje: b.malSahibi || b.basvuruNo, hat }, '*');
+  f.contentWindow.postMessage({ tip: 'havai-ayar', talepKW: (b.talepW || 0) / 1000, faz: b.faz, mevcutAd: kaynakAdi(), proje: b.malSahibi || b.basvuruNo, hat, gdzL, uydu: D.uyduBlob || null }, '*');
 }
 // NYY + askı teli: cer aracına hat yazısı ve askı telinin çekme kuvveti gider (ALPEK'te null: araç kendi hesaplar)
 function havaiHatBilgisi() {

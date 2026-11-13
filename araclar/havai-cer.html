@@ -120,6 +120,11 @@ td select{padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-si
 .gpill{position:absolute;left:12px;top:62px;border:0;background:var(--acc);color:#fff;border-radius:999px;padding:7px 13px;font-weight:600;font-size:12.5px;cursor:pointer;box-shadow:0 4px 14px rgba(27,95,209,.35);display:none;z-index:5}
 .dbar{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);display:none;gap:6px;align-items:center;background:#fff;padding:6px 8px 6px 12px;border-radius:999px;box-shadow:0 4px 16px rgba(16,24,40,.18);font-size:12.5px;z-index:6}
 .dbar.on{display:flex}
+.abar{position:absolute;left:50%;top:62px;transform:translateX(-50%);display:none;gap:8px;align-items:center;background:#fff8e6;border:1px solid #f0c36d;color:#5c4400;padding:8px 10px 8px 14px;border-radius:12px;box-shadow:0 4px 16px rgba(16,24,40,.14);font-size:13px;z-index:6;max-width:92%;flex-wrap:wrap}
+.abar.on{display:flex}
+.empty .kart{pointer-events:auto;background:#fff;border-radius:14px;padding:24px 28px;text-align:center;box-shadow:0 6px 24px rgba(16,24,40,.16);max-width:460px;color:var(--mute);line-height:1.6}
+.empty .kart .row{justify-content:center;margin-top:12px;flex-wrap:wrap}
+.empty .kart .btn{flex:none}
 .selcard{position:absolute;right:12px;top:60px;width:270px;background:#fff;border-radius:12px;box-shadow:0 4px 18px rgba(16,24,40,.16);padding:12px 14px;display:none}
 .selcard.on{display:block}
 .selcard h4{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:8px}
@@ -227,14 +232,17 @@ a{color:var(--acc)}
         <span class="sep"></span>
         <button data-t="parcel" title="Parsel çiz (P)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l9-3 7 6-3 11-12-2z"/></svg>Parsel<kbd>P</kbd></button>
         <button data-t="road" title="Yol çiz (Y)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 21L10 3M17 21L14 3M12 6v2M12 11v2M12 16v2"/></svg>Yol<kbd>Y</kbd></button>
-        <button data-t="scale" title="Ölçek ver (S)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18M5 13v8M19 13v8M9 15v4M13 15v4M17 15v4"/></svg>Ölçek<kbd>S</kbd></button>
+        <button data-t="scale" title="Ölçek ver (S): bilinen bir mesafenin iki ucuna tıkla"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17h18M5 13v8M19 13v8M9 15v4M13 15v4M17 15v4"/></svg>Ölçek<kbd>S</kbd></button>
       </div>
       <div class="tr">
+        <button class="btn" id="bUndo" title="Geri al (Ctrl+Z)">↶ Geri al</button><button class="btn" id="bRedo" title="İleri al (Ctrl+Y)">↷ İleri al</button>
+        <button class="btn" id="bRev" title="Direk sırasını ters çevir (hattı yanlış uçtan başlattıysan)">⇄ Sırayı çevir</button>
         <div class="seg" id="viewSeg"><button data-m="sat" class="on">Uydu</button><button data-m="proj">Proje</button></div>
         <button class="btn" id="zFit">Sığdır</button>
       </div>
       <div class="selcard" id="selCard"></div>
       <div class="empty" id="empty" style="display:none"></div>
+      <div class="abar" id="abar"></div>
       <div class="guide" id="guide">
         <div class="gh"><span id="gStep"></span><div class="dots" id="gDots"></div><button class="x" id="gHide" title="Rehberi gizle">–</button></div>
         <h4 id="gTitle"></h4><p id="gText"></p><div class="gx" id="gExtra"></div><div id="gStatus"></div>
@@ -1335,7 +1343,11 @@ function textH() {
 }
 function spanM(i) { if (i < 1 || !S.mpu) return null; const a = S.poles[i - 1], b = S.poles[i]; return Math.hypot(b.x - a.x, b.y - a.y) * S.mpu; }
 function setSpan(i, m) {
-  if (!S.mpu || i < 1 || !(m > 0)) return;
+  if (i < 1 || !(m > 0)) return;
+  if (!S.mpu) {                                       // ölçek yoksa: yazılan açıklık ölçeği belirler
+    const a = S.poles[i - 1], b = S.poles[i], d = Math.hypot(b.x - a.x, b.y - a.y); if (d < 1e-9) return;
+    S.mpu = m / d; toast(`Ölçek bu açıklıktan verildi (${m} m). Diğer açıklıklar buna göre hesaplandı.`); refresh(); return;
+  }
   const a = S.poles[i - 1], b = S.poles[i], d = Math.hypot(b.x - a.x, b.y - a.y); if (d < 1e-9) return;
   const k = (m / S.mpu) / d, nx = a.x + (b.x - a.x) * k, ny = a.y + (b.y - a.y) * k, dx = nx - b.x, dy = ny - b.y;
   for (let j = i; j < S.poles.length; j++) { const p = S.poles[j]; p.x += dx; p.y += dy; (p.ex || []).forEach(e => { e.x += dx; e.y += dy; }); }
@@ -1399,9 +1411,15 @@ cv.addEventListener('pointermove', e => {
 });
 cv.addEventListener('pointerup', async e => { window._lastEv = e;
   const [sx, sy] = pos(e); const d = drag; drag = null;
+  if (d && d.kind === 'pole' && moved) { checkpoint(); return; }
   if (moved || !d || d.kind === 'pole' || ASKING) return;
   const sn = snapPt(sx, sy); const [wx, wy] = sn ? [sn.x, sn.y] : S2W(sx, sy);
   if (S.tool === 'add') {
+    const ara = segPick(sx, sy);
+    if (ara >= 0) {                                   // hattın üstüne tıklandı: iki direğin arasına yeni direk
+      S.poles.splice(ara + 1, 0, { x: wx, y: wy, mev: false, mevName: '9.30/8', mevCap: 800, ov: 'auto', ex: [] });
+      S.sel = ara + 1; refresh(); toast('Araya direk eklendi (Ctrl+Z ile geri al)'); return;
+    }
     S.poles.push({ x: wx, y: wy, mev: S.poles.length === 0 && S.P.firstMev !== false, mevName: '9.30/8', mevCap: 800, ov: 'auto', ex: [] });
     S.sel = S.poles.length - 1; refresh();
     if (S.poles.length === 1 && S.poles[0].mev) openMevcut(0);
@@ -1437,7 +1455,10 @@ cv.addEventListener('pointerup', async e => { window._lastEv = e;
     if (+v > 0 && dw > 0) { S.mpu = +v / dw; toast(`Ölçek ayarlandı: 1 m = ${(1 / S.mpu).toFixed(2)} piksel`); setTool('add'); refresh(); }
   } else if (S.tool === 'move') { S.sel = -1; refresh(); }
 });
-cv.addEventListener('contextmenu', e => { e.preventDefault(); if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); else if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); });
+cv.addEventListener('contextmenu', e => { e.preventDefault(); drag = null;     // Linux'ta sağ tık menüsü fare basılıyken gelir
+  if ((S.tool === 'add' || S.tool === 'move') && !S.draft.length) { const [sx, sy] = pos(e), h = pick(sx, sy);
+    if (h >= 0) { const ad = (results[h] || {}).name || 'Direk'; S.poles.splice(h, 1); S.sel = -1; refresh(); toast(`${ad} silindi (Ctrl+Z ile geri al)`); return; } }
+  if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); else if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); });
 function finishDraft() { if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); else if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); else toast(S.tool === 'road' ? 'Yol için en az 2 nokta gerekli' : 'Parsel için en az 3 nokta gerekli'); }
 cv.addEventListener('dblclick', () => { if (S.tool === 'parcel' && S.draft.length >= 3) closeDraft(); if (S.tool === 'road' && S.draft.length >= 2) closeRoad(); });
 async function closeRoad() {
@@ -1460,17 +1481,19 @@ window.addEventListener('keydown', e => {
   if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || ASKING || $('mevModal').classList.contains('on')) return;
   const k = e.key.toLowerCase();
   if ((k === 'delete' || k === 'backspace') && S.sel >= 0) { S.poles.splice(S.sel, 1); S.sel = -1; refresh(); e.preventDefault(); }
-  else if (k === 'z' && (e.ctrlKey || e.metaKey)) { if (S.draft.length) S.draft.pop(); else S.poles.pop(); S.sel = -1; refresh(); }
-  else if (k === 'escape') { S.draft = []; S.scaleA = null; pendingEx = null; setTool('add'); draw(); }
+  else if (k === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) { if (S.draft.length) { S.draft.pop(); draw(); } else undo(); e.preventDefault(); }
+  else if ((k === 'y' || (k === 'z' && e.shiftKey)) && (e.ctrlKey || e.metaKey)) { redo(); e.preventDefault(); }
+  else if (k === 'escape') { S.draft = []; S.scaleA = null; pendingEx = null; setTool('add'); draw(); uiBars(); }
   else if (k === 'enter' && S.tool === 'parcel' && S.draft.length >= 3) closeDraft();
   else if (k === 'enter' && S.tool === 'road' && S.draft.length >= 2) closeRoad();
   else if (!e.ctrlKey && !e.metaKey) { const m = { v: 'move', d: 'add', m: 'ex', p: 'parcel', y: 'road', s: 'scale' }[k]; if (m) setTool(m); }
 });
-const HINTS = { add: 'Direk: boş yere tıkla, sıradaki direk eklenir · direğe tıkla: seç · sürükle: taşı', move: 'Seç: direği sürükleyerek taşı · boş yeri sürükle: kaydır · Del: sil', ex: 'Mevcut hat: seçili direkten çıkan mevcut hattın yönüne tıkla', parcel: 'Parsel: parselin içine tıkla, sınır otomatik bulunur · var olan parsele tıkla: numarasını değiştir · Shift+tık: köşeleri elle işaretle', pickline: 'Parsel sınır çizgisinin üzerine tıkla', road: 'Yol: yolun orta çizgisi boyunca tıkla · çift tıkla, sağ tıkla, Enter ya da Bitir ile bitir · sonra genişliği gir', scale: 'Ölçek: bilinen bir mesafenin iki ucuna tıkla' };
+const HINTS = { add: 'Direk: boş yere tıkla → sona eklenir · hattın üstüne tıkla → araya girer · direği sürükle → taşı · sağ tık → sil · Ctrl+Z geri al', move: 'Seç: direği sürükleyerek taşı · boş yeri sürükle: kaydır · Del ya da sağ tık: sil', ex: 'Mevcut hat: seçili direkten çıkan mevcut hattın yönüne tıkla', parcel: 'Parsel: parselin içine tıkla, sınır otomatik bulunur · var olan parsele tıkla: numarasını değiştir · Shift+tık: köşeleri elle işaretle', pickline: 'Parsel sınır çizgisinin üzerine tıkla', road: 'Yol: yolun orta çizgisi boyunca tıkla · çift tıkla, sağ tıkla, Enter ya da Bitir ile bitir · sonra genişliği gir', scale: 'Ölçek: bilinen bir mesafenin iki ucuna tıkla' };
 function setHint(t) { $('hint').textContent = t; }
 function setTool(t) {
   S.tool = t; [...$('tb').querySelectorAll('button')].forEach(b => b.classList.toggle('on', b.dataset.t === t));
   setHint(HINTS[t]); cv.style.cursor = t === 'move' ? 'grab' : 'crosshair'; if (t !== 'parcel') S.draft = []; if (t !== 'scale') S.scaleA = null;
+  if (window._uiHazir) uiBars();                      // araç tam yüklenmeden çağrılmasın
 }
 $('tb').onclick = e => { const b = e.target.closest('button'); if (b && b.dataset.t) setTool(b.dataset.t); };
 $('scaleBtn').onclick = () => setTool('scale'); $('parcelBtn').onclick = () => setTool('parcel');
@@ -1557,6 +1580,50 @@ $('mOk').onclick = () => {
   setTool('ex'); setHint('Mevcut hattın geldiği yöne tıkla' + (mHat === 'through' ? ' (karşı yön otomatik eklenir)' : '')); refresh();
 };
 
+// ---------- düzeltme kolaylıkları: araya direk, geri al / ileri al, sırayı çevir, yönlendirme şeritleri
+function segPick(sx, sy) {
+  let best = -1, bd = 8;
+  for (let i = 0; i < S.poles.length - 1; i++) {
+    const a = W2S(S.poles[i].x, S.poles[i].y), b = W2S(S.poles[i + 1].x, S.poles[i + 1].y), dx = b[0] - a[0], dy = b[1] - a[1], L2 = dx * dx + dy * dy;
+    if (L2 < 400) continue;
+    const t = ((sx - a[0]) * dx + (sy - a[1]) * dy) / L2; if (t < 0.12 || t > 0.88) continue;
+    const d = Math.hypot(a[0] + t * dx - sx, a[1] + t * dy - sy); if (d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+const HIS = { u: [], r: [], cur: null, off: false };
+function snapState() { return JSON.stringify({ poles: S.poles, parcels: S.parcels, roads: S.roads, mpu: S.metric ? null : S.mpu }); }
+function checkpoint() {
+  if (HIS.off || drag) return;
+  const st = snapState(); if (st === HIS.cur) return;
+  if (HIS.cur != null) { HIS.u.push(HIS.cur); if (HIS.u.length > 150) HIS.u.shift(); }
+  HIS.cur = st; HIS.r = [];
+}
+function restoreState(st) { const o = JSON.parse(st); HIS.off = true; S.poles = o.poles; S.parcels = o.parcels; S.roads = o.roads; if (!S.metric) S.mpu = o.mpu; S.sel = -1; refresh(); HIS.off = false; HIS.cur = st; }
+function undo() { if (!HIS.u.length) { toast('Geri alınacak bir şey yok'); return; } HIS.r.push(HIS.cur); restoreState(HIS.u.pop()); toast('Geri alındı'); }
+function redo() { if (!HIS.r.length) { toast('İleri alınacak bir şey yok'); return; } HIS.u.push(HIS.cur); restoreState(HIS.r.pop()); }
+$('bUndo').onclick = undo; $('bRedo').onclick = redo;
+$('bRev').onclick = () => { if (S.poles.length < 2) return; S.poles.reverse(); S.sel = -1; refresh(); toast('Direk sırası ters çevrildi'); };
+function uiBars() {
+  // boş ekran: altlık yükleme kartı
+  const bos = !S.img && !S.bg && !S.parcels.length && !S.poles.length && !S.noBg;
+  const em = $('empty'); em.style.display = bos ? '' : 'none';
+  if (bos) em.innerHTML = `<div class="kart"><b>Önce altlığı yükleyin</b>Kroki resmi, TKGM Parsel Sorgu'dan indirilen KML ya da DXF. Dosyayı buraya sürükleyebilir ya da resmi Ctrl+V ile yapıştırabilirsiniz.
+    <div class="row">${S.gdzUydu ? '<button class="btn pri" id="eGdz">GDZ yazısındaki uydu resmini kullan</button>' : ''}<button class="btn ${S.gdzUydu ? '' : 'pri'}" id="eDosya">Dosya seç</button><button class="btn" id="eBos">Altlıksız başla</button></div></div>`;
+  if (bos) { if ($('eGdz')) $('eGdz').onclick = gdzUyduYukle; $('eDosya').onclick = () => $('file').click(); $('eBos').onclick = () => { S.noBg = true; uiBars(); }; }
+  // üst şerit: bekleyen adım ya da eksik ölçek
+  const ab = $('abar'); let h = '';
+  if (pendingEx) h = `<span><b>Mevcut hat:</b> mevcut direğe gelen mevcut hattın <b>geldiği yöne</b> tıklayın${pendingEx.through ? ' (karşı yön kendiliğinden eklenir)' : ''}.</span><button class="btn sm" id="abAtla">Atla</button>`;
+  else if (S.tool === 'scale') h = `<span><b>Ölçek:</b> uzunluğunu bildiğiniz bir mesafenin iki ucuna tıklayın, sonra metresini yazın.</span><button class="btn sm" id="abIptal">Vazgeç</button>`;
+  else if (!S.mpu && S.poles.length >= 2) h = `<span><b>Ölçek yok</b> — açıklıklar ve hat boyu hesaplanamıyor.</span>${S.P.gdzL > 0 ? `<button class="btn sm pri" id="abGdz">Hat boyu = GDZ'deki ${S.P.gdzL} m</button>` : ''}<span class="note" style="margin:0">ya da alttaki tabloda bir açıklığa metre yazın · ya da Ölçek (S)</span>`;
+  ab.innerHTML = h; ab.classList.toggle('on', !!h);
+  if ($('abAtla')) $('abAtla').onclick = () => { pendingEx = null; setTool('add'); refresh(); };
+  if ($('abIptal')) $('abIptal').onclick = () => setTool('add');
+  if ($('abGdz')) $('abGdz').onclick = () => { let L = 0; for (let i = 1; i < S.poles.length; i++) L += Math.hypot(S.poles[i].x - S.poles[i - 1].x, S.poles[i].y - S.poles[i - 1].y);
+    if (L > 0) { S.mpu = S.P.gdzL / L; refresh(); toast(`Ölçek verildi: hat boyu ${S.P.gdzL} m (GDZ). Direk yerlerini değiştirirseniz açıklıklar buna göre değişir.`); } };
+}
+function gdzUyduYukle() { if (S.gdzUydu) loadFile(new File([S.gdzUydu], 'gdz-uydu.jpg', { type: S.gdzUydu.type || 'image/jpeg' })); }
+
 // ---------- seçili direk kartı
 function selCard() {
   const i = S.sel, p = S.poles[i], r = results[i], el = $('selCard');
@@ -1612,7 +1679,7 @@ function refresh() {
     // açıklık
     if (i > 0) {
       if (S.mpu) { const inp = Object.assign(document.createElement('input'), { className: 'in', type: 'number', step: '0.5', value: Math.round(r.span * 10) / 10 }); inp.title = 'Değiştirirsen bu direk ve sonrakiler hat doğrultusunda kayar'; inp.onchange = e => setSpan(i, +e.target.value); tr.children[2].appendChild(inp); if (r.span > (S.P.maxSpan || 50)) tr.children[2].insertAdjacentHTML('beforeend', ' <span class="pill bad">uzun</span>'); }
-      else tr.children[2].innerHTML = '<span class="note">ölçek yok</span>';
+      else { const inp = Object.assign(document.createElement('input'), { className: 'in', type: 'number', step: '0.5', placeholder: 'm yaz' }); inp.title = 'Ölçek yok: bu açıklığın gerçek boyunu yazarsan ölçek buna göre verilir'; inp.onchange = e => setSpan(i, +e.target.value); tr.children[2].appendChild(inp); }
     } else tr.children[2].textContent = '—';
     // açı
     if (r.kind === 'two') {
@@ -1640,7 +1707,7 @@ function refresh() {
   });
   if (axis.length) w.push(['info', `Güçlü eksen: ${axis.join(', ')} ${axis.length > 1 ? 'direkleri' : 'direği'} güçlü ekseni bileşke kuvvet yönünde olacak şekilde dikilmeli.`]);
   if (S.poles.length && S.poles[0].mev && !S.poles[0].ex.length && !S.poles[0].noEx) w.push(['warn', 'Mevcut direğe gelen mevcut hat girilmedi; mevcut direk nihayet gibi hesaplanıyor. Direği seçip "Mevcut direk ve hattı düzenle".']);
-  if (S.poles.length > 1 && !S.mpu) w.push(['info', 'Ölçek verilmedi: açıklıklar yazılmıyor ve düzenlenemiyor. Altlık bölümünden "Ölçek ver" ile bilinen bir mesafeyi işaretle.']);
+  if (S.poles.length > 1 && !S.mpu) w.push(['info', 'Ölçek verilmedi: tabloda bir açıklığa gerçek metresini yazın ya da üstteki "Hat boyu = GDZ" düğmesini kullanın; Ölçek (S) ile iki nokta arası da verilebilir.']);
   $('warns').innerHTML = w.map(([c, t]) => `<div class="w ${c}">${t}</div>`).join('');
   // durum çipi
   const bad = results.filter(r => !r.ok || r.kViol).length;
@@ -1839,6 +1906,11 @@ if (GOMULU) {
     $('lim').value = 1;                                   // kullanıcının kuralı: kesit %1'e göre seçilir (hesapta "%1,5'ten küçük" yazılır)
     if (m.proje) $('projName').value = m.proje;
     S.P.mevAd = m.mevcutAd || '';
+    S.P.gdzL = m.gdzL > 0 ? Math.round(m.gdzL) : 0;
+    if (m.uydu && typeof m.uydu.arrayBuffer === 'function' && m.uydu !== S.gdzUydu) {   // (başka pencereden gelen Blob: instanceof tutmaz)        // GDZ yazısındaki uydu resmi: altlık yoksa kendiliğinden yüklenir
+      S.gdzUydu = m.uydu;
+      if (!S.img && !S.bg && !S.poles.length && !S.parcels.length) { gdzUyduYukle(); setTimeout(() => toast('GDZ yazısındaki uydu resmi altlık olarak yüklendi'), 400); }
+    }
     S.P.hat = m.hat && m.hat.yazi ? m.hat : null;      // BHP: NYY + askı teli (çekme T = askı teli kesiti × 12)
     document.documentElement.classList.toggle('nyy', !!S.P.hat);
     // EKAT md. 4-c: yalıtılmış iletkenli (ALPEK) küçük aralıklı hatta açıklık en çok 60 m; aşarsa büyük aralıklı hat sayılır
@@ -1850,6 +1922,8 @@ if (GOMULU) {
   parent.postMessage({ tip: 'havai-hazir' }, '*');
 }
 
+window._uiHazir = true;
+{ const _r3 = refresh; refresh = function () { _r3(); checkpoint(); uiBars(); }; }
 readInfo(); refresh(); fit(); goStep(0);
 </script>
 </body>
