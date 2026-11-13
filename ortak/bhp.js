@@ -226,12 +226,14 @@
     3: [['3x16+25', 16, 70, 25], ['3x25+35', 25, 90, 35], ['3x35+50', 35, 115, 50], ['3x50+70', 50, 140, 70], ['3x70+95', 70, 180, 95]],
     1: [['1x16+25', 16, 75, 25], ['1x25+35', 25, 100, 35], ['1x35+50', 35, 125, 50]],
   };
-  function kablolar(iletken, faz = 3) {
+  // ortam: 'toprak' (varsayılan), 'havada' ya da 'inis' (direk/bina inişi: kablonun bir kısmı havada, bir kısmı toprakta →
+  // katalogdaki iki değerin küçüğü; kullanıcının onaylı örneklerinde de iniş kablosunda havada değeri alınmış)
+  function kablolar(iletken, faz = 3, ortam = 'toprak') {
     if (iletken === 'alpek') return ALPEK[faz].map(([ad, kesit, iz, aski]) =>
       ({ ad, kesit, iz, aski, tur: 'ALPEK', iletken: 'al', faz, havai: true, yazi: `${ad} mm² ALPEK` }));
     // 'nyy-aski': kısa mesafede askı teline asılan NYY (kullanıcının uygulaması); Iz katalogdaki "Havada" sütunundan
     const askida = iletken === 'nyy-aski';
-    if (askida) iletken = 'cu';
+    if (askida) { iletken = 'cu'; ortam = 'havada'; }
     const tur = iletken === 'al' ? 'NAYY' : 'NYY';
     const liste = [];
     for (const t of KATALOG.filter(t => t.kablo === tur)) {
@@ -240,15 +242,17 @@
         const m = ad.match(/^(\d)x(\d+(?:[.,]\d+)?)(?:\/(\d+(?:[.,]\d+)?))?$/);
         if (!m) continue;
         const damar = +m[1], kesit = parseFloat(m[2].replace(',', '.')), notr = m[3];   // 1.5 → 1,5 mm² (sayi() noktayı binlik sayar)
-        const iz = sayi(r[t.akimSutun + (askida ? 1 : 0)]);
+        const izT = sayi(r[t.akimSutun]), izH = sayi(r[t.akimSutun + 1]);
+        const iz = ortam === 'havada' ? izH : ortam === 'inis' ? Math.min(izT, isNaN(izH) ? izT : izH) : izT;
+        const izNot = ortam === 'havada' ? 'havada' : ortam === 'inis' ? 'iniş: havada/toprakta küçüğü' : 'toprak';
         if (isNaN(iz)) continue;
         // kullanıcının kuralı: trifazede 16 mm²'ye kadar 4 damarlı, üstünde nötrü küçültülmüş 3x../..;
         // monofazede 3 damarlı (faz + nötr + koruma)
         const uygunTip = faz === 1 ? (damar === 3 && !notr) : ((damar === 4 && !notr && kesit <= 16) || (damar === 3 && notr && kesit > 16));
         const adV = ad.replace(/\./g, ',');
         if (uygunTip) liste.push(askida
-          ? { ad: adV, kesit, iz, tur, iletken, faz, havai: true, askiTelli: true, yazi: `${adV} mm² ${tur} (askı telli)` }
-          : { ad: adV, kesit, iz, tur, iletken, faz, yazi: `${adV} mm² ${tur}` });
+          ? { ad: adV, kesit, iz, izNot, tur, iletken, faz, havai: true, askiTelli: true, yazi: `${adV} mm² ${tur} (askı telli)` }
+          : { ad: adV, kesit, iz, izNot, tur, iletken, faz, yazi: `${adV} mm² ${tur}` });
       }
     }
     return liste.sort((a, b) => a.kesit - b.kesit);

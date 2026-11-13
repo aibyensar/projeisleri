@@ -145,11 +145,14 @@
     c.yazi(`L = ${sayiYaz(v.L)} m  ·  ${v.havai ? 'HAVAİ' : 'YERALTI'}`, ox, yh + 4.6, 2.5, { hiza: 'orta' });
     c.yazi(`N = ${v.N} W`, (kx + r + px1) / 2, yh - 5.5, 2.5, { hiza: 'orta' });
     if (v.inis) {
-      c.daire(xm, yh, 3, S); c.yazi('NİHAYET DİREĞİ', xm, yh + 15, 2.2, { stil: KALIN, hiza: 'orta' });
-      c.cizgi(xm + 3, yh, px1, yh, { katman: 'BHP-KABLO', lt: 'BHP-KESIK', kalin: true });
+      const kisa = v.havai && v.havai.kisa;
+      if (kisa) c.kutu(xm - 3, yh - 3, xm + 3, yh + 3, S); else c.daire(xm, yh, 3, S);
+      c.yazi(kisa === 'dam' ? 'DAM DİREĞİ' : kisa ? 'BİNA CEPHESİ' : 'NİHAYET DİREĞİ', xm, yh + 15, 2.2, { stil: KALIN, hiza: 'orta' });
+      // iniş: yeraltı kısmı varsa kesik (yeraltı kuralı); kısa mesafede binada duvardan inen kablo düz
+      c.cizgi(xm + 3, yh, px1, yh, kisa && !(v.inis.yer > 0) ? { katman: 'BHP-KABLO', kalin: true } : { katman: 'BHP-KABLO', lt: 'BHP-KESIK', kalin: true });
       const oy = (xm + 3 + px1) / 2;
       c.yazi(v.inis.kablo.yazi, oy, yh + 9, 2.8, { stil: KALIN, hiza: 'orta' });
-      c.yazi(`L = ${sayiYaz(v.inis.L)} m  ·  DİREK İNİŞİ`, oy, yh + 4.6, 2.3, { hiza: 'orta' });
+      c.yazi(`L = ${sayiYaz(v.inis.L)} m  ·  ${kisa ? 'BİNA İNİŞİ' : 'DİREK İNİŞİ'}`, oy, yh + 4.6, 2.3, { hiza: 'orta' });
     }
     // sayaç panosu (mühürlenebilir)
     c.kutu(px1, py1, px2, py2, { katman: 'BHP', kalin: true });
@@ -347,8 +350,8 @@
       ['Güç katsayısı', 'cos φ', '0,8'],
       ['Gerilim düşümü katsayısı', 'c', vg(h.c, 7)],
       ['Akım taşıma kapasitesi' + (v.havai ? ' (havada)' : ' (toprak)'), 'Iz', `${v.kablo.iz} A`],
-    ].concat(I2 ? [['İniş kablosu (nihayet direğinden)', '', I2.kablo.yazi], ['İniş uzunluğu / kesit', 'L₂ / S₂', `${sayiYaz(I2.L)} m / ${sayiYaz(I2.kablo.kesit)} mm²`],
-      ['İniş kablosu Iz (toprak)', 'Iz₂', `${I2.kablo.iz} A`]] : [])
+    ].concat(I2 ? [[v.havai && v.havai.kisa ? 'İniş kablosu (binada)' : 'İniş kablosu (nihayet direğinden)', '', I2.kablo.yazi], ['İniş uzunluğu / kesit', 'L₂ / S₂', `${sayiYaz(I2.L)} m / ${sayiYaz(I2.kablo.kesit)} mm²`],
+      [`İniş kablosu Iz (${I2.kablo.izNot || (I2.kablo.tur === 'ALPEK' ? 'havada' : 'toprak')})`, 'Iz₂', `${I2.kablo.iz} A`]] : [])
       .concat(h.In ? [['Ana kesici anma akımı', 'In', `${sayiYaz(h.In)} A`]] : []);
     const sh = Math.min(9, (ust - ya - 16) / (satir.length + 1));
     c.cizgi(xc, ya, xc, ust, T);
@@ -363,7 +366,7 @@
     });
     c.cizgi(xb - 14, ust - sh, xb - 14, ust - sh * (satir.length + 1), T);
     const yn = ust - sh * (satir.length + 1);
-    c.yazi(v.havai ? (v.kablo.askiTelli ? 'Iz: Öznur Kablo kataloğu, havada (askı telli kısım)' : 'Iz: Konen ALPEK kabloları tablosu (havada)') + (I2 ? '; iniş kablosu Öznur Kablo kataloğu (toprak).' : '.') : 'Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
+    c.yazi(v.havai ? (v.kablo.askiTelli ? 'Iz: Öznur Kablo kataloğu, havada (askı telli kısım)' : 'Iz: Konen ALPEK kabloları tablosu (havada)') + (I2 ? `; iniş kablosu ${I2.kablo.tur === 'ALPEK' ? 'aynı tablo' : 'Öznur Kablo kataloğu (' + (I2.kablo.izNot || 'toprak') + ')'}.` : '.') : 'Iz: Öznur Kablo kataloğu, toprakta döşeme.', xa + 2, yn - 4.5, 2.0);
     c.yazi('Bağlantı hattında izin verilen gerilim düşümü: %1,5.', xa + 2, yn - 9, 2.0);
     // sağ üst: hat şeması (kullanıcının hesap çizelgesindeki gibi)
     const X = xc + 6;
@@ -411,7 +414,7 @@
     }
     // sonuç satırı (alt kenarda)
     c.cizgi(xc, ya + 11, x1, ya + 11, T);
-    if (I2) { const t = `SONUÇ: ${v.kablo.yazi} ve ${I2.kablo.yazi} iniş kablosu ${tumUygun ? 'gerilim düşümü, akım taşıma ve koruma uyumu yönünden uygundur.' : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`;
+    if (I2) { const t = `SONUÇ: ${I2.ayniKablo ? `${v.kablo.yazi.replace(/ \(askı telli\)$/, '')} kablo (havai ve iniş)` : `${v.kablo.yazi} ve ${I2.kablo.yazi} iniş kablosu`} ${tumUygun ? 'gerilim düşümü, akım taşıma ve koruma uyumu yönünden uygundur.' : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`;
       c.yazi(t, X, ya + 5.5, sigH(t, 2.6, x1 - X - 3, true), { stil: KALIN }); }
     else c.yazi(`SONUÇ: ${v.kablo.yazi} kablo ${h.uygun ? (h.In ? 'gerilim düşümü, akım taşıma ve koruma uyumu yönünden uygundur.' : 'gerilim düşümü ve akım taşıma yönünden uygundur.') : 'UYGUN DEĞİLDİR, kesit büyütülmelidir.'}`, X, ya + 5.5, 2.8, { stil: KALIN });
   }
@@ -599,8 +602,9 @@
     const B = bilgi.bolgeler, c = new Cizim();
     tekHat(c, v, B.tekhat);
     hesap(c, v, B.hesap);
+    const kisa = v.havai && v.havai.kisa;
     if (B.detay && v.havai && kok.BHPHavai) {
-      kok.BHPHavai.direkListesi(c, v, B.detay);
+      if (kisa) kok.BHPHavai.kisaListe(c, v, B.detay); else kok.BHPHavai.direkListesi(c, v, B.detay);
     } else if (B.detay) {
       if (bilgi.duzen) {                                       // düzenlenmiş pafta: ortak çerçeve, eski çizim kutuya büyütülür
         const ic = blok(c, B.detay, 'BAĞLANTI HATTI TESİS / MONTAJ DETAYI (ÖLÇEKSİZ)');
@@ -609,7 +613,10 @@
     }
     gucTablosu(c, v, B.guc);
     vaziyet(c, v, bilgi.resim.vaziyet);
-    if (v.havai && kok.BHPHavai) { kok.BHPHavai.krokiOzet(c, v); kok.BHPHavai.direkDetay(c, v); kok.BHPHavai.ikinciSayfa(c, v, bilgi); }
+    if (v.havai && kok.BHPHavai) {
+      if (kisa) kok.BHPHavai.binaDetay(c, v);                   // kısa mesafe: yeni direk yok → cer raporu / 2. pafta yok
+      else { kok.BHPHavai.krokiOzet(c, v); kok.BHPHavai.direkDetay(c, v); kok.BHPHavai.ikinciSayfa(c, v, bilgi); }
+    }
     return c;
   }
 

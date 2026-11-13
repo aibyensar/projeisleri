@@ -52,3 +52,23 @@ Müşteri adı, adres ve parsel bilgisi buraya yazılmadı. Örnekler numarayla 
    - örnek 3 ve 4: Ø20 bakır çubuk;
    - araç: 1x16 Cu ve galvaniz kazık.
 6. **Askı teli görünmüyor:** örnek 2 ve 5'te askı teli çizilmemiş. Kablo direkten direğe doğrudan gidiyor gibi.
+
+## Kullanıcının kararları (13 Kasım 2026) ve yapılanlar
+
+- **Kısa mesafe:** üç durum var: cephe, dam direği, A direk. Araçta "Kısa mesafe: dam direği" ve "Kısa mesafe: cephe" (yeni direk yok,
+  cer hesabı yok, açıklık elle girilir, aynı kablo binada duvardan panoya iner). A direk = yeni direk → "Direkli hat" (cer aracı).
+- **İniş kablosu Iz:** "gerçekte neyse". İnişte kablonun bir kısmı havada, bir kısmı toprakta → katalogdaki iki değerin küçüğü
+  (kablolar(…, 'inis')). 4x6 NYY → 43 A (örneklerle aynı).
+- **Kroşe/kelepçe aralığı:** şimdilik 50 cm kalsın.
+- **Pano altı:** PVC hortum yok, artık çelik spiral.
+- **"İç tesisat projesi … onaylanmıştır" kutusu:** gerek yok; koruma elemanları iç tesisattan alınır (yeraltıdaki gibi).
+- **ALPEK çekmesi:** "kitapta ne yazıyorsa". Alpek El Kitabı: T = askı teli kesiti × 12 kg/mm² → 3x25+35: 420 kg (Konen kopma yükü 1050
+  kgf = 30 kg/mm²). Örneklerdeki 390/400 kg kitapla tutmuyor; araç 420 kg kullanıyor.
+- **ALPEK 3x25+35 Iz:** 90 A (Konen).
+- **NYY askı telli çekme:** "doğrusu nasıl" → aynı yöntem: askı teli kesiti × 12 kg/mm² (araçta kesit girilir, T otomatik).
+  EKAT: çekme zorlanması kopma dayanımının %45'ini geçmez (web aramasıyla görüldü; resmî metin bu oturumdan açılamadı).
+- **Bakırsa askı teli olur:** NYY havai hat her zaman askı telli.
+- **Yeni direk varsa cer hesabı her zaman.**
+- **Muhafaza borusu / topraklama:** "kitap kural ne diyorsa". TEDAŞ pozu: 65x65x7 mm, L = 2 m galvaniz köşebent kazık
+  (birim fiyat 85.790.1203); topraklama iletkeni en az 16 mm² Cu. Direk inişindeki koruma borusu boyu için yazılı kaynak bulunamadı
+  (araç 3 m, kullanıcının onaylı direk bağlantı detayından).
