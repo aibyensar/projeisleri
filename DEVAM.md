@@ -331,6 +331,12 @@ monofaze 3 damar; c 0,0000124/0,0000198 (3~), 0,000074/0,000118 (1~); I = N/527 
    bilgilerdeki AG tablosuyla aynı (Konen'in 008 tablosu MÜŞTEREK direkler içindir, farklı). Açık: Manisa ilçelerinin buz
    yükü bölgesi (araç varsayılanı 1. bölge), sağ sütun (eski "uygulama usul ve esasları") havaide boş, onaylı havai proje
    örneği yok (yerleşim kullanıcıyla düzeltilecek). Deneme: baglanti-hatti/test/havai-dene.js <havai-sonuc.json> <klasör>.
+   13 Kasım (devam): sağ sütunda "AG havai hat direk tesis detayları" (nihayet + taşıyıcı direk, KT/İT, tırmanma engeli
+   EKAT md. 44-o, Çizelge-8 en küçük düşey uzaklıklar; temel ölçüsü yazılmadı: TEDAŞ montaj şartnamesine erişilemedi).
+   EKAT md. 4-c: yalıtılmış iletkende küçük aralıklı hat açıklığı ≤ 60 m (gömülü araçta maxSpan 60, sayfada uyarı).
+   Pafta, cer aracında seçilen iletkeni (routeCond) kullanır; havai-sonuc iletisinde talepKW de gelir. KML (TKGM) yolu
+   uçtan uca denendi (gerçek koordinat, parsel etiketi). EMO ek dosyaları (buz bölgesi ilçe listesi) 404; GDZ'nin proje
+   kapsamı (Elektrik Tesisleri Proje Yönetmeliği EK-2) metinde yok.
 
 **Yeni oturumda ilk iş:** bu dosyayı okuyun; kullanıcıya kısaca durumu söyleyin; açık konu yok, kullanıcı yeni iş söyleyecek.
 Değişiklikten sonra: şablon (gerekirse) → on.cjs benzeri örnekle DXF üret → onizleme.sh ile PNG'ye BAKIN → web tarayıcı denemesi →
