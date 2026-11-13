@@ -282,6 +282,16 @@
       || l.find(k => k.kesit >= (enKucuk || 0) && hesap(k, N, L, In).uygun) || l[l.length - 1];
   }
 
+  // ---------- Bağlantı hattı uzunluk sınırı ----------
+  // EPDK Elektrik Piyasası Bağlantı ve Sistem Kullanım Yönetmeliği md. 10/B-1 (RG 09.11.2023 değişikliğiyle): bağlantı hattının
+  // kullanıcı mülkiyetindeki arazi sınırları DIŞINDA kalan kısmı; meskun mahalde AG kullanıcı için 60 m (birden fazla kullanıcı
+  // 120 m), meskun mahalde 50 kW üstü ya da meskun mahal dışı AG için 200 m'yi geçemez; aşan kısım dağıtım tesisi olarak yapılır.
+  function uzunlukSiniri(b, meskunDisi = false) {
+    const kW = (b.talepW || 0) / 1000, coklu = (parseInt(b.bagimsiz, 10) || (b.satirlar || []).length || 1) > 1;
+    if (meskunDisi || kW > 50) return { sinir: 200, neden: meskunDisi ? 'meskun mahal dışı AG kullanıcı' : 'anlaşma gücü 50 kW üstü' };
+    return coklu ? { sinir: 120, neden: 'meskun mahalde birden fazla kullanıcı' } : { sinir: 60, neden: 'meskun mahalde tek AG kullanıcı' };
+  }
+
   // ---------- Bilgileri birleştir ----------
   function birlestir(g, i) {
     const ilk = (...a) => a.find(x => x !== undefined && x !== null && x !== '' && !(typeof x === 'number' && isNaN(x)));
@@ -412,7 +422,7 @@
     return sablon.replace(/\{\{([A-Z_0-9]+)\}\}/g, (a, k) => temiz(d[k] === undefined ? '' : d[k]));
   }
 
-  const BHP = { gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
+  const BHP = { uzunlukSiniri, gdzOku, uyduSayfasi, icTesisatOku, gucTablosuOku, gucKontrol, bbSayisi, kablolar, hesap, kabloOner, birlestir, malzemeOner, notlarOner, sayacGruplari, sayacOnuEksik, cizimVerisi, degerler, doldur,
     virgul, baslikHarf, LOGO_DOSYA, anaKesiciA, kesiciDuzelt, RESIM: { uydu: [2000, 1083], vaziyet: [2000, 1083] } };
   if (typeof module !== 'undefined' && module.exports) module.exports = BHP; else kok.BHP = BHP;
 })(typeof window !== 'undefined' ? window : globalThis);

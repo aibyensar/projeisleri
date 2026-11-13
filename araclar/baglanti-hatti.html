@@ -985,6 +985,10 @@ function guncelle() {
   }
   if (D.panoKaynak === 'resim' && !pOnay) eksik.push('sayaç panosu' + (D.onuFark ? ' (kırmızı kenarlı değerler var)' : '') + ': 3. bölümde resimle karşılaştırıp "doğru" kutusunu işaretleyin');
   else if (D.onuFark && !pOnay) eksik.push('sayaç önü sigortalar: kırmızı kenarlı değerleri kontrol edin (3. bölüm)');
+  { // EPDK Bağlantı ve Sistem Kullanım Yönetmeliği md. 10/B-1: parsel dışı kısım sınırı
+    const sn = BHP.uzunlukSiniri(b), dis = havai ? Math.max(0, L - (b.Lic || 0)) : (b.Ldis || 0);
+    if (dis > sn.sinir) uyari.push(`bağlantı hattının parsel dışında kalan kısmı ${Math.round(dis)} m; ${sn.neden} için sınır ${sn.sinir} m (EPDK Bağlantı ve Sistem Kullanım Yön. md. 10/B). Aşan kısım dağıtım tesisi olarak yapılır; GDZ görüşünü kontrol edin`);
+  }
   if (!D.uydu) uyari.push('GDZ uydu görüntüsü yok, krokinin yeri boş kalacak');
   if (!D.vaziyet) uyari.push('TKGM görüntüsü yok, vaziyet planının yeri boş kalacak');
   else if (!(D.isaret.nokta && D.isaret.bina)) uyari.push('vaziyet planında direk/box ve sayaç panosu işaretlenmedi (5. bölüm)');
